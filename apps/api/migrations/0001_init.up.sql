@@ -2,8 +2,10 @@
 -- with every addendum applied in place. Hand-written SQL (RLS, triggers and
 -- matviews are not expressible in an ORM generator); see docs/impl-notes.md I-01.
 --
--- Roles (created by infra/postgres/init.sql or scripts/dev-db.sh):
---   foodtrack      owner of every object, runs migrations. NOT superuser.
+-- Roles (created by infra/postgres/init.sql.tpl or scripts/dev-db.sh):
+--   foodtrack      owner of every object, runs migrations, seeds reference data and
+--                  refreshes matviews. NOT superuser. As owner it is not subject to RLS,
+--                  which is why NO request-serving process ever connects as it.
 --   foodtrack_app  what the API, worker and analysis service connect as.
 --                  Not the owner, no BYPASSRLS → every policy applies.
 
@@ -641,18 +643,15 @@ BEGIN
     'transit_measurement','event_marker','job','passphrase_reset'
   ] LOOP
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
-    EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
     EXECUTE format('CREATE POLICY %I ON %I USING (user_id = app_current_user()) WITH CHECK (user_id = app_current_user())', t || '_isolation', t);
   END LOOP;
 END $$;
 
 ALTER TABLE app_user ENABLE ROW LEVEL SECURITY;
-ALTER TABLE app_user FORCE ROW LEVEL SECURITY;
 CREATE POLICY app_user_isolation ON app_user USING (id = app_current_user()) WITH CHECK (id = app_current_user());
 
 -- user-created foods are private to their author; shared canonical foods are readable by all
 ALTER TABLE food ENABLE ROW LEVEL SECURITY;
-ALTER TABLE food FORCE ROW LEVEL SECURITY;
 CREATE POLICY food_read ON food FOR SELECT USING (created_by IS NULL OR created_by = app_current_user());
 CREATE POLICY food_write ON food FOR INSERT WITH CHECK (created_by = app_current_user());
 CREATE POLICY food_update ON food FOR UPDATE USING (created_by = app_current_user());
@@ -663,13 +662,11 @@ DECLARE t text;
 BEGIN
   FOREACH t IN ARRAY ARRAY['food_nutrient','food_tag'] LOOP
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
-    EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
     EXECUTE format('CREATE POLICY %I ON %I FOR SELECT USING (EXISTS (SELECT 1 FROM food f WHERE f.id = food_id))', t || '_read', t);
     EXECUTE format('CREATE POLICY %I ON %I FOR ALL USING (EXISTS (SELECT 1 FROM food f WHERE f.id = food_id AND f.created_by = app_current_user())) WITH CHECK (EXISTS (SELECT 1 FROM food f WHERE f.id = food_id AND f.created_by = app_current_user()))', t || '_write', t);
   END LOOP;
 END $$;
 ALTER TABLE food_component ENABLE ROW LEVEL SECURITY;
-ALTER TABLE food_component FORCE ROW LEVEL SECURITY;
 CREATE POLICY food_component_read ON food_component FOR SELECT USING (EXISTS (SELECT 1 FROM food f WHERE f.id = parent_food_id));
 CREATE POLICY food_component_write ON food_component FOR ALL
   USING (EXISTS (SELECT 1 FROM food f WHERE f.id = parent_food_id AND f.created_by = app_current_user()))
