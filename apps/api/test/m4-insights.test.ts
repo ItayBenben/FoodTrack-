@@ -2,7 +2,6 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { spawn, type ChildProcess } from 'node:child_process';
 import { join } from 'node:path';
 import type { FastifyInstance } from 'fastify';
-import type { Deps } from '../src/app';
 import { lintCopy } from '@foodtrack/shared';
 import { REPO_ROOT } from '../src/config';
 import { runOnce } from '../src/workers/jobs';
@@ -14,7 +13,7 @@ import { issueAccess } from '../src/services/auth';
 import { withUser } from '../src/db/pool';
 
 const PORT = 8765;
-let py: ChildProcess; let deps: Deps; let app: FastifyInstance; let A: string; let tA = ''; let tB = '';
+let py: ChildProcess; let deps: Awaited<ReturnType<typeof freshDeps>>; let app: FastifyInstance; let A: string; let tA = ''; let tB = '';
 
 async function tokenFor(uid: string) {
   const sid = await withUser(deps.db, uid, async (tx) => (await tx.query<{ id: string }>(`INSERT INTO auth_session (user_id, family_id, token_hash, expires_at) VALUES (app_current_user(), uuidv7(), gen_random_bytes(16), now() + interval '1 day') RETURNING id`)).rows[0]!.id);

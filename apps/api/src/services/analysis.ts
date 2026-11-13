@@ -2,7 +2,6 @@
  * Analysis runs (03 §6). The API asks the Python service; the service reads Postgres as the app role.
  * Results land in `association`; narratives are generated from NUMBERS only, validated, and sealed.
  */
-import type { Deps } from '../app.js';
 import type { Tx } from '../db/pool.js';
 import { HttpProblem } from '../lib/problem.js';
 import { handlers, publish, systemHandlers } from '../workers/jobs.js';
