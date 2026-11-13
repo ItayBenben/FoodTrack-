@@ -7,7 +7,8 @@
  * never `if (tracker_key === 'stool')`; extend this format instead.
  */
 import { z } from 'zod';
-import { createHash } from 'node:crypto';
+import { sha256 } from '@noble/hashes/sha256';
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils';
 
 export const LOCALES = ['en', 'he'] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -158,6 +159,8 @@ export const TrackerDefinitionSchema = z.object({
   has_meal_items: z.boolean().optional(),
   /** one save may record several observations, one per value of this field (symptoms) */
   group_by_field: snake.optional(),
+  /** the explicit "nothing to report" answer, worth as much to the engine as a symptom report (05 §4.4) */
+  all_clear: z.object({ field: snake, value: z.union([z.boolean(), z.string(), z.number()]) }).strict().optional(),
   quick_log: z.object({
     enabled: z.boolean(),
     primary_field: snake.optional(),
@@ -189,6 +192,9 @@ export const TrackerDefinitionSchema = z.object({
   }
   if (t.quick_log?.primary_field && !keys.has(t.quick_log.primary_field)) {
     ctx.addIssue({ code: 'custom', path: ['quick_log', 'primary_field'], message: `unknown field '${t.quick_log.primary_field}'` });
+  }
+  if (t.all_clear && !keys.has(t.all_clear.field)) {
+    ctx.addIssue({ code: 'custom', path: ['all_clear'], message: `unknown field '${t.all_clear.field}'` });
   }
   if (t.group_by_field && !keys.has(t.group_by_field)) {
     ctx.addIssue({ code: 'custom', path: ['group_by_field'], message: `unknown field '${t.group_by_field}'` });
@@ -229,7 +235,7 @@ export function canonicalJson(value: unknown): string {
 }
 
 export function contentHash(def: unknown): string {
-  return createHash('sha256').update(canonicalJson(def)).digest('hex').slice(0, 16);
+  return bytesToHex(sha256(utf8ToBytes(canonicalJson(def)))).slice(0, 16);
 }
 
 export class TrackerDefinitionError extends Error {

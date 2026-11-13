@@ -5,6 +5,10 @@
   "category": "wellbeing",
   "icon": "checkin",
   "cardinality": "one_per_day",
+  "all_clear": {
+    "field": "all_clear",
+    "value": true
+  },
   "counts_as_checkin": true,
   "quick_log": {
     "enabled": true,

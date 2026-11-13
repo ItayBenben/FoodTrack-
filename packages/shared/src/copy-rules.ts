@@ -18,6 +18,7 @@ export const COPY_ALLOWLIST_KEYS = new Set<string>([
   'safety.disclaimer_body',
   'onboarding.disclaimer_body',
   'trial.limitations.not_diagnosis',
+  'safety.not_diagnosis',
 ]);
 
 export interface CopyViolation { code: string; match: string }

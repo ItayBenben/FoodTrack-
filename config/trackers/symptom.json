@@ -5,6 +5,10 @@
   "category": "gut",
   "icon": "symptom",
   "cardinality": "many_per_day",
+  "all_clear": {
+    "field": "kind",
+    "value": "none"
+  },
   "counts_as_outcome_record": true,
   "group_by_field": "kind",
   "quick_log": {

@@ -12,7 +12,7 @@ export interface ValueIssue { path: string; code: string; message: string }
 
 function isNum(v: unknown): v is number { return typeof v === 'number' && Number.isFinite(v); }
 
-export function visibleFields(def: TrackerDefinition, values: ObservationValues): FieldDef[] {
+export function visibleFields(def: TrackerDefinition, values: Record<string, unknown>): FieldDef[] {
   return def.fields.filter((f) => {
     if (!f.show_when) return true;
     const v = values[f.show_when.field];
@@ -20,7 +20,7 @@ export function visibleFields(def: TrackerDefinition, values: ObservationValues)
   });
 }
 
-export function validateValues(def: TrackerDefinition, values: ObservationValues): ValueIssue[] {
+export function validateValues(def: TrackerDefinition, values: Record<string, unknown>): ValueIssue[] {
   const issues: ValueIssue[] = [];
   const known = new Map(def.fields.map((f) => [f.key, f]));
   for (const k of Object.keys(values)) {
@@ -93,7 +93,7 @@ export function storageColumn(f: FieldDef, v: ObservationValue): 'value_num' | '
   }
 }
 
-export interface DayObservation { values: ObservationValues }
+export interface DayObservation { values: Record<string, unknown> }
 
 function matches(a: AggregationDef, o: DayObservation): boolean {
   if (!a.where) return true;

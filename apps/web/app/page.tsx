@@ -1,1 +1,4 @@
-export default function Home() { return <main>FoodTrack</main>; }
+'use client';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+export default function Root() { const r = useRouter(); useEffect(() => { r.replace('/today'); }, [r]); return null; }

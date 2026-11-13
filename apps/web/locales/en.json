@@ -1,0 +1,361 @@
+{
+ "common": {
+  "back": "Back",
+  "clear": "Clear",
+  "close": "Close",
+  "delete": "Delete",
+  "done": "Done",
+  "save": "Save",
+  "save_changes": "Save changes",
+  "search": "Search",
+  "skip": "Skip",
+  "undo": "Undo",
+  "continue": "Continue",
+  "cancel": "Cancel",
+  "retry": "Try again",
+  "loading": "Loading…",
+  "yes": "Yes",
+  "no": "No",
+  "edit": "Edit",
+  "copy": "Copy",
+  "learn_more": "How this works"
+ },
+ "tabs": {
+  "label": "Main",
+  "today": "Today",
+  "timeline": "Timeline",
+  "insights": "Insights",
+  "more": "More"
+ },
+ "time": {
+  "now": "Now",
+  "set": "Set",
+  "today": "Today",
+  "rollover_note": "Counts as {day} — your day starts at {time}.",
+  "out_of_range": "That date is outside what I can record."
+ },
+ "capture": {
+  "fab": "Log something",
+  "more_trackers": "More",
+  "picker_title": "What do you want to log?",
+  "saved_add_more": "Saved — add more?",
+  "closing_in": "closing in {n}…",
+  "more_details": "More details",
+  "fewer_details": "Fewer details",
+  "nothing_to_report": "Nothing to report",
+  "edit_title": "Edit {name}"
+ },
+ "fields": {
+  "low": "none",
+  "high": "worst",
+  "decrease": "Decrease",
+  "increase": "Increase",
+  "minutes": "minutes",
+  "unsupported": "This field type ({type}) is not supported on this screen yet.",
+  "body_map": "Where in the belly",
+  "region": {
+   "upper_start": "Upper, one side",
+   "upper_mid": "Upper middle",
+   "upper_end": "Upper, other side",
+   "mid_start": "Middle, one side",
+   "navel": "Around the navel",
+   "mid_end": "Middle, other side",
+   "lower_start": "Lower, one side",
+   "lower_mid": "Lower middle",
+   "lower_end": "Lower, other side"
+  }
+ },
+ "meal": {
+  "title": "Log a meal",
+  "edit_title": "Edit meal",
+  "placeholder": "What did you eat? Any language, your own words.",
+  "parsed": "Understood as",
+  "updating": "updating…",
+  "parse_later": "Offline — I’ll sort the items out when you’re back online.",
+  "parse_degraded": "Partly understood — saving works anyway.",
+  "unresolved": "not matched yet",
+  "remove_item": "Remove item",
+  "invisible_prompt": "Anything you can’t see in it?",
+  "add_item": "Add item",
+  "photo": "Photo",
+  "favourites": "Favourites",
+  "repeat_last": "Repeat last",
+  "clarify_title": "Do you remember roughly what it was?",
+  "clarify_skip": "I don’t remember",
+  "clarify_hint": "Even one word helps — \"sandwich\", \"pasta\".",
+  "portion_precision": {
+   "weighed": "Weighed",
+   "measured": "Measured",
+   "estimated": "Estimate",
+   "unspecified": "Not sure"
+  }
+ },
+ "units": {
+  "g": "g",
+  "ml": "ml",
+  "unit": "pc",
+  "slice": "slice",
+  "portion": "portion",
+  "tbsp": "tbsp",
+  "tsp": "tsp",
+  "cup": "cup",
+  "bowl": "bowl",
+  "can": "can",
+  "bag": "bag",
+  "bottle": "bottle",
+  "glass": "glass",
+  "shot": "shot",
+  "clove": "clove"
+ },
+ "rows": {
+  "all_clear": "All clear",
+  "meal_unspecified": "Meal (no details)",
+  "needs_a_moment": "needs a moment"
+ },
+ "toast": {
+  "deleted": "Deleted.",
+  "draft_kept": "Draft kept.",
+  "item_removed": "Item removed.",
+  "parse_completed": "Tidied up your {time} meal — {n} items.",
+  "saved": "Saved."
+ },
+ "sync": {
+  "synced": "synced",
+  "syncing": "syncing…",
+  "offline": "offline",
+  "waiting": "{n} waiting",
+  "waiting_one": "Waiting to sync",
+  "failed_one": "Could not sync — open the sync sheet",
+  "title": "Sync",
+  "pending_count": "{n} entries are saved on this device and waiting to reach the server.",
+  "all_saved": "Everything is saved on the server.",
+  "last": "Last synced at {time}",
+  "retry_failed": "Retry failed",
+  "retry_all": "Retry all now",
+  "retrying": "retrying (attempt {n})",
+  "queued": "queued",
+  "offline_explain": "You’re offline. Everything you log is kept on this device and sent when you’re back.",
+  "op": {
+   "upsert": "Save",
+   "delete": "Delete"
+  },
+  "offline_waiting": "offline · {n} waiting"
+ },
+ "today": {
+  "quick_log": "Quick log",
+  "usual": "Usual for this time",
+  "so_far": "Today so far",
+  "nothing_yet": "Nothing logged yet — start anywhere.",
+  "logged_n": "logged {n}×",
+  "score_title": "Gut day so far",
+  "weight": "weight {w}",
+  "score_default_weighting": "This is our default weighting, not a clinical measure.",
+  "checkin_prompt": "How was today?",
+  "checkin_cta": "Check in",
+  "draft_row": "Unfinished {name}",
+  "resume": "Resume",
+  "discard": "Discard",
+  "next_title": "What happens next",
+  "next_1": "Log for a few days — anything at all.",
+  "next_2": "After about 3 weeks I can start looking for patterns.",
+  "next_3": "Around 3–4 months a clear effect becomes visible. This is a slow tool.",
+  "how": "How this works"
+ },
+ "timeline": {
+  "search": "Search meals, notes, foods",
+  "filter": "Filter",
+  "all": "Everything",
+  "empty_title": "Nothing here yet",
+  "empty_body": "Entries you log show up here, grouped by day.",
+  "score": "score {n}",
+  "add_to_day": "Log into this day",
+  "load_more": "Show older days"
+ },
+ "insights": {
+  "not_yet_title": "Not enough data yet",
+  "not_yet_body": "I need about 3 weeks of logging before I can look for anything. A clear effect usually takes 3–4 months; a subtle one 6 or more."
+ },
+ "more": {
+  "trackers": "Trackers",
+  "foods": "Food library",
+  "day_builder": "Fill in a day",
+  "trials": "Trials",
+  "export": "Export & import",
+  "reminders": "Reminders",
+  "security": "Security & encryption",
+  "deleted": "Recently deleted",
+  "how": "How this works",
+  "language": "Language",
+  "theme": "Appearance",
+  "theme_system": "System",
+  "theme_light": "Light",
+  "theme_dark": "Dark",
+  "account": "Account",
+  "lock_now": "Lock now",
+  "logout": "Log out",
+  "avoid": "Avoid list",
+  "inbox": "Notifications"
+ },
+ "logout": {
+  "clean": "Log out? Your data stays on the server.",
+  "unsynced": "{n} entries haven’t synced yet.",
+  "sync_then": "Sync now and log out",
+  "discard_hint": "To discard them and log out anyway, type {n}.",
+  "type_number": "Type the number of entries",
+  "discard_then": "Discard {n} and log out"
+ },
+ "deleted": {
+  "explain": "Deleted entries can be restored for 30 days.",
+  "empty": "Nothing deleted recently",
+  "restore": "Restore",
+  "offline": "This list needs a connection."
+ },
+ "trackers": {
+  "packs": "Packs",
+  "all": "All trackers",
+  "on": "On",
+  "off": "Off",
+  "pack_on": "Added",
+  "pack_add": "Add",
+  "data_kept": "Turning a tracker off hides it; nothing you logged is deleted.",
+  "names": {
+   "meal": "Meals",
+   "stool": "Bowel movements",
+   "symptom": "Symptoms",
+   "checkin": "Evening check-in",
+   "weight": "Weight",
+   "body": "Body measurements",
+   "hydration": "Water",
+   "medication": "Medication",
+   "supplement": "Supplements",
+   "exercise": "Exercise",
+   "note": "Notes",
+   "event_marker": "Life events",
+   "transit_marker": "Transit-time test"
+  }
+ },
+ "unlock": {
+  "passphrase": "Passphrase",
+  "email": "Email",
+  "show": "Show",
+  "hide": "Hide",
+  "cta": "Unlock",
+  "totp": "6-digit code",
+  "wrong": "That passphrase didn’t work.",
+  "wrong_n": "That passphrase didn’t work. {n} attempts left before a short lockout.",
+  "locked": "Too many attempts. Try again in {s} s.",
+  "offline": "No connection — unlocking needs the server once.",
+  "totp_wrong": "That code didn’t match.",
+  "forgot": "Forgot passphrase?",
+  "forgot_title": "You can reset it — you own the server.",
+  "forgot_body": "The passphrase locks the app. It is not the key to your data, so nothing is lost. On the machine running FoodTrack, run:",
+  "forgot_link": "It prints a one-time link, valid for 15 minutes, that lets you set a new one.",
+  "copy_command": "Copy the command",
+  "cant_reach": "I can’t reach the server",
+  "cant_reach_body": "Then you can’t get in from here. There’s no email reset, because there’s no email service and no one but you holds a key. Someone with access to the machine can run the command above.",
+  "server_error": "The server didn’t answer properly. Nothing was lost — try again in a moment."
+ },
+ "onboarding": {
+  "step": "Step {n} of {total}",
+  "start": "Get started",
+  "welcome_title": "Find out what’s behind your bad gut days.",
+  "welcome_1": "Log meals, stool and how you feel in under a minute a day.",
+  "welcome_2": "Over months, it looks for foods that tend to come before bad days — and says how sure it is.",
+  "welcome_3": "Then it helps you test a suspicion properly, with a short structured trial.",
+  "disclaimer_body": "FoodTrack is a wellness tool, not a medical device. It never diagnoses anything. If it notices a warning sign, it will tell you to see a doctor.",
+  "goal_title": "What are you trying to figure out?",
+  "goal_gut_health": "Which foods upset my gut",
+  "goal_body": "Track what I eat and my weight",
+  "goal_energy": "Energy, sleep and mood",
+  "goal_other": "Something else",
+  "trackers_title": "Which of these do you want to track?",
+  "why": {
+   "meal": "The thing we’re looking into.",
+   "stool": "The main outcome.",
+   "symptom": "Bloating, pain, reflux and more.",
+   "checkin": "Sleep and stress make the food findings much more trustworthy.",
+   "weight": "Trend line, and a safety check.",
+   "body": "Optional measurements.",
+   "hydration": "Fluids affect stool.",
+   "medication": "Painkillers and antibiotics change the gut — the analysis needs to know.",
+   "supplement": "Probiotics, fibre and magnesium matter.",
+   "exercise": "Long sessions affect digestion.",
+   "note": "Anything else worth remembering.",
+   "event_marker": "Travel, illness, antibiotics — big shocks to the gut.",
+   "transit_marker": "Measure your own transit time (optional)."
+  },
+  "about_title": "About you",
+  "about_note": "This only ever affects unit defaults and trend lines. Leave anything blank.",
+  "birth_year": "Year of birth",
+  "sex": "Sex at birth",
+  "sex_f": "Female",
+  "sex_m": "Male",
+  "sex_o": "Prefer not to say",
+  "height": "Height (cm)",
+  "weight": "Current weight (kg)",
+  "day_title": "Your day",
+  "timezone": "Timezone",
+  "rollover": "My day starts at",
+  "rollover_explain": "A 01:00 snack belongs to yesterday.",
+  "reminders_title": "Reminders",
+  "checkin_reminder": "Evening check-in",
+  "meal_nudges": "Meal nudges",
+  "lock_title": "This is health data. Set a passphrase.",
+  "passphrase": "Passphrase (12+ characters)",
+  "confirm": "Confirm passphrase",
+  "lock_note": "This locks the app, not the database. If you forget it, you can reset it from the server. Nothing is lost.",
+  "set_passphrase": "Set passphrase",
+  "pass_short": "Use at least 12 characters — a few words is easiest.",
+  "pass_mismatch": "The two passphrases don’t match.",
+  "offline": "Setting up needs a connection to your server."
+ },
+ "safety": {
+  "acknowledge": "I understand",
+  "not_diagnosis": "This is not a diagnosis. It is a reason to check with a professional.",
+  "disclaimer_body": "FoodTrack is a wellness tool, not a medical device, and does not diagnose. Findings are associations in your own data; only a trial can test them. If something worries you, see a doctor. Never change a medication because of something this app shows you.",
+  "red_flag_blood": {
+   "title": "Blood in a bowel movement",
+   "body": "Please see a doctor about this, even if it happened only once."
+  },
+  "red_flag_melena": {
+   "title": "Black or tarry stool",
+   "body": "Please see a doctor soon."
+  },
+  "red_flag_weight_loss": {
+   "title": "Your weight has dropped noticeably",
+   "body": "If you weren’t trying to lose weight, please see a doctor."
+  },
+  "red_flag_persistent_pain": {
+   "title": "Severe pain for several days",
+   "body": "Please see a doctor."
+  },
+  "red_flag_nocturnal_pain_check": {
+   "title": "Symptoms that wake you at night",
+   "body": "If this keeps happening, please see a doctor."
+  },
+  "red_flag_fever_gi": {
+   "title": "Fever together with gut symptoms",
+   "body": "Please see a doctor."
+  },
+  "red_flag_fluids": {
+   "title": "Can’t keep fluids down",
+   "body": "Please get medical help today."
+  },
+  "red_flag_new_symptoms_over_50": {
+   "title": "New symptoms",
+   "body": "New gut symptoms are worth checking with a doctor."
+  }
+ },
+ "how": {
+  "title": "How this works",
+  "p1": "You log what you ate, your bowel movements, any symptoms, and a short evening check-in. Nothing is mandatory; a bare time is still useful.",
+  "p2": "After about three weeks, the app starts comparing days: how often did a bad gut day follow a food, compared with days without it — 6 to 72 hours later.",
+  "p3": "Every finding shows its evidence: how many days, how big the difference, how sure, and what else might explain it.",
+  "p4": "A finding is an association, not proof. To test a suspicion, the app can set up a short trial: remove the food, then bring it back in steps.",
+  "p5": "This is a slow tool. A clear effect usually takes 3–4 months of logging to show; a subtle one 6 months or more.",
+  "p6": "Your data stays on your own server. Meal text may be sent to the language model you configured to understand it; stool, symptoms, mood and weight never are."
+ },
+ "trial": {
+  "open_label": "open-label — hypothesis-generating, not confirmatory"
+ }
+}

@@ -12,6 +12,7 @@ import { anonymous, withUser } from '../db/pool.js';
 import { generateFixture } from '../fixtures/synthetic.js';
 import { loadFoodRefs, insertFixture } from '../fixtures/load.js';
 import { ARGON2 } from '../services/auth.js';
+import { applyPack } from '../services/trackers.js';
 
 const args = process.argv.slice(2);
 const flag = (n: string) => { const i = args.indexOf(n); return i >= 0 ? args[i + 1] : undefined; };
@@ -27,7 +28,11 @@ async function main() {
   const email = deps.env.AUTH_MODE === 'multi' ? (flag('--email') ?? 'demo@foodtrack.local') : null;
   const uid = await anonymous(deps.db, async (tx) => (await tx.query<{ id: string }>('SELECT auth_create_user($1,$2,$3,$4,$5) AS id',
     [email, await hash(passphrase, ARGON2), 'Demo', 'he-IL', 'Asia/Jerusalem'])).rows[0]!.id);
-  await withUser(deps.db, uid, (tx) => tx.query('UPDATE app_user SET onboarded_at = now(), disclaimer_accepted_at = now() WHERE id = app_current_user()'));
+  await withUser(deps.db, uid, async (tx) => {
+    await tx.query('UPDATE app_user SET onboarded_at = now(), disclaimer_accepted_at = now() WHERE id = app_current_user()');
+    await tx.query('INSERT INTO user_profile (user_id) VALUES (app_current_user()) ON CONFLICT DO NOTHING');
+    for (const p of deps.registry.packs.filter((x) => x.default_enabled)) await applyPack(tx, deps, p.key);
+  });
   const foods = await loadFoodRefs(deps.db, uid);
   const { observations, truth } = generateFixture(foods, { days: 90, seed: 42 });
   const t0 = Date.now();

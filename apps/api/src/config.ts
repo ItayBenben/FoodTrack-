@@ -37,6 +37,7 @@ const EnvSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().optional(),
   INTERNAL_NETWORK_CIDRS: z.string().default('127.0.0.1/32,::1/128,172.16.0.0/12,10.0.0.0/8'),
   LOG_LEVEL: z.string().default('info'),
+  AUTH_RATE_LIMIT_PER_MIN: z.coerce.number().int().positive().default(10),
 });
 export type Env = z.infer<typeof EnvSchema>;
 
