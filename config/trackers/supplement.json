@@ -1,0 +1,172 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "supplement",
+  "version": 1,
+  "category": "intake",
+  "icon": "supplement",
+  "cardinality": "many_per_day",
+  "quick_log": {
+    "enabled": true
+  },
+  "labels": {
+    "en": {
+      "name": "Supplement",
+      "short": "Supplement"
+    },
+    "he": {
+      "name": "תוסף",
+      "short": "תוסף"
+    }
+  },
+  "fields": [
+    {
+      "key": "name",
+      "type": "text",
+      "required": true,
+      "max_length": 120,
+      "sensitive": true,
+      "labels": {
+        "en": "Name",
+        "he": "שם"
+      },
+      "analysis": {
+        "role": "meta"
+      }
+    },
+    {
+      "key": "class",
+      "type": "enum",
+      "required": true,
+      "labels": {
+        "en": "Type",
+        "he": "סוג"
+      },
+      "options": [
+        {
+          "value": "probiotic",
+          "labels": {
+            "en": "Probiotic",
+            "he": "פרוביוטיקה"
+          }
+        },
+        {
+          "value": "fiber",
+          "labels": {
+            "en": "Fibre",
+            "he": "סיבים"
+          }
+        },
+        {
+          "value": "magnesium",
+          "labels": {
+            "en": "Magnesium",
+            "he": "מגנזיום"
+          }
+        },
+        {
+          "value": "iron",
+          "labels": {
+            "en": "Iron",
+            "he": "ברזל"
+          }
+        },
+        {
+          "value": "vitamin",
+          "labels": {
+            "en": "Vitamin",
+            "he": "ויטמין"
+          }
+        },
+        {
+          "value": "other",
+          "labels": {
+            "en": "Other",
+            "he": "אחר"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "confounder"
+      }
+    },
+    {
+      "key": "dose",
+      "type": "text",
+      "max_length": 60,
+      "labels": {
+        "en": "Dose",
+        "he": "מינון"
+      },
+      "advanced": true,
+      "analysis": {
+        "role": "meta"
+      }
+    },
+    {
+      "key": "note",
+      "type": "text",
+      "labels": {
+        "en": "Note",
+        "he": "הערה"
+      },
+      "max_length": 500,
+      "sensitive": true,
+      "analysis": {
+        "role": "meta"
+      },
+      "advanced": true
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "probiotic",
+        "op": "any",
+        "field": "class",
+        "in": [
+          "probiotic"
+        ],
+        "analysis": {
+          "role": "covariate",
+          "type": "binary",
+          "labels": {
+            "en": "Probiotic",
+            "he": "פרוביוטיקה"
+          }
+        }
+      },
+      {
+        "key": "fiber",
+        "op": "any",
+        "field": "class",
+        "in": [
+          "fiber"
+        ],
+        "analysis": {
+          "role": "covariate",
+          "type": "binary",
+          "labels": {
+            "en": "Fibre supplement",
+            "he": "תוסף סיבים"
+          }
+        }
+      },
+      {
+        "key": "magnesium",
+        "op": "any",
+        "field": "class",
+        "in": [
+          "magnesium"
+        ],
+        "analysis": {
+          "role": "confounder",
+          "type": "binary",
+          "labels": {
+            "en": "Magnesium",
+            "he": "מגנזיום"
+          }
+        }
+      }
+    ]
+  }
+}

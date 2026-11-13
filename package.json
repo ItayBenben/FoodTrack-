@@ -1,0 +1,33 @@
+{
+  "name": "foodtrack",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.12.1",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel --filter ./apps/web --filter ./apps/api dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint && node scripts/copy-lint.mjs && node scripts/compose-lint.mjs",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @foodtrack/web test:e2e",
+    "test:stats": "cd apps/analysis && python -m pytest tests -m gate -q",
+    "db:migrate": "pnpm --filter @foodtrack/api db:migrate",
+    "db:rollback": "pnpm --filter @foodtrack/api db:rollback",
+    "db:seed": "pnpm --filter @foodtrack/api db:seed",
+    "keys:init": "pnpm --filter @foodtrack/api keys init",
+    "keys:show": "pnpm --filter @foodtrack/api keys show",
+    "keys:verify": "pnpm --filter @foodtrack/api keys verify",
+    "keys:check": "pnpm --filter @foodtrack/api keys check",
+    "keys:rotate-kek": "pnpm --filter @foodtrack/api keys rotate-kek",
+    "reset-passphrase": "pnpm --filter @foodtrack/api reset-passphrase"
+  },
+  "devDependencies": {
+    "eslint": "^9.29.0",
+    "typescript-eslint": "^8.34.1",
+    "typescript": "^5.8.3",
+    "@eslint/js": "^9.29.0"
+  }
+}

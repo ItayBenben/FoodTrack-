@@ -1,0 +1,106 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "note",
+  "version": 1,
+  "category": "context",
+  "icon": "note",
+  "cardinality": "many_per_day",
+  "quick_log": {
+    "enabled": true
+  },
+  "labels": {
+    "en": {
+      "name": "Note",
+      "short": "Note"
+    },
+    "he": {
+      "name": "הערה",
+      "short": "הערה"
+    }
+  },
+  "fields": [
+    {
+      "key": "text",
+      "type": "text",
+      "required": true,
+      "max_length": 2000,
+      "sensitive": true,
+      "labels": {
+        "en": "Note",
+        "he": "הערה"
+      },
+      "analysis": {
+        "role": "meta"
+      }
+    },
+    {
+      "key": "tags",
+      "type": "multi_enum",
+      "labels": {
+        "en": "Tags",
+        "he": "תגיות"
+      },
+      "options": [
+        {
+          "value": "travel",
+          "labels": {
+            "en": "Away from home",
+            "he": "מחוץ לבית"
+          }
+        },
+        {
+          "value": "period",
+          "labels": {
+            "en": "Period",
+            "he": "מחזור"
+          }
+        },
+        {
+          "value": "ill",
+          "labels": {
+            "en": "Unwell",
+            "he": "חולה"
+          }
+        },
+        {
+          "value": "party",
+          "labels": {
+            "en": "Event / party",
+            "he": "אירוע / מסיבה"
+          }
+        },
+        {
+          "value": "work_stress",
+          "labels": {
+            "en": "Work stress",
+            "he": "לחץ בעבודה"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "covariate"
+      }
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "travel",
+        "op": "any",
+        "field": "tags",
+        "in": [
+          "travel"
+        ],
+        "analysis": {
+          "role": "covariate",
+          "type": "binary",
+          "adjust": true,
+          "labels": {
+            "en": "Away from home",
+            "he": "מחוץ לבית"
+          }
+        }
+      }
+    ]
+  }
+}

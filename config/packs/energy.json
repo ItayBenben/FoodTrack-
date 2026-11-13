@@ -1,0 +1,7 @@
+{
+  "key": "energy",
+  "labels": { "en": "Energy & sleep", "he": "אנרגיה ושינה" },
+  "description": { "en": "The evening check-in, exercise and notes.", "he": "צ'ק-אין ערב, פעילות גופנית והערות." },
+  "trackers": ["checkin", "exercise", "note"],
+  "default_enabled": false
+}

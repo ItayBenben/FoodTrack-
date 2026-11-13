@@ -1,0 +1,104 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "body",
+  "version": 1,
+  "category": "body",
+  "icon": "body",
+  "cardinality": "occasional",
+  "quick_log": {
+    "enabled": false
+  },
+  "labels": {
+    "en": {
+      "name": "Body measurements",
+      "short": "Body"
+    },
+    "he": {
+      "name": "מדדי גוף",
+      "short": "גוף"
+    }
+  },
+  "fields": [
+    {
+      "key": "waist_cm",
+      "type": "number",
+      "min": 30,
+      "max": 250,
+      "step": 0.5,
+      "unit": "cm",
+      "labels": {
+        "en": "Waist",
+        "he": "היקף מותניים"
+      },
+      "analysis": {
+        "role": "covariate"
+      }
+    },
+    {
+      "key": "body_fat_pct",
+      "type": "number",
+      "min": 2,
+      "max": 70,
+      "step": 0.1,
+      "unit": "%",
+      "labels": {
+        "en": "Body fat",
+        "he": "אחוז שומן"
+      },
+      "analysis": {
+        "role": "ignore"
+      }
+    },
+    {
+      "key": "bp_systolic",
+      "type": "number",
+      "min": 60,
+      "max": 260,
+      "unit": "mmHg",
+      "labels": {
+        "en": "Blood pressure (upper)",
+        "he": "לחץ דם (עליון)"
+      },
+      "analysis": {
+        "role": "ignore"
+      }
+    },
+    {
+      "key": "bp_diastolic",
+      "type": "number",
+      "min": 30,
+      "max": 160,
+      "unit": "mmHg",
+      "labels": {
+        "en": "Blood pressure (lower)",
+        "he": "לחץ דם (תחתון)"
+      },
+      "analysis": {
+        "role": "ignore"
+      }
+    },
+    {
+      "key": "resting_hr",
+      "type": "number",
+      "min": 25,
+      "max": 220,
+      "unit": "bpm",
+      "labels": {
+        "en": "Resting heart rate",
+        "he": "דופק במנוחה"
+      },
+      "analysis": {
+        "role": "ignore"
+      }
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "waist_cm",
+        "op": "last",
+        "field": "waist_cm"
+      }
+    ]
+  }
+}

@@ -1,0 +1,197 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "meal",
+  "version": 1,
+  "category": "meal",
+  "icon": "meal",
+  "cardinality": "many_per_day",
+  "has_meal_items": true,
+  "quick_log": {
+    "enabled": true,
+    "home_shortcut": true
+  },
+  "labels": {
+    "en": {
+      "name": "Meal",
+      "short": "Meal"
+    },
+    "he": {
+      "name": "ארוחה",
+      "short": "ארוחה"
+    }
+  },
+  "fields": [
+    {
+      "key": "description",
+      "type": "text",
+      "labels": {
+        "en": "What did you eat?",
+        "he": "מה אכלת?"
+      },
+      "max_length": 1000,
+      "sensitive": true,
+      "analysis": {
+        "role": "exposure_source"
+      }
+    },
+    {
+      "key": "slot",
+      "type": "enum",
+      "labels": {
+        "en": "Meal",
+        "he": "ארוחה"
+      },
+      "options": [
+        {
+          "value": "breakfast",
+          "labels": {
+            "en": "Breakfast",
+            "he": "בוקר"
+          }
+        },
+        {
+          "value": "lunch",
+          "labels": {
+            "en": "Lunch",
+            "he": "צהריים"
+          }
+        },
+        {
+          "value": "dinner",
+          "labels": {
+            "en": "Dinner",
+            "he": "ערב"
+          }
+        },
+        {
+          "value": "snack",
+          "labels": {
+            "en": "Snack",
+            "he": "נשנוש"
+          }
+        },
+        {
+          "value": "drink",
+          "labels": {
+            "en": "Drink",
+            "he": "שתייה"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "photos",
+      "type": "multi_photo",
+      "labels": {
+        "en": "Photos",
+        "he": "תמונות"
+      },
+      "max_items": 4,
+      "analysis": {
+        "role": "exposure_source"
+      }
+    },
+    {
+      "key": "portion_feel",
+      "type": "enum",
+      "labels": {
+        "en": "How big was it?",
+        "he": "כמה גדול?"
+      },
+      "options": [
+        {
+          "value": "small",
+          "labels": {
+            "en": "Small",
+            "he": "קטנה"
+          }
+        },
+        {
+          "value": "normal",
+          "labels": {
+            "en": "Normal",
+            "he": "רגילה"
+          }
+        },
+        {
+          "value": "large",
+          "labels": {
+            "en": "Large",
+            "he": "גדולה"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "confounder"
+      },
+      "advanced": true
+    },
+    {
+      "key": "eaten_out",
+      "type": "boolean",
+      "labels": {
+        "en": "Eaten out",
+        "he": "אכלתי בחוץ"
+      },
+      "analysis": {
+        "role": "confounder"
+      },
+      "advanced": true
+    },
+    {
+      "key": "note",
+      "type": "text",
+      "labels": {
+        "en": "Note",
+        "he": "הערה"
+      },
+      "max_length": 500,
+      "sensitive": true,
+      "analysis": {
+        "role": "meta"
+      },
+      "advanced": true
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "count",
+        "op": "count"
+      },
+      {
+        "key": "large_meal",
+        "op": "any",
+        "field": "portion_feel",
+        "in": [
+          "large"
+        ],
+        "analysis": {
+          "role": "confounder",
+          "type": "binary",
+          "labels": {
+            "en": "Large meal",
+            "he": "ארוחה גדולה"
+          },
+          "adjust": false
+        }
+      },
+      {
+        "key": "eaten_out",
+        "op": "any",
+        "field": "eaten_out",
+        "analysis": {
+          "role": "covariate",
+          "type": "binary",
+          "labels": {
+            "en": "Ate out",
+            "he": "אכלתי בחוץ"
+          }
+        }
+      }
+    ]
+  }
+}

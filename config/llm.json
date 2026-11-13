@@ -1,0 +1,8 @@
+{
+  "text": { "provider": "anthropic", "model_env": "ANTHROPIC_MODEL_TEXT", "timeout_ms": 8000 },
+  "vision": { "provider": "anthropic", "model_env": "ANTHROPIC_MODEL_VISION", "enabled": false },
+  "narrative": { "provider": "anthropic", "model_env": "ANTHROPIC_MODEL_TEXT", "timeout_ms": 15000 },
+  "openai_compat": { "endpoint_env": "OPENAI_COMPAT_URL", "model_env": "OPENAI_COMPAT_MODEL" },
+  "fallback_order": ["anthropic", "openai-compat", "deterministic"],
+  "prompt_versions": { "meal_parse": "meal-parse-v3", "narrative": "narrative-v1" }
+}

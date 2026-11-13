@@ -1,0 +1,22 @@
+{
+ "gibson2010": {
+  "ref": "Gibson PR, Shepherd SJ. Evidence-based dietary management of functional gastrointestinal symptoms: the FODMAP approach. J Gastroenterol Hepatol. 2010;25(2):252-258.",
+  "status": "needs_check"
+ },
+ "biesiekierski2011": {
+  "ref": "Biesiekierski JR, Rosella O, Rose R, et al. Quantification of fructans, galacto-oligosacharides and other short-chain carbohydrates in processed grains and cereals. J Hum Nutr Diet. 2011;24(2):154-176.",
+  "status": "needs_check"
+ },
+ "muir2007": {
+  "ref": "Muir JG, Shepherd SJ, Rosella O, et al. Fructan and free fructose content of common Australian vegetables and fruit. J Agric Food Chem. 2007;55(16):6619-6627.",
+  "status": "needs_check"
+ },
+ "muir2009": {
+  "ref": "Muir JG, Rose R, Rosella O, et al. Measurement of short-chain carbohydrates in common Australian vegetables and fruits by high-performance liquid chromatography (HPLC). J Agric Food Chem. 2009;57(2):554-565.",
+  "status": "needs_check"
+ },
+ "varney2017": {
+  "ref": "Varney J, Barrett J, Scarlata K, et al. FODMAPs: food composition, defining cutoff values and international application. J Gastroenterol Hepatol. 2017;32 Suppl 1:53-61.",
+  "status": "needs_check"
+ }
+}

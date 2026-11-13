@@ -1,0 +1,412 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "stool",
+  "version": 1,
+  "category": "gut",
+  "icon": "stool",
+  "cardinality": "many_per_day",
+  "counts_as_outcome_record": true,
+  "quick_log": {
+    "enabled": true,
+    "primary_field": "bristol",
+    "home_shortcut": true
+  },
+  "labels": {
+    "en": {
+      "name": "Bowel movement",
+      "short": "Stool"
+    },
+    "he": {
+      "name": "יציאה",
+      "short": "יציאה"
+    }
+  },
+  "fields": [
+    {
+      "key": "bristol",
+      "type": "enum",
+      "required": true,
+      "labels": {
+        "en": "Type",
+        "he": "סוג"
+      },
+      "options": [
+        {
+          "value": 1,
+          "labels": {
+            "en": "Separate hard lumps",
+            "he": "גושים קשים נפרדים"
+          },
+          "illustration": "bristol-1"
+        },
+        {
+          "value": 2,
+          "labels": {
+            "en": "Lumpy sausage",
+            "he": "נקניק גושי"
+          },
+          "illustration": "bristol-2"
+        },
+        {
+          "value": 3,
+          "labels": {
+            "en": "Cracked sausage",
+            "he": "נקניק סדוק"
+          },
+          "illustration": "bristol-3"
+        },
+        {
+          "value": 4,
+          "labels": {
+            "en": "Smooth sausage",
+            "he": "נקניק חלק"
+          },
+          "illustration": "bristol-4"
+        },
+        {
+          "value": 5,
+          "labels": {
+            "en": "Soft blobs",
+            "he": "גושים רכים"
+          },
+          "illustration": "bristol-5"
+        },
+        {
+          "value": 6,
+          "labels": {
+            "en": "Mushy, ragged edges",
+            "he": "דייסתי"
+          },
+          "illustration": "bristol-6"
+        },
+        {
+          "value": 7,
+          "labels": {
+            "en": "Entirely liquid",
+            "he": "נוזלי לגמרי"
+          },
+          "illustration": "bristol-7"
+        }
+      ],
+      "analysis": {
+        "role": "outcome",
+        "direction": "distance_from_center",
+        "center": 4,
+        "normal_range": [
+          3,
+          5
+        ],
+        "abnormal_high": [
+          6,
+          7
+        ],
+        "abnormal_low": [
+          1,
+          2
+        ]
+      }
+    },
+    {
+      "key": "urgency",
+      "type": "scale",
+      "min": 0,
+      "max": 4,
+      "labels": {
+        "en": "Urgency",
+        "he": "דחיפות"
+      },
+      "analysis": {
+        "role": "outcome",
+        "direction": "higher_is_worse"
+      }
+    },
+    {
+      "key": "complete",
+      "type": "boolean",
+      "labels": {
+        "en": "Felt complete",
+        "he": "תחושת התרוקנות מלאה"
+      },
+      "advanced": true,
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "pain",
+      "type": "scale",
+      "min": 0,
+      "max": 10,
+      "labels": {
+        "en": "Pain",
+        "he": "כאב"
+      },
+      "advanced": true,
+      "analysis": {
+        "role": "outcome",
+        "direction": "higher_is_worse"
+      }
+    },
+    {
+      "key": "blood",
+      "type": "boolean",
+      "labels": {
+        "en": "Blood",
+        "he": "דם"
+      },
+      "safety": {
+        "flag": "red_flag_blood"
+      },
+      "advanced": true,
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "mucus",
+      "type": "boolean",
+      "labels": {
+        "en": "Mucus",
+        "he": "ריר"
+      },
+      "advanced": true,
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "colour",
+      "type": "enum",
+      "labels": {
+        "en": "Colour",
+        "he": "צבע"
+      },
+      "advanced": true,
+      "options": [
+        {
+          "value": "brown",
+          "labels": {
+            "en": "Brown",
+            "he": "חום"
+          }
+        },
+        {
+          "value": "dark",
+          "labels": {
+            "en": "Dark",
+            "he": "כהה"
+          }
+        },
+        {
+          "value": "black",
+          "labels": {
+            "en": "Black / tarry",
+            "he": "שחור / זפתי"
+          }
+        },
+        {
+          "value": "pale",
+          "labels": {
+            "en": "Pale",
+            "he": "בהיר"
+          }
+        },
+        {
+          "value": "green",
+          "labels": {
+            "en": "Green",
+            "he": "ירוק"
+          }
+        },
+        {
+          "value": "red",
+          "labels": {
+            "en": "Red",
+            "he": "אדום"
+          }
+        }
+      ],
+      "safety": {
+        "flag_map": {
+          "black": "red_flag_melena",
+          "red": "red_flag_blood"
+        }
+      },
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "nocturnal",
+      "type": "boolean",
+      "labels": {
+        "en": "Woke me at night",
+        "he": "העיר אותי בלילה"
+      },
+      "advanced": true,
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "note",
+      "type": "text",
+      "labels": {
+        "en": "Note",
+        "he": "הערה"
+      },
+      "max_length": 500,
+      "sensitive": true,
+      "analysis": {
+        "role": "meta"
+      },
+      "advanced": true
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "count",
+        "op": "count"
+      },
+      {
+        "key": "bristol_mean",
+        "op": "mean",
+        "field": "bristol"
+      },
+      {
+        "key": "bristol_worst",
+        "op": "max_abs_deviation_from",
+        "field": "bristol",
+        "center": 4
+      },
+      {
+        "key": "any_abnormal",
+        "op": "any",
+        "field": "bristol",
+        "in": [
+          1,
+          2,
+          6,
+          7
+        ],
+        "analysis": {
+          "role": "outcome",
+          "type": "binary",
+          "labels": {
+            "en": "Abnormal stool (Bristol 1–2 or 6–7)",
+            "he": "יציאה חריגה (בריסטול 1–2 או 6–7)"
+          }
+        }
+      },
+      {
+        "key": "loose",
+        "op": "any",
+        "field": "bristol",
+        "in": [
+          6,
+          7
+        ],
+        "analysis": {
+          "role": "outcome",
+          "type": "binary",
+          "labels": {
+            "en": "Loose stool (Bristol 6–7)",
+            "he": "יציאה רכה (בריסטול 6–7)"
+          }
+        }
+      },
+      {
+        "key": "hard",
+        "op": "any",
+        "field": "bristol",
+        "in": [
+          1,
+          2
+        ],
+        "analysis": {
+          "role": "outcome",
+          "type": "binary",
+          "labels": {
+            "en": "Hard stool (Bristol 1–2)",
+            "he": "יציאה קשה (בריסטול 1–2)"
+          }
+        }
+      },
+      {
+        "key": "deviation",
+        "op": "mean_abs_deviation_from",
+        "field": "bristol",
+        "center": 4,
+        "analysis": {
+          "role": "outcome",
+          "type": "continuous",
+          "scale_max": 3,
+          "score_component": "stool_deviation",
+          "labels": {
+            "en": "Distance from a typical stool",
+            "he": "מרחק מיציאה תקינה"
+          }
+        }
+      },
+      {
+        "key": "urgency_max",
+        "op": "max",
+        "field": "urgency",
+        "analysis": {
+          "role": "outcome",
+          "type": "continuous",
+          "scale_max": 4,
+          "score_component": "urgency",
+          "labels": {
+            "en": "Urgency",
+            "he": "דחיפות"
+          }
+        }
+      },
+      {
+        "key": "flag_event",
+        "op": "any",
+        "field": "blood",
+        "analysis": {
+          "role": "context",
+          "type": "binary",
+          "score_component": "incompleteness",
+          "labels": {
+            "en": "Blood or night-time event",
+            "he": "דם או אירוע לילי"
+          }
+        }
+      },
+      {
+        "key": "nocturnal",
+        "op": "any",
+        "field": "nocturnal",
+        "analysis": {
+          "role": "context",
+          "type": "binary",
+          "score_component": "incompleteness",
+          "labels": {
+            "en": "Night-time bowel movement",
+            "he": "יציאה בלילה"
+          }
+        }
+      }
+    ]
+  },
+  "charts": [
+    {
+      "type": "distribution",
+      "field": "bristol",
+      "bins": 7
+    },
+    {
+      "type": "timeline_band",
+      "field": "bristol",
+      "good_range": [
+        3,
+        5
+      ]
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "key": "body",
+  "labels": { "en": "Body", "he": "גוף" },
+  "description": { "en": "Weight and body measurements.", "he": "משקל ומדדי גוף." },
+  "trackers": ["weight", "body", "hydration"],
+  "default_enabled": true
+}

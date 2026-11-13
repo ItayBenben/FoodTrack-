@@ -1,0 +1,39 @@
+{
+  "name": "@foodtrack/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint --no-error-on-unmatched-pattern app components lib",
+    "test": "vitest run --passWithNoTests",
+    "test:e2e": "playwright test --trace off"
+  },
+  "dependencies": {
+    "@foodtrack/shared": "workspace:*",
+    "@foodtrack/tokens": "workspace:*",
+    "@foodtrack/tracker-schema": "workspace:*",
+    "@tanstack/react-query": "^5.80.7",
+    "dexie": "^4.0.11",
+    "dexie-react-hooks": "^1.1.7",
+    "next": "15.3.4",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "zustand": "^5.0.5",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@tailwindcss/postcss": "^4.1.10",
+    "@types/node": "^22.15.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "fake-indexeddb": "^6.0.1",
+    "tailwindcss": "^4.1.10",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}
