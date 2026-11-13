@@ -69,6 +69,7 @@ export interface AnalysisConfig {
   max_active_trials: number; max_concurrent_eliminations: number; avoid_list_suppression_days: number;
   trial_min_interesting_rd: number; trial_min_days_per_phase: number; design_b_prevalence_threshold: number;
   dismissal_reopen_delta: number; washout_cap_days: number; trial_decision_bar: number; blinding_divergence_threshold: number;
-  population_transit_median_hours: number; transit_min_measurements: number;
+  population_transit_median_hours: number; transit_min_measurements: number; min_total_days: number; min_interesting_rd: number;
+  slot_default_times?: Record<string, string>;
   [k: string]: unknown;
 }

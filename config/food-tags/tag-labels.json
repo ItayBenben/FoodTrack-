@@ -1,0 +1,196 @@
+{
+ "alcohol": {
+  "en": "Alcohol",
+  "he": "אלכוהול"
+ },
+ "artificial_sweetener": {
+  "en": "Artificial sweeteners",
+  "he": "ממתיקים מלאכותיים"
+ },
+ "caffeine": {
+  "en": "Caffeine",
+  "he": "קפאין"
+ },
+ "contains_gluten": {
+  "en": "Gluten",
+  "he": "גלוטן"
+ },
+ "contains_lactose": {
+  "en": "Dairy (lactose)",
+  "he": "מוצרי חלב (לקטוז)"
+ },
+ "dairy": {
+  "en": "Dairy",
+  "he": "מוצרי חלב"
+ },
+ "dairy_free": {
+  "en": "Dairy-free",
+  "he": "ללא חלב"
+ },
+ "egg": {
+  "en": "Eggs",
+  "he": "ביצים"
+ },
+ "fermented": {
+  "en": "Fermented dairy",
+  "he": "מוצרי חלב מותססים"
+ },
+ "fish": {
+  "en": "Fish",
+  "he": "דגים"
+ },
+ "fodmap_fructan_high": {
+  "en": "FODMAP fructan (high)",
+  "he": "פודמאפ פרוקטנים (גבוה)"
+ },
+ "fodmap_fructan_low": {
+  "en": "FODMAP fructan (low)",
+  "he": "פודמאפ פרוקטנים (נמוך)"
+ },
+ "fodmap_fructan_moderate": {
+  "en": "FODMAP fructan (moderate)",
+  "he": "פודמאפ פרוקטנים (בינוני)"
+ },
+ "fodmap_fructose_high": {
+  "en": "FODMAP fructose (high)",
+  "he": "פודמאפ פרוקטוז (גבוה)"
+ },
+ "fodmap_fructose_low": {
+  "en": "FODMAP fructose (low)",
+  "he": "פודמאפ פרוקטוז (נמוך)"
+ },
+ "fodmap_fructose_moderate": {
+  "en": "FODMAP fructose (moderate)",
+  "he": "פודמאפ פרוקטוז (בינוני)"
+ },
+ "fodmap_gos_high": {
+  "en": "FODMAP GOS (high)",
+  "he": "פודמאפ GOS (קטניות) (גבוה)"
+ },
+ "fodmap_gos_low": {
+  "en": "FODMAP GOS (low)",
+  "he": "פודמאפ GOS (קטניות) (נמוך)"
+ },
+ "fodmap_gos_moderate": {
+  "en": "FODMAP GOS (moderate)",
+  "he": "פודמאפ GOS (קטניות) (בינוני)"
+ },
+ "fodmap_lactose_high": {
+  "en": "FODMAP lactose (high)",
+  "he": "פודמאפ לקטוז (גבוה)"
+ },
+ "fodmap_lactose_low": {
+  "en": "FODMAP lactose (low)",
+  "he": "פודמאפ לקטוז (נמוך)"
+ },
+ "fodmap_lactose_moderate": {
+  "en": "FODMAP lactose (moderate)",
+  "he": "פודמאפ לקטוז (בינוני)"
+ },
+ "fodmap_polyol_high": {
+  "en": "FODMAP polyol (high)",
+  "he": "פודמאפ פוליאולים (גבוה)"
+ },
+ "fodmap_polyol_moderate": {
+  "en": "FODMAP polyol (moderate)",
+  "he": "פודמאפ פוליאולים (בינוני)"
+ },
+ "fried": {
+  "en": "Fried food",
+  "he": "מטוגן"
+ },
+ "high_fat": {
+  "en": "Fatty food",
+  "he": "מזון שומני"
+ },
+ "insoluble_fiber_high": {
+  "en": "High insoluble fibre",
+  "he": "סיבים לא מסיסים"
+ },
+ "lactose_free": {
+  "en": "Lactose-free dairy",
+  "he": "מוצרי חלב נטולי לקטוז"
+ },
+ "legume": {
+  "en": "Legumes",
+  "he": "קטניות"
+ },
+ "peanut": {
+  "en": "Peanuts",
+  "he": "בוטנים"
+ },
+ "poultry": {
+  "en": "Poultry",
+  "he": "עוף"
+ },
+ "processed_meat": {
+  "en": "Processed meat",
+  "he": "בשר מעובד"
+ },
+ "red_meat": {
+  "en": "Red meat",
+  "he": "בשר אדום"
+ },
+ "sesame": {
+  "en": "Sesame",
+  "he": "שומשום"
+ },
+ "soy": {
+  "en": "Soy",
+  "he": "סויה"
+ },
+ "spicy": {
+  "en": "Spicy food",
+  "he": "חריף"
+ },
+ "sugar_alcohol": {
+  "en": "Sugar alcohols",
+  "he": "ממתיקי פוליאול"
+ },
+ "tree_nut": {
+  "en": "Nuts",
+  "he": "אגוזים"
+ },
+ "ultraprocessed": {
+  "en": "Ultra-processed food",
+  "he": "מזון מעובד מאוד"
+ },
+ "wheat": {
+  "en": "Wheat",
+  "he": "חיטה"
+ },
+ "_meta": {
+  "late_meal": {
+   "en": "Late meals",
+   "he": "ארוחות מאוחרות"
+  },
+  "large_meal": {
+   "en": "Large eating days",
+   "he": "ימים של אכילה גדולה"
+  },
+  "fat_g_high": {
+   "en": "High-fat days",
+   "he": "ימים עתירי שומן"
+  },
+  "fiber_g_high": {
+   "en": "High-fibre days",
+   "he": "ימים עתירי סיבים"
+  },
+  "lactose_g_high": {
+   "en": "High-lactose days",
+   "he": "ימים עתירי לקטוז"
+  },
+  "caffeine_mg_high": {
+   "en": "High-caffeine days",
+   "he": "ימים עתירי קפאין"
+  },
+  "alcohol_g_high": {
+   "en": "More alcohol than usual",
+   "he": "יותר אלכוהול מהרגיל"
+  },
+  "sugar_g_high": {
+   "en": "High-sugar days",
+   "he": "ימים עתירי סוכר"
+  }
+ }
+}

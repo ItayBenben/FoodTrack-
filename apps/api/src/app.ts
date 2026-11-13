@@ -71,6 +71,9 @@ export async function buildApp(deps: Deps): Promise<FastifyInstance> {
       const errors = err.issues.map((i) => ({ path: i.path.join('.'), code: i.code, message: `${i.path.join('.') || 'body'}: ${i.message}` }));
       return reply.status(422).type('application/problem+json').send(new HttpProblem(422, 'validation', 'Invalid request', errors.map((e) => e.message).join('; '), errors).toJSON());
     }
+    if ((err as { code?: string }).code === '22P02') {
+      return reply.status(404).type('application/problem+json').send(new HttpProblem(404, 'not_found', 'Not found', 'No such item for this account.').toJSON());
+    }
     const status = (err as { statusCode?: number }).statusCode ?? 500;
     if (status >= 500) req.log.error({ err }, 'unhandled');
     const detail = status >= 500

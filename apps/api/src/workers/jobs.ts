@@ -42,7 +42,10 @@ export function startWorker(deps: Deps, opts: { intervalMs?: number } = {}) {
     if (!stopped) timer = setTimeout(tick, opts.intervalMs ?? 2000);
   };
   void tick();
-  return { stop: () => { stopped = true; if (timer) clearTimeout(timer); }, kick: () => { if (timer) { clearTimeout(timer); timer = null; } void tick(); } };
+  // schedule analysis runs every 6 hours (one queued system job at a time, deduped)
+  const sched = setInterval(() => void anonymous(deps.db, (tx) => tx.query(`SELECT job_enqueue_system('schedule_analysis', '{}', 'schedule_analysis', now())`)).catch(() => undefined), 6 * 3600_000);
+  void anonymous(deps.db, (tx) => tx.query(`SELECT job_enqueue_system('schedule_analysis', '{}', 'schedule_analysis', now() + interval '5 minutes')`)).catch(() => undefined);
+  return { stop: () => { stopped = true; clearInterval(sched); if (timer) clearTimeout(timer); }, kick: () => { if (timer) { clearTimeout(timer); timer = null; } void tick(); } };
 }
 
 /** Cross-process events: workers NOTIFY, the API LISTENs and republishes onto SSE. */

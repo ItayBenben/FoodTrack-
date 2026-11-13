@@ -116,5 +116,8 @@
     "dinner": "19:30",
     "snack": "16:00",
     "drink": "10:30"
-  }
+  },
+  "confounder_tags": [
+    "alcohol"
+  ]
 }

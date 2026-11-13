@@ -1,7 +1,7 @@
 'use client';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { useSession } from '@/lib/session';
 import { db } from '@/lib/db/local';
@@ -18,11 +18,13 @@ export default function Timeline() {
   const [q, setQ] = useState('');
   const [filter, setFilter] = useState<string>('all');
   const [span, setSpan] = useState(30);
+  const [onlyDay, setOnlyDay] = useState<string | null>(null);
+  useEffect(() => { const d = new URLSearchParams(window.location.search).get('day'); if (d && /^\d{4}-\d{2}-\d{2}$/.test(d)) { setOnlyDay(d); setSpan(Math.ceil((Date.now() - Date.parse(d)) / 86400_000) + 2); } }, []);
   const since = useMemo(() => { const d = new Date(); d.setDate(d.getDate() - span); return d.toISOString().slice(0, 10); }, [span]);
   const obs = useLiveQuery(() => db().observations.where('local_day').aboveOrEqual(since).filter((o) => !o.deleted_at).reverse().sortBy('occurred_at'), [since], []);
   const scores = useQuery({ queryKey: ['scores-range', since], queryFn: () => api<{ data: { local_day: string; score: number | null }[] }>(`/scores/daily?from=${since}&to=${new Date().toISOString().slice(0, 10)}`) });
   const scoreBy = new Map((scores.data?.data ?? []).map((d) => [d.local_day, d.score]));
-  const shown = obs.filter((o) => (filter === 'all' || o.tracker_key === filter) && (!q || summarize(o, defs.get(o.tracker_key), label, t).toLowerCase().includes(q.toLowerCase()) || (o.note ?? '').toLowerCase().includes(q.toLowerCase())));
+  const shown = obs.filter((o) => (!onlyDay || o.local_day === onlyDay) && (filter === 'all' || o.tracker_key === filter) && (!q || summarize(o, defs.get(o.tracker_key), label, t).toLowerCase().includes(q.toLowerCase()) || (o.note ?? '').toLowerCase().includes(q.toLowerCase())));
   const days = [...new Set(shown.map((o) => o.local_day))].sort().reverse();
   return (
     <div>
@@ -34,6 +36,7 @@ export default function Timeline() {
           {[...defs.values()].map((d) => <option key={d.key} value={d.key}>{label({ en: d.labels.en.short, he: d.labels.he.short })}</option>)}
         </select>
       </div>
+      {onlyDay && <button className="mt-2 min-h-12 text-accent" onClick={() => { setOnlyDay(null); history.replaceState(null, '', '/timeline'); }}>{t('timeline.show_all')}</button>}
       {days.length === 0 && <div className="mt-6"><Empty title={t('timeline.empty_title')} body={t('timeline.empty_body')} /></div>}
       {days.map((d) => (
         <section key={d} className="mt-5">
