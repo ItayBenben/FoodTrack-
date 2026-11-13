@@ -88,7 +88,20 @@
    "measured": "Measured",
    "estimated": "Estimate",
    "unspecified": "Not sure"
-  }
+  },
+  "voice": "Dictate",
+  "remove_photo": "Remove photo",
+  "no_last": "No earlier meal to repeat yet.",
+  "clarify_question": "I can’t tell what that was. Was it one of these?",
+  "times_here": "{n} times around now",
+  "clarify_type": "Something else — I’ll type it",
+  "unspecified_saved": "Saved. This one won’t count toward finding patterns.",
+  "item_editor": "Which food is it?",
+  "you_typed": "You typed",
+  "in_library": "logged {n}×",
+  "quantity": "Quantity",
+  "unit": "Unit",
+  "no_favourites": "Meals you log often will show up here."
  },
  "units": {
   "g": "g",
@@ -357,5 +370,34 @@
  },
  "trial": {
   "open_label": "open-label — hypothesis-generating, not confirmatory"
+ },
+ "foods": {
+  "explain": "Everything you’ve logged, in your own words. The more it learns, the less you type.",
+  "empty": "Your library fills up as you log meals.",
+  "usual": "usually ~{g} g",
+  "unverified": "Added by the parser — check it or merge it.",
+  "merge": "Merge",
+  "merge_title": "Merge into another food",
+  "merge_explain": "Past meals with this food will point at the one you choose."
+ },
+ "builder": {
+  "offline": "Filling in a whole day needs a connection. Single entries still work offline.",
+  "saved": "Day saved — the meals will fill in as they’re understood.",
+  "discard_confirm": "Discard changes?",
+  "date": "Day",
+  "time": "Time",
+  "weight": "This day is {pct}% complete as evidence.",
+  "no_median": "No usual time yet — this will be saved as “some time that day”.",
+  "paste_hint": "Paste several lines: “Lunch: …”, “13:00 …”, or just one meal per line.",
+  "paste": "Paste",
+  "distribute": "Spread over the day",
+  "estimates_note": "Times marked ~ are estimates from your own usual times. They are left out of the 0–6 hour analysis; tap a time to set it exactly.",
+  "slot": {
+   "breakfast": "Breakfast",
+   "lunch": "Lunch",
+   "dinner": "Dinner",
+   "snack": "Snack",
+   "drink": "Drinks"
+  }
  }
 }

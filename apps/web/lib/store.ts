@@ -21,7 +21,7 @@ export function dayOf(iso: string, u: UserMeta | null): string {
 
 export interface SaveInput {
   tracker_key: string; values: Record<string, unknown>; occurred_at?: string; time_source?: string; note?: string | null;
-  meal_items?: MealItemInput[]; group_id?: string | null; batch_id?: string | null; id?: string;
+  meal_items?: MealItemInput[]; group_id?: string | null; batch_id?: string | null; id?: string; specificity?: 'unspecified';
 }
 
 async function refreshCounts() {
@@ -38,7 +38,7 @@ export async function saveObservation(input: SaveInput): Promise<LocalObservatio
     id: input.id ?? uuidv7(), client_id: `c_${uuidv7()}`, tracker_key: input.tracker_key, occurred_at: occurred, local_day: dayOf(occurred, u),
     time_source: input.time_source ?? (input.occurred_at ? 'user_set' : 'now'), values: input.values, note: input.note ?? null,
     meal_items: input.meal_items, revision: 0, deleted_at: null, group_id: input.group_id ?? null, batch_id: input.batch_id ?? null,
-    parse_status: input.tracker_key === 'meal' && !input.meal_items?.length && input.values.description ? 'pending' : 'none',
+    specificity: input.specificity, parse_status: !input.specificity && !input.meal_items?.length && typeof input.values.description === 'string' ? 'pending' : 'none',
     recorded_at: now, sync: 'pending',
   };
   await db().transaction('rw', db().observations, db().outbox, async () => {
@@ -107,7 +107,7 @@ export function scheduleDrain(ms = 1000) {
 
 function toPayload(o: LocalObservation) {
   return { id: o.id, client_id: o.client_id, tracker_key: o.tracker_key, occurred_at: o.occurred_at, time_source: o.time_source, source: 'manual',
-    note: o.note, values: o.values, group_id: o.group_id ?? null, batch_id: o.batch_id ?? null,
+    note: o.note, values: o.values, group_id: o.group_id ?? null, batch_id: o.batch_id ?? null, ...(o.specificity === 'unspecified' ? { specificity: 'unspecified' } : {}),
     ...(o.meal_items ? { meal_items: o.meal_items.map(({ canonical_name: _c, ...i }) => i) } : {}) };
 }
 
@@ -115,6 +115,7 @@ export async function drain(): Promise<void> {
   if (draining || !hasToken()) return;
   draining = true; useSync.setState({ syncing: true });
   try {
+    await uploadMedia();
     for (;;) {
       const now = Date.now();
       const rows = (await db().outbox.where('status').equals('pending').sortBy('seq')).filter((r) => r.next_attempt_at <= now).slice(0, 50);
@@ -168,6 +169,23 @@ export async function drain(): Promise<void> {
     }
   } finally {
     draining = false; useSync.setState({ syncing: false }); await refreshCounts();
+  }
+}
+
+/** Photos wait in IndexedDB until they upload; the observation then points at the server's media id. */
+async function uploadMedia() {
+  for (const m of await db().media_queue.toArray()) {
+    const fd = new FormData(); fd.append('file', m.blob, 'photo');
+    const { getAccessToken } = await import('./api');
+    let r: Response;
+    try { r = await fetch('/api/v1/media', { method: 'POST', body: fd, headers: { authorization: `Bearer ${getAccessToken()}` } }); } catch { return; }
+    if (!r.ok) continue;
+    const { media_id } = await r.json() as { media_id: string };
+    await db().transaction('rw', db().observations, db().media_queue, async () => {
+      const o = await db().observations.get(m.observation_id);
+      if (o && Array.isArray(o.values.photos)) await db().observations.put({ ...o, values: { ...o.values, photos: (o.values.photos as string[]).map((x) => (x === m.id ? media_id : x)) } });
+      await db().media_queue.delete(m.id);
+    });
   }
 }
 

@@ -218,8 +218,11 @@ export async function createObservation(tx: Tx, ctx: WriteCtx, input: Observatio
   const id = input.id ?? uuidv7();
   const items = input.meal_items ?? [];
   const hasContent = Boolean(input.values.description) || (Array.isArray(input.values.photos) && input.values.photos.length > 0);
-  const specificity = def.has_meal_items ? deriveSpecificity(items, hasContent) : 'resolved';
-  const parseStatus = def.has_meal_items && items.length === 0 && input.values.description ? 'pending' : 'none';
+  // The server recomputes specificity; the only client value it honours is an explicit "I don't remember"
+  // on a meal with nothing resolved (08 §4.3b) — a client can never upgrade an empty meal to resolved.
+  const declined = input.specificity === 'unspecified' && !items.some((i) => i.food_id);
+  const specificity = def.has_meal_items ? (declined ? 'unspecified' : deriveSpecificity(items, hasContent)) : 'resolved';
+  const parseStatus = def.has_meal_items && !declined && items.length === 0 && input.values.description ? 'pending' : 'none';
 
   await tx.query(
     `INSERT INTO observation (id, user_id, tracker_key, def_version, def_hash, occurred_at, local_day, recorded_at, source, confidence, note,

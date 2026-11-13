@@ -6,6 +6,7 @@ import { useI18n } from '@/lib/i18n';
 import { Icon } from '@/components/icons';
 import { CaptureHost, TrackerPicker, useCapture } from '@/components/capture';
 import { useSession } from '@/lib/session';
+import { EventToasts } from '@/components/event-toasts';
 
 const TABS = [{ href: '/today', icon: 'today', key: 'tabs.today' }, { href: '/timeline', icon: 'timeline', key: 'tabs.timeline' }, { href: '/insights', icon: 'insights', key: 'tabs.insights' }, { href: '/more', icon: 'more', key: 'tabs.more' }];
 
@@ -34,6 +35,7 @@ export default function TabsLayout({ children }: { children: ReactNode }) {
         </ul>
       </nav>
       <CaptureHost />
+      <EventToasts />
       <TrackerPicker open={picker} onClose={() => setPicker(false)} />
     </div>
   );

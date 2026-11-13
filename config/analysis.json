@@ -4,13 +4,33 @@
   "min_unexposed_days": 10,
   "min_outcome_events_per_arm": 3,
   "min_total_days": 21,
-  "exposure_prevalence_range": [0.10, 0.90],
+  "exposure_prevalence_range": [
+    0.1,
+    0.9
+  ],
   "min_day_weight": 0.4,
-  "lag_windows_hours": [[0, 6], [6, 24], [24, 48], [24, 72]],
+  "lag_windows_hours": [
+    [
+      0,
+      6
+    ],
+    [
+      6,
+      24
+    ],
+    [
+      24,
+      48
+    ],
+    [
+      24,
+      72
+    ]
+  ],
   "population_transit_median_hours": 28,
   "transit_min_measurements": 3,
   "transit_shift_cap_pct": 50,
-  "fdr_q": 0.10,
+  "fdr_q": 0.1,
   "low_tier_q": 0.25,
   "min_interesting_rd": 0.15,
   "min_interesting_d": 0.35,
@@ -19,34 +39,82 @@
   "medium_min_exposed_days": 20,
   "autocorr_threshold": 0.2,
   "bootstrap_resamples": 2000,
-  "confounder_attenuation_warn": 0.30,
+  "confounder_attenuation_warn": 0.3,
   "regression_min_days": 60,
   "dose_min_exposure_days": 15,
   "max_active_trials": 1,
   "max_concurrent_eliminations": 3,
   "notable_symptom_threshold": 5,
   "trial_power_simulations": 2000,
-  "trial_power_target": 0.80,
-  "trial_min_interesting_rd": 0.20,
+  "trial_power_target": 0.8,
+  "trial_min_interesting_rd": 0.2,
   "trial_min_days_per_phase": 15,
-  "trial_decision_bar": 0.90,
+  "trial_decision_bar": 0.9,
   "avoid_list_suppression_days": 90,
-  "dismissal_reopen_delta": 0.10,
-  "design_b_prevalence_threshold": 0.40,
+  "dismissal_reopen_delta": 0.1,
+  "design_b_prevalence_threshold": 0.4,
   "days_more_max_shown": 180,
-  "days_more_min_prevalence": 0.10,
-  "blinding_divergence_threshold": 0.20,
+  "days_more_min_prevalence": 0.1,
+  "blinding_divergence_threshold": 0.2,
   "washout_cap_days": 10,
-  "trial_default": { "baseline_days": 14, "elimination_days": 21, "washout_days": 3, "challenge_days": 3, "followup_days": 3, "analytic_washout_k": 1, "min_adherence": 0.85, "min_days_logged": 0.70 },
-  "time_precision_min_window": { "exact": 0, "slot_estimate": 6, "day_only": 24 },
+  "trial_default": {
+    "baseline_days": 14,
+    "elimination_days": 21,
+    "washout_days": 3,
+    "challenge_days": 3,
+    "followup_days": 3,
+    "analytic_washout_k": 1,
+    "min_adherence": 0.85,
+    "min_days_logged": 0.7
+  },
+  "time_precision_min_window": {
+    "exact": 0,
+    "slot_estimate": 6,
+    "day_only": 24
+  },
   "slot_median_min_observations": 3,
   "exact_recording_delay_hours": 2,
-  "day_weight": { "meal_coverage": 0.5, "outcome_recorded": 0.3, "checkin_present": 0.2 },
-  "gut_day_score": { "stool_deviation": 30, "symptom_load": 40, "urgency": 15, "incompleteness": 15 },
-  "fodmap_load": {
-    "tau_hours": { "fructan": 8, "gos": 8, "lactose": 4, "fructose": 4, "polyol": 6 },
-    "weights": { "fructan": 1, "gos": 1, "lactose": 1, "fructose": 1, "polyol": 1 },
-    "class_density": { "high": 1.0, "moderate": 0.4, "low": 0.0 }
+  "day_weight": {
+    "meal_coverage": 0.5,
+    "outcome_recorded": 0.3,
+    "checkin_present": 0.2
   },
-  "meta_exposures": { "late_meal_hours_before_rollover": 3, "large_meal_quantile": 0.75 }
+  "gut_day_score": {
+    "stool_deviation": 30,
+    "symptom_load": 40,
+    "urgency": 15,
+    "incompleteness": 15
+  },
+  "fodmap_load": {
+    "tau_hours": {
+      "fructan": 8,
+      "gos": 8,
+      "lactose": 4,
+      "fructose": 4,
+      "polyol": 6
+    },
+    "weights": {
+      "fructan": 1,
+      "gos": 1,
+      "lactose": 1,
+      "fructose": 1,
+      "polyol": 1
+    },
+    "class_density": {
+      "high": 1.0,
+      "moderate": 0.4,
+      "low": 0.0
+    }
+  },
+  "meta_exposures": {
+    "late_meal_hours_before_rollover": 3,
+    "large_meal_quantile": 0.75
+  },
+  "slot_default_times": {
+    "breakfast": "08:00",
+    "lunch": "13:00",
+    "dinner": "19:30",
+    "snack": "16:00",
+    "drink": "10:30"
+  }
 }

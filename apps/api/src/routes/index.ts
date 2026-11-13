@@ -7,6 +7,9 @@ import { observationRoutes } from './observations.js';
 import { syncRoutes } from './sync.js';
 import { meRoutes } from './me.js';
 import { eventRoutes } from './events.js';
+import { mealRoutes } from './meals.js';
+import { dayBuilderRoutes } from './day-builder.js';
+import { mediaRoutes } from './media.js';
 
 /** Route groups added by later milestones register here. */
 export const protectedGroups: ((app: FastifyInstance) => Promise<void>)[] = [];
@@ -21,6 +24,9 @@ export async function registerRoutes(app: FastifyInstance) {
     await scope.register(syncRoutes);
     await scope.register(meRoutes);
     await scope.register(eventRoutes);
+    await scope.register(mealRoutes);
+    await scope.register(dayBuilderRoutes);
+    await scope.register(mediaRoutes);
     for (const g of protectedGroups) await scope.register(g);
   }, { prefix: '/api/v1' });
 }

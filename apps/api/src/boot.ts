@@ -18,7 +18,7 @@ export async function boot(overrides: Partial<Record<keyof Env, string>> = {}, o
   const db = createPool(env.DATABASE_URL);
   const keys = await loadKeys(db, env.FOODTRACK_KEK);       // missing/wrong KEK → throws KeyError
   const analysis = readConfigJson<AnalysisConfig>('analysis.json', env);
-  const llm = createLLMRouter();
+  const llm = createLLMRouter(env);
   const media = new VolumeMediaStore(env.MEDIA_DIR.startsWith('/') ? env.MEDIA_DIR : join(REPO_ROOT, env.MEDIA_DIR));
   return { env, db, registry, keys, analysis, llm, media, events: new EventBus() };
 }
