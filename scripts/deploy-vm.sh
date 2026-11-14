@@ -23,6 +23,8 @@ if [[ $MEM_MB -lt 3500 && ! -f /swapfile ]]; then
 fi
 
 log "2/7 docker + git"
+# a fresh VM is often still running unattended-upgrades: wait for the apt lock instead of failing
+[[ -d /etc/apt/apt.conf.d ]] && echo 'DPkg::Lock::Timeout "600";' > /etc/apt/apt.conf.d/99foodtrack-lock-timeout
 if ! command -v docker >/dev/null; then
   if command -v dnf >/dev/null || command -v yum >/dev/null; then
     (dnf install -y docker git || yum install -y docker git) >/dev/null
@@ -47,7 +49,8 @@ if [[ ! -f .env ]]; then
   IP=$(curl -fsS -m 3 -H "X-aws-ec2-metadata-token: $(curl -fsS -m 3 -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 60' || true)" http://169.254.169.254/latest/meta-data/public-ipv4 || curl -fsS -m 5 https://checkip.amazonaws.com)
   DOMAIN="${FOODTRACK_DOMAIN:-${IP//./-}.sslip.io}"
   rnd() { openssl rand -base64 32 | tr -d '/+=' | head -c 40; }
-  cp .env.example .env
+  # drop the inline "   # comment" tails: an empty value followed by a comment is not empty to every .env parser
+  sed -E '/^[A-Z_]+=/ s/[[:space:]]+#.*$//' .env.example > .env
   sed -i "s|^POSTGRES_SUPERUSER_PASSWORD=.*|POSTGRES_SUPERUSER_PASSWORD=$(rnd)|; s|^FOODTRACK_DB_OWNER_PASSWORD=.*|FOODTRACK_DB_OWNER_PASSWORD=$(rnd)|; s|^FOODTRACK_DB_APP_PASSWORD=.*|FOODTRACK_DB_APP_PASSWORD=$(rnd)|;
           s|^SESSION_SECRET=.*|SESSION_SECRET=$(rnd)$(rnd)|; s|^FOODTRACK_DOMAIN=.*|FOODTRACK_DOMAIN=$DOMAIN|; s|^PUBLIC_ORIGIN=.*|PUBLIC_ORIGIN=https://$DOMAIN|;
           s|^ANTHROPIC_MODEL_TEXT=.*|ANTHROPIC_MODEL_TEXT=|; s|^ANTHROPIC_MODEL_VISION=.*|ANTHROPIC_MODEL_VISION=|" .env
