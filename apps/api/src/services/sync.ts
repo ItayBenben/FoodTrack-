@@ -12,13 +12,14 @@ import { createObservation, deleteObservation, openFromLog, updateObservation } 
 export interface PushResult {
   applied: { client_id: string; entity_id: string; revision: number; local_day: string }[];
   conflicts: { client_id: string; entity_id: string; resolution: string; fields: string[]; server_state: unknown }[];
+  notes: unknown[];
   rejected: { client_id: string; reason: string; detail: string; errors?: unknown }[];
   new_seq: number;
 }
 
 export async function push(deps: Deps, userId: string, deviceId: string, mutations: Mutation[]): Promise<PushResult> {
-  const out: PushResult = { applied: [], conflicts: [], rejected: [], new_seq: 0 };
-  const ctx = { deps, deviceId };
+  const out: PushResult = { applied: [], conflicts: [], rejected: [], notes: [], new_seq: 0 };
+  const ctx: { deps: Deps; deviceId: string; notes?: unknown[] } = { deps, deviceId };
   for (const m of mutations) {
     try {
       await withUser(deps.db, userId, async (tx) => {
@@ -59,6 +60,7 @@ export async function push(deps: Deps, userId: string, deviceId: string, mutatio
       out.rejected.push({ client_id: m.client_id, reason: p?.type ?? 'error', detail: p?.detail ?? (e as Error).message, errors: p?.errors });
     }
   }
+  out.notes = ctx.notes ?? [];
   out.new_seq = await withUser(deps.db, userId, async (tx) => {
     const { rows } = await tx.query<{ s: number | null }>('SELECT max(seq) AS s FROM change_log');
     await tx.query(`INSERT INTO sync_cursor (user_id, device_id, last_seen_seq) VALUES (app_current_user(), $1, 0) ON CONFLICT DO NOTHING`, [deviceId]);

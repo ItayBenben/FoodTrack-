@@ -451,7 +451,190 @@
   "p6": "Your data stays on your own server. Meal text may be sent to the language model you configured to understand it; stool, symptoms, mood and weight never are."
  },
  "trial": {
-  "open_label": "open-label — hypothesis-generating, not confirmatory"
+  "open_label": "open-label — hypothesis-generating, not confirmatory",
+  "card_title": "Testing {name}",
+  "paused_line": "Paused. Tap to resume when you’re ready.",
+  "not_started": "Starts tomorrow.",
+  "day_of": "{phase} · day {n} of {of}",
+  "no_live_estimate": "I’ll show the result at the end. Knowing early changes how you rate things.",
+  "strip": "Trial days",
+  "legend": "● followed · ◯ slipped · ○ no data",
+  "today": {
+   "baseline": "Eat normally. I’m just watching.",
+   "elimination": "No {name} today.",
+   "washout": "Still no {name} — letting things settle.",
+   "challenge": "Today: {dose}",
+   "followup": "Back off {name}. Watching for late reactions.",
+   "on": "Eat {name} as usual today.",
+   "off": "No {name} today.",
+   "habitual": "Your usual amount of {name}.",
+   "half": "Half your usual {name}.",
+   "quarter": "A quarter of your usual {name}.",
+   "paused": "Paused."
+  },
+  "phase": {
+   "baseline": "Baseline",
+   "elimination": "Elimination",
+   "washout": "Washout",
+   "challenge": "Challenge",
+   "followup": "Follow-up",
+   "on": "With it",
+   "off": "Without",
+   "habitual": "Usual amount",
+   "half": "Half",
+   "quarter": "Quarter",
+   "paused": "Paused",
+   "active": "Active",
+   "control": "Control"
+  },
+  "status": {
+   "proposed": "ready to start",
+   "active": "running",
+   "paused": "paused",
+   "completed": "finished",
+   "stopped_early": "stopped early",
+   "abandoned": "abandoned"
+  },
+  "design_name": {
+   "A": "remove and reintroduce",
+   "B": "alternating blocks",
+   "C": "smaller amounts",
+   "D": "blinded challenge"
+  },
+  "design_explain": {
+   "A": "Remove it completely for a while, then bring it back in steps and see what happens.",
+   "B": "You eat this most days, so: four days with, four days without, in turns.",
+   "C": "Your usual amount, then half, then a quarter — no full removal.",
+   "D": "You won’t know which days get the real thing and which get an inert control. It’s the only honest way to separate the food from expecting it."
+  },
+  "none_title": "No trials yet",
+  "none_body": "When a pattern is worth testing, start a trial from its insight.",
+  "verdict": {
+   "effect": "Likely a trigger for you",
+   "probable": "Probably a trigger — consider repeating",
+   "inconclusive": "Inconclusive",
+   "probably_not": "Probably not a trigger",
+   "no_meaningful_effect": "No meaningful effect — you can have it"
+  },
+  "verdict_body": {
+   "effect": "When you had {name}, the outcome was clearly worse than without it.",
+   "probable": "Signs point that way, but not strongly enough to be sure.",
+   "inconclusive": "This trial couldn’t answer the question either way.",
+   "probably_not": "{name} doesn’t look like the problem.",
+   "no_meaningful_effect": "The difference with and without {name} is too small to matter. That’s a result you earned — {name} comes back."
+  },
+  "verdict_reason": {
+   "low_adherence": "Too many days didn’t follow the plan, so it can’t say “no”. That’s not a judgement — it just can’t tell.",
+   "too_few_days_logged": "Too few days were logged to tell.",
+   "too_few_days": "Too few days to tell."
+  },
+  "stopped_line": "Stopped on day {n} of {of}, so this is less certain than a finished trial would be.",
+  "verdict_numbers": "Difference {effect} (95% {lo} to {hi}); chance it’s at least the size worth acting on: {p}%",
+  "adherence_line": "Followed the plan on {a}% of days; logged {l}% of days.",
+  "blinding_line": "You guessed the arm correctly {rate} of the time (chance: {chance}%).",
+  "blinding_diverges": "What you expected and what you got point in different directions, so the result was marked down.",
+  "limitations": {
+   "not_diagnosis": "This is not a diagnosis and says nothing about any medical condition."
+  },
+  "limitation": {
+   "single_participant": "One person, so it says nothing about anyone else.",
+   "open_label": "You knew when you were eating it, so expectation can play a part.",
+   "blinded": "Blinded with an inert control.",
+   "expectation_effects": "Expectation effects are possible in any trial like this.",
+   "not_generalisable": "Doesn’t generalise to other people.",
+   "carryover_not_estimated": "Carry-over between periods was not estimated.",
+   "stopped_early": "Stopped on day {n} of {of}, so this is less certain than a finished trial would be."
+  },
+  "analytic_excluded": "{n} days right after each switch were left out, as planned before the start.",
+  "retest_note": "Tolerance can change. I’ll suggest testing again in about six months.",
+  "propose_title": "Test this properly",
+  "error_title": "Can’t start this now",
+  "see_running": "See the running trial",
+  "reintroduce": "Bring something back first",
+  "guard": {
+   "active_trial_exists": {
+    "title": "One trial at a time",
+    "body": "You’re already testing {name}. Running two at once means neither answer is trustworthy."
+   },
+   "elimination_cap": {
+    "title": "You’re avoiding enough already",
+    "body": "Adding a fourth makes it very hard to tell which one matters — and hard to eat well. Want to bring one back first?"
+   },
+   "avoid_list_recent": {
+    "title": "Recently added to your avoid list",
+    "body": "A new trial on it is held back for 90 days."
+   },
+   "restriction_watch": {
+    "title": "Not now",
+    "body": "You’re eating a narrower range than you used to. That’s worth a thought — variety helps your gut and helps this app find things."
+   },
+   "medication_never": {
+    "title": "Trials are only for foods",
+    "body": "Your data shows a pattern around this. That’s worth showing to whoever prescribed it — don’t change it on your own."
+   }
+  },
+  "blind_option": "Make it blinded ({dose} vs an inert control)",
+  "schedule": "Schedule",
+  "baseline_reused": "Your last two weeks are well logged, so they serve as the baseline.",
+  "why_three_weeks": "Three weeks is the shortest window that can actually answer this. A two-week version would probably come back “inconclusive”, which wastes the effort of doing it.",
+  "adjust_elim": "Elimination length",
+  "n_days": "{n} days",
+  "prereg": "Decided before you start",
+  "prereg_line": "It counts as a trigger only if the difference is at least {mie}.",
+  "locked_note": "Fixed before the data is seen, so the answer can’t move. A reintroduction is always part of it.",
+  "power_ok": "This design is long enough to answer the question.",
+  "power_low": "This design is probably too short to answer the question — a longer elimination would help.",
+  "power_unknown": "I couldn’t check the length right now.",
+  "nutrition": "Removing this group usually removes some {list}. A dietitian can help you keep those up.",
+  "nutrient": {
+   "calcium": "calcium",
+   "vitamin_b12": "vitamin B12",
+   "protein": "protein",
+   "fibre": "fibre",
+   "b_vitamins": "B vitamins",
+   "iron": "iron",
+   "folate": "folate"
+  },
+  "start": "Start the trial",
+  "prepare": "Prepare the blinded trial",
+  "not_now": "Not now",
+  "adherence_so_far": "Followed the plan on {pct}% of days so far.",
+  "guess_question": "Which do you think you got in the last period?",
+  "guess_why": "There’s no right answer — it measures how much expectation is part of this.",
+  "guess": {
+   "active": "With {name}",
+   "control": "Without {name}",
+   "no_idea": "No idea",
+   "blind_active": "The real thing",
+   "blind_control": "The control",
+   "blind_no_idea": "No idea"
+  },
+  "i_slipped": "I slipped",
+  "record_slip": "Record a slip on that day",
+  "slip_extend": "Record it and extend the trial by 2 days",
+  "pause": "Pause",
+  "resume": "Resume",
+  "stop_early": "Stop early and see what it shows",
+  "stop_confirm": "Stop now? You’ll get a verdict on what’s been collected, labelled as partial.",
+  "abandon": "Abandon",
+  "abandon_why": "What happened? This only improves future suggestions.",
+  "abandon_reason": {
+   "too_hard": "Too hard",
+   "felt_unwell": "Felt unwell",
+   "circumstances_changed": "Circumstances changed",
+   "lost_interest": "Lost interest",
+   "other": "Other"
+  },
+  "reveal": "Reveal which periods were real",
+  "add_avoid": "Add to my avoid list",
+  "added_avoid": "Added to your avoid list.",
+  "prep_title": "Before you start",
+  "prep_1": "Fill identical opaque containers: half with the real powder, half with the control.",
+  "prep_2": "Ask someone else to label each envelope below at random, keeping the key — or use the app’s sealed allocation and let a friend pack them.",
+  "prep_3": "Take the envelope for each period on its dates. You’ll be asked what you think you got.",
+  "exposure_prompt": "A meal may have had {name} in it ({items}). Count it as a slip?",
+  "yes_slip": "Yes, slip",
+  "limitations_title": "Limitations"
  },
  "foods": {
   "explain": "Everything you’ve logged, in your own words. The more it learns, the less you type.",
@@ -480,6 +663,16 @@
    "dinner": "Dinner",
    "snack": "Snack",
    "drink": "Drinks"
+  }
+ },
+ "avoid": {
+  "explain": "Foods you’ve decided to avoid. Meals with them get a small marker — never a warning.",
+  "empty": "Nothing on your avoid list.",
+  "remove": "Remove",
+  "removed": "Removed from your avoid list.",
+  "reason": {
+   "trial_confirmed": "trial confirmed",
+   "user_choice": "my choice"
   }
  }
 }

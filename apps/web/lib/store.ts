@@ -165,6 +165,7 @@ export async function drain(): Promise<void> {
           if (o) await db().observations.put({ ...o, sync: 'failed', sync_error: j.detail });
         }
       });
+      for (const n of (res as { notes?: { trial_exposure?: unknown }[] }).notes ?? []) if (n.trial_exposure) window.dispatchEvent(new CustomEvent('ft:trial-exposure', { detail: n.trial_exposure }));
       useSync.setState({ lastSyncAt: new Date().toISOString() });
     }
   } finally {

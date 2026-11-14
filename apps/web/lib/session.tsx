@@ -52,7 +52,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     es.current?.close();
     const token = getAccessToken(); if (!token || typeof EventSource === 'undefined') return;
     const src = new EventSource(`/api/v1/events?access_token=${encodeURIComponent(token)}`);
-    for (const type of ['parse.completed', 'analysis.completed', 'trial.phase_changed', 'safety.flag_raised', 'sync.hint', 'export.completed']) {
+    for (const type of ['parse.completed', 'analysis.completed', 'trial.phase_changed', 'safety.flag_raised', 'sync.hint', 'export.completed', 'trial.exposure_detected', 'trial.washout_stalled']) {
       src.addEventListener(type, (ev) => {
         events.dispatchEvent(new CustomEvent(type, { detail: JSON.parse((ev as MessageEvent).data) }));
         if (type === 'sync.hint' || type === 'parse.completed') void pull().catch(() => 0);
@@ -83,6 +83,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [loadLocal, becomeReady]);
 
   useEffect(() => { void boot(); }, [boot]);
+  // exposure notes from the sync response arrive here too (same request cycle as the save)
+  useEffect(() => { const h = (e: Event) => events.dispatchEvent(new CustomEvent('trial.exposure_detected', { detail: (e as CustomEvent).detail })); window.addEventListener('ft:trial-exposure', h); return () => window.removeEventListener('ft:trial-exposure', h); }, [events]);
   useEffect(() => onAuthChange((authed) => { if (authed && phase === 'ready') { scheduleDrain(0); connectEvents(); } }), [phase, connectEvents]);
 
   // Idle lock (08 §3.1) and activity keep-alive for offline continuity.

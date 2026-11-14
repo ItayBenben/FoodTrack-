@@ -9,6 +9,7 @@ from engine.associations import ENGINE_VERSION, analyze
 from engine.config import analysis_config
 from engine.load import load_user
 from engine import stats as S
+from engine.trials import design_power, verdict
 
 app = FastAPI(title="FoodTrack analysis", docs_url=None, redoc_url=None, openapi_url=None)
 DSN = os.environ.get("DATABASE_URL", "postgresql://foodtrack_app:foodtrack_app@localhost:5432/foodtrack")
@@ -61,3 +62,32 @@ def power(req: PowerReq) -> dict:
     more = max(0, -(-(need - req.n_exposed_now) // 1) / pe)
     more = int(-(-more // 1))
     return {"days_more": more if more <= cfg["days_more_max_shown"] else None, "reason": None if more <= cfg["days_more_max_shown"] else "too_long", "n_exposed_needed": need}
+
+
+class TrialReq(BaseModel):
+    days: list[dict]
+    hypothesis: dict
+    outcome_type: str
+    guesses: list[dict] | None = None
+    allocation: list[str] | None = None
+    partial: dict | None = None
+
+
+@app.post("/analyze/trial")
+def trial(req: TrialReq) -> dict:
+    return verdict(req.days, req.hypothesis, req.outcome_type, req.guesses, req.allocation, req.partial, analysis_config())
+
+
+class TrialPowerReq(BaseModel):
+    on_days: int
+    off_days: int
+    p_base: float
+    log_rate: float
+    mie: float
+
+
+@app.post("/analyze/trial-power")
+def trial_power(req: TrialPowerReq) -> dict:
+    cfg = analysis_config()
+    p = design_power({"on_days": req.on_days, "off_days": req.off_days}, req.p_base, req.log_rate, req.mie, sims=cfg["trial_power_simulations"], bar=cfg["trial_decision_bar"])
+    return {"power": p, "adequate": p >= cfg["trial_power_target"]}

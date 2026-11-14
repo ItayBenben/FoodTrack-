@@ -119,5 +119,128 @@
   },
   "confounder_tags": [
     "alcohol"
-  ]
+  ],
+  "blinding_agents": {
+    "contains_lactose": {
+      "agent": "lactose_powder",
+      "control": "glucose_powder",
+      "vehicle": "powder_in_water",
+      "dose": {
+        "en": "12 g lactose in water",
+        "he": "12 גרם לקטוז במים"
+      }
+    },
+    "fodmap_lactose_high": {
+      "agent": "lactose_powder",
+      "control": "glucose_powder",
+      "vehicle": "powder_in_water",
+      "dose": {
+        "en": "12 g lactose in water",
+        "he": "12 גרם לקטוז במים"
+      }
+    },
+    "fodmap_fructan_high": {
+      "agent": "inulin_powder",
+      "control": "glucose_powder",
+      "vehicle": "powder_in_water",
+      "dose": {
+        "en": "2 g fructan (inulin) in water",
+        "he": "2 גרם פרוקטן (אינולין) במים"
+      }
+    },
+    "fodmap_fructose_high": {
+      "agent": "fructose_powder",
+      "control": "glucose_powder",
+      "vehicle": "powder_in_water",
+      "dose": {
+        "en": "25 g fructose in water",
+        "he": "25 גרם פרוקטוז במים"
+      }
+    },
+    "fodmap_polyol_high": {
+      "agent": "sorbitol_powder",
+      "control": "glucose_powder",
+      "vehicle": "powder_in_water",
+      "dose": {
+        "en": "5 g sorbitol in water",
+        "he": "5 גרם סורביטול במים"
+      }
+    },
+    "sugar_alcohol": {
+      "agent": "sorbitol_powder",
+      "control": "glucose_powder",
+      "vehicle": "powder_in_water",
+      "dose": {
+        "en": "5 g sorbitol in water",
+        "he": "5 גרם סורביטול במים"
+      }
+    },
+    "contains_gluten": {
+      "agent": "gluten_capsule",
+      "control": "rice_flour_capsule",
+      "vehicle": "capsule",
+      "dose": {
+        "en": "6 g gluten in capsules",
+        "he": "6 גרם גלוטן בקפסולות"
+      }
+    }
+  },
+  "whole_group_tags": {
+    "contains_lactose": [
+      "calcium",
+      "vitamin_b12",
+      "protein"
+    ],
+    "dairy": [
+      "calcium",
+      "vitamin_b12",
+      "protein"
+    ],
+    "contains_gluten": [
+      "fibre",
+      "b_vitamins",
+      "iron"
+    ],
+    "wheat": [
+      "fibre",
+      "b_vitamins",
+      "iron"
+    ],
+    "legume": [
+      "fibre",
+      "protein",
+      "iron",
+      "folate"
+    ]
+  },
+  "challenge_doses": {
+    "default": [
+      {
+        "en": "a small portion",
+        "he": "מנה קטנה"
+      },
+      {
+        "en": "a normal portion",
+        "he": "מנה רגילה"
+      },
+      {
+        "en": "a large portion",
+        "he": "מנה גדולה"
+      }
+    ],
+    "contains_lactose": [
+      {
+        "en": "100 ml milk",
+        "he": "100 מ\"ל חלב"
+      },
+      {
+        "en": "250 ml milk",
+        "he": "250 מ\"ל חלב"
+      },
+      {
+        "en": "500 ml milk",
+        "he": "500 מ\"ל חלב"
+      }
+    ]
+  }
 }

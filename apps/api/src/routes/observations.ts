@@ -16,9 +16,11 @@ export async function observationRoutes(app: FastifyInstance) {
 
   app.post('/observations', async (req, reply) => {
     const input = ObservationInputSchema.parse(req.body);
-    const r = await withUser(deps.db, req.userId, (tx) => createObservation(tx, ctx(req), input));
+    const c = ctx(req) as ReturnType<typeof ctx> & { notes?: { trial_exposure?: unknown }[] };
+    const r = await withUser(deps.db, req.userId, (tx) => createObservation(tx, c, input));
     if (r.safety_flags.length) for (const f of r.safety_flags) deps.events.publish({ user_id: req.userId, type: 'safety.flag_raised', data: { flag_id: f.id, rule_key: f.rule_key } });
-    return reply.status(r.created ? 201 : 200).send({ ...r.observation, safety_flags: r.safety_flags });
+    // a meal containing the trial target raises the exposure prompt in the same request cycle (07 M5)
+    return reply.status(r.created ? 201 : 200).send({ ...r.observation, safety_flags: r.safety_flags, trial_exposure: c.notes?.find((n) => n.trial_exposure)?.trial_exposure ?? null });
   });
   app.post('/observations/bulk', async (req) => {
     const items = z.array(ObservationInputSchema).max(500).parse(req.body);
