@@ -38,3 +38,30 @@ export async function prepareMealPhoto(file: File): Promise<Blob> {
     return out && out.size < file.size ? out : file;
   } finally { bitmap.close(); }
 }
+
+export interface PhotoParseItem { raw_text: string; food_id: string | null; canonical_name: string | null; quantity: number | null; unit: string | null; grams_est: number | null; confidence: number | null; resolved_by: string | null; portion_precision?: string }
+export interface PhotoParseResult { media_id: string; items: PhotoParseItem[]; vision: 'on' | 'off' | 'unavailable' }
+
+/**
+ * Upload one meal photo and ask the server what's in it. Returns null when offline or on any failure —
+ * the caller keeps the photo locally and it uploads with the meal later (nothing is lost).
+ */
+export async function parseMealPhoto(blob: Blob, headers: Record<string, string>): Promise<PhotoParseResult | null> {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return null;
+  const fd = new FormData(); fd.append('file', blob, 'meal');
+  try {
+    const r = await fetch('/api/v1/meals/parse-photo', { method: 'POST', body: fd, headers, credentials: 'same-origin' });
+    return r.ok ? (await r.json()) as PhotoParseResult : null;
+  } catch { return null; }
+}
+
+const key = (s: string | null | undefined) => (s ?? '').trim().toLowerCase();
+/** Add photo-found items the meal doesn't already have (same food, or same name), keeping typed ones first. */
+export function mergeItems<T extends { food_id: string | null; canonical_name: string | null; raw_text: string }>(base: T[], extra: T[]): T[] {
+  const out = [...base];
+  for (const e of extra) {
+    const dup = out.some((b) => (e.food_id && b.food_id === e.food_id) || (key(e.canonical_name) && key(b.canonical_name) === key(e.canonical_name)) || key(b.raw_text) === key(e.raw_text));
+    if (!dup) out.push(e);
+  }
+  return out;
+}

@@ -26,10 +26,13 @@ async function withTimeout<T>(ms: number, fn: (s: AbortSignal) => Promise<T>): P
   try { return await fn(ctl.signal); } finally { clearTimeout(t); }
 }
 
+const usable = (m: string | undefined) => (m && !m.startsWith('<') ? m : null);
 export function buildProviders(env: Env, cfg: LlmConfig): LLMProvider[] {
+  // with vision enabled and no separate vision model set, the text model reads photos too (Claude models are multimodal)
+  const visionModel = cfg.vision.enabled ? usable(env.ANTHROPIC_MODEL_VISION) ?? usable(env.ANTHROPIC_MODEL_TEXT) : null;
   const all: Record<string, () => LLMProvider | null> = {
     anthropic: () => (env.ANTHROPIC_API_KEY && env.ANTHROPIC_MODEL_TEXT && !env.ANTHROPIC_MODEL_TEXT.startsWith('<')
-      ? new AnthropicProvider(env.ANTHROPIC_API_KEY, env.ANTHROPIC_MODEL_TEXT, cfg.vision.enabled && env.ANTHROPIC_MODEL_VISION && !env.ANTHROPIC_MODEL_VISION.startsWith('<') ? env.ANTHROPIC_MODEL_VISION : null, cfg.prompt_versions.meal_parse) : null),
+      ? new AnthropicProvider(env.ANTHROPIC_API_KEY, env.ANTHROPIC_MODEL_TEXT, visionModel, cfg.prompt_versions.meal_parse) : null),
     'openai-compat': () => (env.OPENAI_COMPAT_URL && env.OPENAI_COMPAT_MODEL ? new OpenAICompatProvider(env.OPENAI_COMPAT_URL, env.OPENAI_COMPAT_MODEL, cfg.prompt_versions.meal_parse) : null),
     deterministic: () => new DeterministicProvider(),
   };

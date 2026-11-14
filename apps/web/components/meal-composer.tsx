@@ -9,11 +9,11 @@ import type { TrackerDefinition } from '@foodtrack/tracker-schema';
 import type { MealItemInput } from '@foodtrack/shared';
 import { uuidv7 } from '@foodtrack/shared';
 import { useI18n } from '@/lib/i18n';
-import { api } from '@/lib/api';
-import { db, type LocalObservation } from '@/lib/db/local';
+import { api, getAccessToken } from '@/lib/api';
+import { db, deviceId, type LocalObservation } from '@/lib/db/local';
 import { editObservation, saveObservation } from '@/lib/store';
 import { useParse, type ParsedItem } from '@/lib/meals';
-import { admit, prepareMealPhoto } from '@/lib/photos';
+import { admit, mergeItems, parseMealPhoto, prepareMealPhoto } from '@/lib/photos';
 import { Button, Chip, Sheet, useToasts } from './ui';
 import { TimestampControl } from './fields';
 import { Icon } from './icons';
@@ -38,6 +38,9 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
   const cameraRef = useRef<HTMLInputElement>(null);
   const galleryRef = useRef<HTMLInputElement>(null);
   const [photoSource, setPhotoSource] = useState(false);
+  const [photoItems, setPhotoItems] = useState<ParsedItem[]>([]);
+  const [reading, setReading] = useState(0);
+  const [vision, setVision] = useState<'on' | 'off' | 'unavailable' | null>(null);
   const parse = useParse(text, ts);
   const slotField = def.fields.find((f) => f.key === 'slot' && f.type === 'enum');
   const photoField = def.fields.find((f) => f.type === 'multi_photo');
@@ -48,7 +51,7 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
     else void db().drafts.get(DRAFT).then((d) => { if (d) { setText(String(d.data.text ?? '')); setSlot((d.data.slot as string) ?? null); } });
     setTimeout(() => ref.current?.focus(), 30);
   }, [editId]);
-  useEffect(() => { if (parse.items && !existing) setItems(parse.items); }, [parse.items, existing]);
+  useEffect(() => { if (parse.items && !existing) setItems(mergeItems(parse.items, photoItems)); }, [parse.items, existing, photoItems]);
 
   const close = async (saved: boolean) => {
     if (!saved && !editId && (text.trim() || photos.length)) {
@@ -92,8 +95,26 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
     if (dropped > 0) push({ text: t('meal.photo_limit', { n: maxPhotos }) });
     for (const f of take) {
       const blob = await prepareMealPhoto(f);
-      setPhotos((prev) => (prev.length >= maxPhotos ? prev : [...prev, { id: `local_${uuidv7()}`, url: URL.createObjectURL(blob), blob }]));
+      const local = `local_${uuidv7()}`;
+      setPhotos((prev) => (prev.length >= maxPhotos ? prev : [...prev, { id: local, url: URL.createObjectURL(blob), blob }]));
+      void readPhoto(local, blob);
     }
+  };
+  /** Online: upload now and let the vision model name the foods. Offline or failed: the photo stays queued and uploads with the meal. */
+  const readPhoto = async (local: string, blob: Blob) => {
+    const token = getAccessToken(); if (!token) return;
+    setReading((n) => n + 1);
+    try {
+      const r = await parseMealPhoto(blob, { authorization: `Bearer ${token}`, 'x-device-id': await deviceId() });
+      if (!r) return;
+      setPhotos((prev) => prev.map((p) => (p.id === local ? { id: r.media_id, url: p.url } : p)));
+      setVision(r.vision);
+      if (r.items.length) {
+        const found = r.items as ParsedItem[];
+        setPhotoItems((prev) => mergeItems(prev, found));
+        setItems((prev) => mergeItems(prev ?? [], found));
+      }
+    } finally { setReading((n) => n - 1); }
   };
   const removePhoto = (id: string) => {
     const prev = photos;
@@ -141,6 +162,7 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" data-testid="photo-camera-input" onChange={(e) => { const f = Array.from(e.target.files ?? []); e.target.value = ''; void addPhotos(f); }} />
         <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" data-testid="photo-gallery-input" onChange={(e) => { const f = Array.from(e.target.files ?? []); e.target.value = ''; void addPhotos(f); }} />
       </div>
+      {photos.length > 0 && (reading > 0 || (vision && vision !== 'on')) && <p className="text-label text-text-muted mt-2" data-testid="photo-status">{reading > 0 ? t('meal.photo_reading') : vision === 'off' ? t('meal.photo_vision_off') : t('meal.photo_vision_unavailable')}</p>}
       {photos.length > 0 && <div className="flex gap-2 mt-2 overflow-x-auto" data-testid="meal-photos">{photos.map((p) => (
         <div key={p.id} className="relative shrink-0"><img src={p.url} alt={t('meal.photo')} className="h-20 w-20 object-cover rounded-chip" />
           <button aria-label={t('meal.remove_photo')} className="absolute top-0 end-0 bg-text text-bg rounded-pill h-7 w-7 flex items-center justify-center" onClick={() => removePhoto(p.id)}><Icon name="close" size={14} /></button></div>))}</div>}

@@ -10,7 +10,7 @@ import type { Candidate } from '../llm/types.js';
 
 export interface ResolvedItem {
   raw_text: string; food_id: string | null; canonical_name: string | null; quantity: number | null; unit: string | null;
-  grams_est: number | null; confidence: number | null; resolved_by: 'library' | 'canonical' | 'llm' | 'deterministic' | null;
+  grams_est: number | null; confidence: number | null; resolved_by: 'library' | 'canonical' | 'llm' | 'vision' | 'deterministic' | null;
   portion_precision: 'estimated' | 'unspecified'; position: number;
 }
 export interface ParseResult { items: ResolvedItem[]; unresolved: string[]; degraded: boolean; tier: 1 | 2 | 3; model: string; prompt_version: string; add_ons: AddOn[] }
@@ -184,6 +184,26 @@ export class MealParser {
     const confident = items.filter((i) => i.food_id && (i.confidence ?? 0) >= 0.6).length;
     const tier: 1 | 2 | 3 = confident === 0 ? 3 : unresolved.length ? 2 : 1;
     return { items, unresolved, degraded, tier, model, prompt_version, add_ons: confident ? await this.addOns(items) : [] };
+  }
+
+  /**
+   * Photo items (08 §4.4): the vision model names what it sees; we place each name in the user's
+   * library or the canonical table exactly as typed text would be, so a photographed "hummus" is the
+   * same food as a typed "חומוס". An unknown but confident name becomes a private llm food (stage 6).
+   */
+  async resolveVision(items: { raw_text: string; canonical_name: string; quantity: number | null; unit: string | null; grams_est: number | null; confidence: number; category: string | null }[]): Promise<ResolvedItem[]> {
+    const out: ResolvedItem[] = [];
+    for (const [i, it] of items.entries()) {
+      const hit = (await this.resolveExact(it.canonical_name)) ?? (await this.resolveExact(it.raw_text));
+      const foodId = hit?.foodId ?? (it.confidence >= 0.5 ? await this.createLlmFood(it.raw_text, it.canonical_name, it.category, it.grams_est, it.unit) : null);
+      const f = foodId ? await this.food(foodId) : null;
+      const gpu = f?.grams_per_unit ? Number(f.grams_per_unit) : null;
+      const grams = it.grams_est ?? (it.quantity && gpu ? Math.round(it.quantity * gpu) : null);
+      // a picture tells us what, far better than how much: confidence is the model's, capped below a typed match
+      out.push({ raw_text: it.raw_text, food_id: foodId, canonical_name: f?.canonical_name ?? it.canonical_name, quantity: it.quantity, unit: it.unit, grams_est: grams,
+        confidence: Math.round(Math.min(it.confidence, 0.9) * 100) / 100, resolved_by: 'vision', portion_precision: it.quantity || grams ? 'estimated' : 'unspecified', position: i });
+    }
+    return out;
   }
 
   /** Stage 6: an LLM-proposed food becomes a private, unverified food (source 'llm') for later review/merge. */

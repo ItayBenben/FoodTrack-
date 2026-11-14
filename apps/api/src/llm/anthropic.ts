@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { MEAL_JSON_SCHEMA, MEAL_SYSTEM, MealParseResultSchema, NARRATE_JSON_SCHEMA, NARRATE_SYSTEM, mealUserPrompt,
+import { MEAL_JSON_SCHEMA, MEAL_SYSTEM, MealParseResultSchema, NARRATE_JSON_SCHEMA, NARRATE_SYSTEM, PHOTO_SYSTEM, mealUserPrompt, photoUserPrompt,
   type LLMProvider, type LocalizedText, type MealParseInput, type MealParseResult, type NarrateInput, type PhotoParseInput } from './types.js';
 
 export class AnthropicProvider implements LLMProvider {
@@ -31,9 +31,9 @@ export class AnthropicProvider implements LLMProvider {
   }
   async parsePhoto(input: PhotoParseInput, signal: AbortSignal): Promise<MealParseResult> {
     if (!this.visionModel) return { items: [], model: 'none', prompt_version: this.promptVersion };
-    const raw = await this.json(this.visionModel, MEAL_SYSTEM, [
+    const raw = await this.json(this.visionModel, PHOTO_SYSTEM, [
       { type: 'image', source: { type: 'base64', media_type: input.mime as 'image/jpeg', data: input.image.toString('base64') } },
-      { type: 'text', text: `List the foods visible on this plate. ${input.hint ? `The user added: <meal>${input.hint}</meal>` : ''}` },
+      { type: 'text', text: photoUserPrompt(input.locale, input.hint) },
     ], MEAL_JSON_SCHEMA as unknown as Record<string, unknown>, signal);
     return { ...MealParseResultSchema.parse(raw), model: `anthropic:${this.visionModel}`, prompt_version: this.promptVersion };
   }
