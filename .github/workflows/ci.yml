@@ -1,0 +1,99 @@
+name: ci
+on:
+  push: { branches: [main, "claude/**"] }
+  pull_request:
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      DATABASE_URL: postgres://foodtrack_app:foodtrack_app@localhost:5432/foodtrack_test
+      DATABASE_OWNER_URL: postgres://foodtrack:foodtrack@localhost:5432/foodtrack_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip, cache-dependency-path: apps/analysis/requirements.txt }
+      - run: pnpm install --frozen-lockfile
+      - name: create database roles
+        run: |
+          psql -c "CREATE ROLE foodtrack LOGIN PASSWORD 'foodtrack' NOSUPERUSER NOBYPASSRLS"
+          psql -c "CREATE ROLE foodtrack_app LOGIN PASSWORD 'foodtrack_app' NOSUPERUSER NOBYPASSRLS"
+          psql -c "CREATE DATABASE foodtrack_test OWNER foodtrack"
+          psql -d foodtrack_test -c "CREATE EXTENSION citext; CREATE EXTENSION pg_trgm; CREATE EXTENSION pgcrypto; ALTER SCHEMA public OWNER TO foodtrack; REVOKE ALL ON SCHEMA public FROM PUBLIC; GRANT USAGE ON SCHEMA public TO foodtrack_app;"
+      - name: lint (eslint + logical-property rule + copy lint + compose lint)
+        run: pnpm lint
+      - name: typecheck
+        run: pnpm typecheck
+      - name: python deps
+        run: pip install -r apps/analysis/requirements.txt pytest httpx
+      - name: unit + integration
+        run: pnpm test
+      - name: analysis unit tests
+        run: cd apps/analysis && python -m pytest tests -q -m "not gate and not slow"
+      - name: statistical release gate (null-data test)
+        run: cd apps/analysis && python -m pytest tests -q -m gate
+      - name: restore drill (verified restore is a release gate)
+        run: |
+          sudo apt-get install -y postgresql-client >/dev/null
+          echo "FOODTRACK_KEK=$(openssl rand -base64 32)" >> .env
+          psql -c "CREATE DATABASE foodtrack_src OWNER foodtrack"
+          psql -d foodtrack_src -c "CREATE EXTENSION citext; CREATE EXTENSION pg_trgm; CREATE EXTENSION pgcrypto; ALTER SCHEMA public OWNER TO foodtrack; GRANT USAGE ON SCHEMA public TO foodtrack_app;"
+          export DATABASE_OWNER_URL=postgres://foodtrack:foodtrack@localhost:5432/foodtrack_src DATABASE_URL=postgres://foodtrack_app:foodtrack_app@localhost:5432/foodtrack_src
+          pnpm db:migrate && pnpm --filter @foodtrack/api keys init && pnpm db:seed
+          pnpm --filter @foodtrack/api keys show > card.txt
+          PSQL="psql" SOURCE_DB_URL=$DATABASE_OWNER_URL MEDIA_DIR=./data/media CARD=$PWD/card.txt scripts/restore-drill.sh
+      - name: build
+        run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: lint-typecheck-test
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      DATABASE_URL: postgres://foodtrack_app:foodtrack_app@localhost:5432/foodtrack_e2e
+      DATABASE_OWNER_URL: postgres://foodtrack:foodtrack@localhost:5432/foodtrack_e2e
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @foodtrack/web exec playwright install --with-deps chromium
+      - name: create database roles
+        run: |
+          psql -c "CREATE ROLE foodtrack LOGIN PASSWORD 'foodtrack' NOSUPERUSER NOBYPASSRLS"
+          psql -c "CREATE ROLE foodtrack_app LOGIN PASSWORD 'foodtrack_app' NOSUPERUSER NOBYPASSRLS"
+          psql -c "CREATE DATABASE foodtrack_e2e OWNER foodtrack"
+          psql -d foodtrack_e2e -c "CREATE EXTENSION citext; CREATE EXTENSION pg_trgm; CREATE EXTENSION pgcrypto; ALTER SCHEMA public OWNER TO foodtrack; REVOKE ALL ON SCHEMA public FROM PUBLIC; GRANT USAGE ON SCHEMA public TO foodtrack_app;"
+      - name: e2e (LTR + RTL, online + offline)
+        env: { E2E_DATABASE_URL: postgres://foodtrack_app:foodtrack_app@localhost:5432/foodtrack_e2e, E2E_DATABASE_OWNER_URL: postgres://foodtrack:foodtrack@localhost:5432/foodtrack_e2e }
+        run: pnpm test:e2e
+
+  compose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: node scripts/compose-lint.mjs
+      - run: cp .env.example .env && docker compose config -q

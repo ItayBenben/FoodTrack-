@@ -1,0 +1,190 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "medication",
+  "version": 1,
+  "category": "intake",
+  "icon": "pill",
+  "cardinality": "many_per_day",
+  "quick_log": {
+    "enabled": true,
+    "home_shortcut": false
+  },
+  "labels": {
+    "en": {
+      "name": "Medication",
+      "short": "Meds"
+    },
+    "he": {
+      "name": "תרופות",
+      "short": "תרופות"
+    }
+  },
+  "fields": [
+    {
+      "key": "name",
+      "type": "text",
+      "required": true,
+      "max_length": 120,
+      "sensitive": true,
+      "labels": {
+        "en": "Name",
+        "he": "שם"
+      },
+      "analysis": {
+        "role": "meta"
+      }
+    },
+    {
+      "key": "class",
+      "type": "enum",
+      "required": true,
+      "labels": {
+        "en": "Type",
+        "he": "סוג"
+      },
+      "options": [
+        {
+          "value": "nsaid",
+          "labels": {
+            "en": "Painkiller (ibuprofen, aspirin…)",
+            "he": "משכך כאבים (איבופרופן, אספירין…)"
+          }
+        },
+        {
+          "value": "antibiotic",
+          "labels": {
+            "en": "Antibiotic",
+            "he": "אנטיביוטיקה"
+          }
+        },
+        {
+          "value": "ppi",
+          "labels": {
+            "en": "Acid reducer",
+            "he": "מפחית חומצה"
+          }
+        },
+        {
+          "value": "laxative",
+          "labels": {
+            "en": "Laxative",
+            "he": "משלשל"
+          }
+        },
+        {
+          "value": "antidiarrheal",
+          "labels": {
+            "en": "Anti-diarrhoea",
+            "he": "נגד שלשול"
+          }
+        },
+        {
+          "value": "antispasmodic",
+          "labels": {
+            "en": "Antispasmodic",
+            "he": "נוגד עוויתות"
+          }
+        },
+        {
+          "value": "other",
+          "labels": {
+            "en": "Other",
+            "he": "אחר"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "confounder"
+      }
+    },
+    {
+      "key": "dose",
+      "type": "text",
+      "max_length": 60,
+      "labels": {
+        "en": "Dose",
+        "he": "מינון"
+      },
+      "advanced": true,
+      "analysis": {
+        "role": "meta"
+      }
+    },
+    {
+      "key": "note",
+      "type": "text",
+      "labels": {
+        "en": "Note",
+        "he": "הערה"
+      },
+      "max_length": 500,
+      "sensitive": true,
+      "analysis": {
+        "role": "meta"
+      },
+      "advanced": true
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "any",
+        "op": "count"
+      },
+      {
+        "key": "nsaid",
+        "op": "any",
+        "field": "class",
+        "in": [
+          "nsaid"
+        ],
+        "analysis": {
+          "role": "confounder",
+          "type": "binary",
+          "adjust": true,
+          "labels": {
+            "en": "Painkiller (NSAID)",
+            "he": "משכך כאבים"
+          }
+        }
+      },
+      {
+        "key": "antibiotic",
+        "op": "any",
+        "field": "class",
+        "in": [
+          "antibiotic"
+        ],
+        "analysis": {
+          "role": "confounder",
+          "type": "binary",
+          "adjust": true,
+          "persist_days": 14,
+          "labels": {
+            "en": "Antibiotics in the last 14 days",
+            "he": "אנטיביוטיקה ב-14 הימים האחרונים"
+          }
+        }
+      },
+      {
+        "key": "laxative",
+        "op": "any",
+        "field": "class",
+        "in": [
+          "laxative",
+          "antidiarrheal"
+        ],
+        "analysis": {
+          "role": "confounder",
+          "type": "binary",
+          "adjust": true,
+          "persist_days": 1,
+          "labels": {
+            "en": "Laxative or anti-diarrhoea",
+            "he": "משלשל או נגד שלשול"
+          }
+        }
+      }
+    ]
+  }
+}

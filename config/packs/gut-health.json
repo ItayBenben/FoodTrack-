@@ -1,0 +1,7 @@
+{
+  "key": "gut_health",
+  "labels": { "en": "Gut health", "he": "בריאות המעי" },
+  "description": { "en": "Meals, stool, symptoms and the evening check-in, plus the confounders that keep the analysis honest.", "he": "ארוחות, יציאות, תסמינים וצ'ק-אין ערב, יחד עם הגורמים המשפיעים ששומרים על ניתוח הוגן." },
+  "trackers": ["meal", "stool", "symptom", "checkin", "medication", "supplement", "exercise", "hydration", "note", "event_marker", "transit_marker"],
+  "default_enabled": true
+}

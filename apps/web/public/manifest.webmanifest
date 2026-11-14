@@ -1,0 +1,16 @@
+{
+  "name": "FoodTrack",
+  "short_name": "FoodTrack",
+  "description": "Log food, gut and how you feel — and find out what is behind your bad days.",
+  "start_url": "/today",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FBFAF8",
+  "theme_color": "#3F6E5E",
+  "dir": "auto",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

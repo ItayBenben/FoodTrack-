@@ -1,0 +1,7 @@
+{
+  "key": "migraine",
+  "labels": { "en": "Headaches", "he": "כאבי ראש" },
+  "description": { "en": "Headaches and migraines, with the same food analysis.", "he": "כאבי ראש ומיגרנות, עם אותו ניתוח מזון." },
+  "trackers": ["migraine", "meal", "checkin", "medication", "hydration"],
+  "default_enabled": false
+}

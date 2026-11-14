@@ -1,0 +1,118 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "hydration",
+  "version": 1,
+  "category": "intake",
+  "icon": "water",
+  "cardinality": "many_per_day",
+  "quick_log": {
+    "enabled": true,
+    "primary_field": "amount_ml",
+    "home_shortcut": false
+  },
+  "labels": {
+    "en": {
+      "name": "Water & drinks",
+      "short": "Water"
+    },
+    "he": {
+      "name": "מים ומשקאות",
+      "short": "מים"
+    }
+  },
+  "fields": [
+    {
+      "key": "amount_ml",
+      "type": "enum",
+      "required": true,
+      "labels": {
+        "en": "How much",
+        "he": "כמה"
+      },
+      "options": [
+        {
+          "value": 250,
+          "labels": {
+            "en": "Cup (250 ml)",
+            "he": "כוס (250 מ\"ל)"
+          }
+        },
+        {
+          "value": 500,
+          "labels": {
+            "en": "Bottle (500 ml)",
+            "he": "בקבוק (500 מ\"ל)"
+          }
+        },
+        {
+          "value": 1000,
+          "labels": {
+            "en": "Large bottle (1 l)",
+            "he": "בקבוק גדול (1 ל')"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "covariate"
+      }
+    },
+    {
+      "key": "kind",
+      "type": "enum",
+      "labels": {
+        "en": "What",
+        "he": "מה"
+      },
+      "advanced": true,
+      "options": [
+        {
+          "value": "water",
+          "labels": {
+            "en": "Water",
+            "he": "מים"
+          }
+        },
+        {
+          "value": "tea",
+          "labels": {
+            "en": "Tea",
+            "he": "תה"
+          }
+        },
+        {
+          "value": "other",
+          "labels": {
+            "en": "Other",
+            "he": "אחר"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "context"
+      }
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "total_ml",
+        "op": "sum",
+        "field": "amount_ml",
+        "analysis": {
+          "role": "confounder",
+          "type": "continuous",
+          "labels": {
+            "en": "Fluids",
+            "he": "נוזלים"
+          }
+        }
+      }
+    ]
+  },
+  "charts": [
+    {
+      "type": "bar",
+      "aggregation": "total_ml"
+    }
+  ]
+}

@@ -1,0 +1,470 @@
+{
+ "_note": "Self-authored coarse FODMAP subgroup classes (D12). Not derived from, and not a copy of, the Monash University dataset. Classes are high / moderate / low per subgroup; gram quantities are deliberately absent (04 §17.1). Every citation is status needs_check until a human verifies it.",
+ "subgroups": [
+  "fructan",
+  "gos",
+  "lactose",
+  "fructose",
+  "polyol"
+ ],
+ "tag_format": "fodmap_{subgroup}_{class}",
+ "groups": [
+  {
+   "key": "wheat_products",
+   "labels": {
+    "en": "Wheat products",
+    "he": "מוצרי חיטה"
+   },
+   "subgroups": {
+    "fructan": "high"
+   },
+   "foods": [
+    "Pita bread",
+    "White bread",
+    "Whole wheat bread",
+    "Challah",
+    "Laffa",
+    "Bagel",
+    "Pasta",
+    "Couscous",
+    "Bulgur",
+    "Ptitim",
+    "Croissant",
+    "Rugelach",
+    "Cake",
+    "Cookies",
+    "Bissli",
+    "Jachnun",
+    "Granola",
+    "Granola bar"
+   ],
+   "citations": [
+    "gibson2010",
+    "biesiekierski2011"
+   ]
+  },
+  {
+   "key": "sourdough",
+   "labels": {
+    "en": "Long-fermented sourdough",
+    "he": "לחם מחמצת"
+   },
+   "subgroups": {
+    "fructan": "moderate"
+   },
+   "foods": [
+    "Sourdough bread"
+   ],
+   "citations": [
+    "biesiekierski2011"
+   ]
+  },
+  {
+   "key": "onion_garlic",
+   "labels": {
+    "en": "Onion and garlic",
+    "he": "בצל ושום"
+   },
+   "subgroups": {
+    "fructan": "high"
+   },
+   "foods": [
+    "Onion",
+    "Garlic"
+   ],
+   "citations": [
+    "muir2007",
+    "gibson2010"
+   ]
+  },
+  {
+   "key": "legumes",
+   "labels": {
+    "en": "Legumes",
+    "he": "קטניות"
+   },
+   "subgroups": {
+    "gos": "high"
+   },
+   "foods": [
+    "Chickpeas",
+    "Lentils",
+    "Beans",
+    "Ful",
+    "Green peas",
+    "Edamame"
+   ],
+   "citations": [
+    "muir2009",
+    "gibson2010"
+   ]
+  },
+  {
+   "key": "legume_spreads",
+   "labels": {
+    "en": "Legume spreads and fritters",
+    "he": "ממרחי קטניות"
+   },
+   "subgroups": {
+    "gos": "moderate"
+   },
+   "foods": [
+    "Hummus",
+    "Falafel"
+   ],
+   "citations": [
+    "muir2009"
+   ]
+  },
+  {
+   "key": "tofu_firm",
+   "labels": {
+    "en": "Firm tofu",
+    "he": "טופו קשה"
+   },
+   "subgroups": {
+    "gos": "low"
+   },
+   "foods": [
+    "Tofu"
+   ],
+   "citations": [
+    "varney2017"
+   ]
+  },
+  {
+   "key": "lactose_dairy",
+   "labels": {
+    "en": "Lactose-containing dairy",
+    "he": "מוצרי חלב עם לקטוז"
+   },
+   "subgroups": {
+    "lactose": "high"
+   },
+   "foods": [
+    "Milk",
+    "Yogurt",
+    "Leben",
+    "Ice cream",
+    "Cottage cheese",
+    "White cheese",
+    "Labneh",
+    "Cream cheese"
+   ],
+   "citations": [
+    "gibson2010",
+    "varney2017"
+   ]
+  },
+  {
+   "key": "greek_yogurt",
+   "labels": {
+    "en": "Strained yogurt",
+    "he": "יוגורט מסונן"
+   },
+   "subgroups": {
+    "lactose": "moderate"
+   },
+   "foods": [
+    "Greek yogurt"
+   ],
+   "citations": [
+    "varney2017"
+   ]
+  },
+  {
+   "key": "hard_cheese",
+   "labels": {
+    "en": "Hard and aged cheese",
+    "he": "גבינות קשות"
+   },
+   "subgroups": {
+    "lactose": "low"
+   },
+   "foods": [
+    "Yellow cheese",
+    "Feta cheese",
+    "Butter"
+   ],
+   "citations": [
+    "varney2017"
+   ]
+  },
+  {
+   "key": "lactose_free",
+   "labels": {
+    "en": "Lactose-free dairy",
+    "he": "מוצרי חלב נטולי לקטוז"
+   },
+   "subgroups": {
+    "lactose": "low"
+   },
+   "foods": [
+    "Lactose-free milk"
+   ],
+   "citations": [
+    "varney2017"
+   ]
+  },
+  {
+   "key": "excess_fructose_fruit",
+   "labels": {
+    "en": "Fruit with excess fructose",
+    "he": "פירות עם עודף פרוקטוז"
+   },
+   "subgroups": {
+    "fructose": "high"
+   },
+   "foods": [
+    "Apple",
+    "Pear",
+    "Mango",
+    "Watermelon",
+    "Honey"
+   ],
+   "citations": [
+    "muir2009",
+    "gibson2010"
+   ]
+  },
+  {
+   "key": "polyol_fruit",
+   "labels": {
+    "en": "Fruit with polyols",
+    "he": "פירות עם פוליאולים"
+   },
+   "subgroups": {
+    "polyol": "high"
+   },
+   "foods": [
+    "Apple",
+    "Pear",
+    "Watermelon"
+   ],
+   "citations": [
+    "muir2009"
+   ]
+  },
+  {
+   "key": "polyol_veg",
+   "labels": {
+    "en": "Vegetables with polyols",
+    "he": "ירקות עם פוליאולים"
+   },
+   "subgroups": {
+    "polyol": "high"
+   },
+   "foods": [
+    "Mushrooms",
+    "Cauliflower"
+   ],
+   "citations": [
+    "muir2009"
+   ]
+  },
+  {
+   "key": "sugar_alcohols",
+   "labels": {
+    "en": "Sugar alcohols (sorbitol, mannitol, xylitol)",
+    "he": "ממתיקים מסוג פוליאול"
+   },
+   "subgroups": {
+    "polyol": "high"
+   },
+   "foods": [
+    "Sugar-free gum",
+    "Protein bar"
+   ],
+   "citations": [
+    "gibson2010"
+   ]
+  },
+  {
+   "key": "dried_fruit",
+   "labels": {
+    "en": "Dried fruit and dates",
+    "he": "פירות יבשים ותמרים"
+   },
+   "subgroups": {
+    "fructan": "high",
+    "fructose": "moderate"
+   },
+   "foods": [
+    "Dates",
+    "Dried fruit"
+   ],
+   "citations": [
+    "muir2009"
+   ]
+  },
+  {
+   "key": "cashew",
+   "labels": {
+    "en": "Cashews",
+    "he": "קשיו"
+   },
+   "subgroups": {
+    "gos": "high",
+    "fructan": "moderate"
+   },
+   "foods": [
+    "Cashews"
+   ],
+   "citations": [
+    "varney2017"
+   ]
+  },
+  {
+   "key": "almonds_small",
+   "labels": {
+    "en": "Almonds (small portions)",
+    "he": "שקדים (מנה קטנה)"
+   },
+   "subgroups": {
+    "gos": "moderate"
+   },
+   "foods": [
+    "Almonds"
+   ],
+   "citations": [
+    "varney2017"
+   ]
+  },
+  {
+   "key": "low_fodmap_grains",
+   "labels": {
+    "en": "Low-FODMAP grains",
+    "he": "דגנים דלי פודמאפ"
+   },
+   "subgroups": {
+    "fructan": "low"
+   },
+   "foods": [
+    "White rice",
+    "Brown rice",
+    "Oats",
+    "Rice cakes",
+    "Popcorn",
+    "Potato",
+    "Cornflakes"
+   ],
+   "citations": [
+    "gibson2010",
+    "varney2017"
+   ]
+  },
+  {
+   "key": "low_fodmap_veg",
+   "labels": {
+    "en": "Low-FODMAP vegetables",
+    "he": "ירקות דלי פודמאפ"
+   },
+   "subgroups": {
+    "fructan": "low"
+   },
+   "foods": [
+    "Tomato",
+    "Cucumber",
+    "Carrot",
+    "Bell pepper",
+    "Lettuce",
+    "Zucchini",
+    "Eggplant",
+    "Potato"
+   ],
+   "citations": [
+    "muir2007",
+    "varney2017"
+   ]
+  },
+  {
+   "key": "moderate_veg",
+   "labels": {
+    "en": "Moderate-FODMAP vegetables",
+    "he": "ירקות בינוניים"
+   },
+   "subgroups": {
+    "fructan": "moderate",
+    "polyol": "moderate"
+   },
+   "foods": [
+    "Broccoli",
+    "Cabbage",
+    "Corn",
+    "Sweet potato",
+    "Avocado"
+   ],
+   "citations": [
+    "muir2009",
+    "varney2017"
+   ]
+  },
+  {
+   "key": "low_fodmap_fruit",
+   "labels": {
+    "en": "Low-FODMAP fruit",
+    "he": "פירות דלי פודמאפ"
+   },
+   "subgroups": {
+    "fructose": "low"
+   },
+   "foods": [
+    "Banana",
+    "Orange",
+    "Grapes",
+    "Strawberries"
+   ],
+   "citations": [
+    "muir2009"
+   ]
+  },
+  {
+   "key": "juice",
+   "labels": {
+    "en": "Fruit juice",
+    "he": "מיץ פירות"
+   },
+   "subgroups": {
+    "fructose": "moderate"
+   },
+   "foods": [
+    "Orange juice"
+   ],
+   "citations": [
+    "varney2017"
+   ]
+  },
+  {
+   "key": "plant_milk_oat",
+   "labels": {
+    "en": "Oat drink",
+    "he": "משקה שיבולת שועל"
+   },
+   "subgroups": {
+    "fructan": "moderate"
+   },
+   "foods": [
+    "Oat milk"
+   ],
+   "citations": [
+    "varney2017"
+   ]
+  },
+  {
+   "key": "plant_milk_soy",
+   "labels": {
+    "en": "Soy drink (from whole beans)",
+    "he": "משקה סויה"
+   },
+   "subgroups": {
+    "gos": "high"
+   },
+   "foods": [
+    "Soy milk"
+   ],
+   "citations": [
+    "varney2017"
+   ]
+  }
+ ]
+}

@@ -1,0 +1,2090 @@
+<title>FoodTrack Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Heebo:wght@400;500;600;700&display=swap">
+<style>
+/* ══ app tokens — lifted verbatim from 05-ux-design.md §2.1 ══ */
+:root{
+  --bg:#FBFAF8; --surface:#FFFFFF; --sunken:#F2F0EC; --border:#E4E0D9;
+  --text:#1C1A17; --muted:#6B6560; --faint:#9A938C;
+  --accent:#3F6E5E; --accent-soft:#E6EFEA; --accent-ink:#2C5245;
+  --warn:#B4762A; --warn-soft:#F7EEDF; --danger:#A4383A; --danger-soft:#F7E7E7;
+  --info:#3A5B7A; --info-soft:#E5EDF4;
+  --dry:#C08A3E; --wet:#4A7EA5;      /* Bristol diverging scale, anchored at 4 */
+  --shadow:0 1px 2px rgba(28,26,23,.05), 0 10px 30px -18px rgba(28,26,23,.35);
+  --stage:#EDEBE5; --stage-ink:#1C1A17; --stage-muted:#6B6560; --stage-line:#DAD6CD;
+  --fs:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  --fh:"Heebo","Inter",-apple-system,sans-serif;
+  --r-sm:8px; --r-md:16px; --r-lg:28px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#14130F; --surface:#1E1C18; --sunken:#100F0C; --border:#33302A;
+    --text:#F2EFE9; --muted:#9C958C; --faint:#77716A;
+    --accent:#6FA891; --accent-soft:#22332C; --accent-ink:#8FC2AC;
+    --warn:#D69E52; --warn-soft:#2E2718; --danger:#D96B6D; --danger-soft:#301F1F;
+    --info:#7BA3C9; --info-soft:#1B2530;
+    --dry:#D6A25A; --wet:#7BA9CD;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+    --stage:#0C0B08; --stage-ink:#F2EFE9; --stage-muted:#9C958C; --stage-line:#2A2822;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#14130F; --surface:#1E1C18; --sunken:#100F0C; --border:#33302A;
+  --text:#F2EFE9; --muted:#9C958C; --faint:#77716A;
+  --accent:#6FA891; --accent-soft:#22332C; --accent-ink:#8FC2AC;
+  --warn:#D69E52; --warn-soft:#2E2718; --danger:#D96B6D; --danger-soft:#301F1F;
+  --info:#7BA3C9; --info-soft:#1B2530;
+  --dry:#D6A25A; --wet:#7BA9CD;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+  --stage:#0C0B08; --stage-ink:#F2EFE9; --stage-muted:#9C958C; --stage-line:#2A2822;
+}
+/* app-local theme override, driven by the prototype's own ◐ button */
+#app[data-app="light"]{
+  --bg:#FBFAF8; --surface:#FFFFFF; --sunken:#F2F0EC; --border:#E4E0D9;
+  --text:#1C1A17; --muted:#6B6560; --faint:#9A938C;
+  --accent:#3F6E5E; --accent-soft:#E6EFEA; --accent-ink:#2C5245;
+  --warn:#B4762A; --warn-soft:#F7EEDF; --danger:#A4383A; --danger-soft:#F7E7E7;
+  --info:#3A5B7A; --info-soft:#E5EDF4; --dry:#C08A3E; --wet:#4A7EA5;
+  --shadow:0 1px 2px rgba(28,26,23,.05), 0 10px 30px -18px rgba(28,26,23,.35);
+}
+#app[data-app="dark"]{
+  --bg:#14130F; --surface:#1E1C18; --sunken:#100F0C; --border:#33302A;
+  --text:#F2EFE9; --muted:#9C958C; --faint:#77716A;
+  --accent:#6FA891; --accent-soft:#22332C; --accent-ink:#8FC2AC;
+  --warn:#D69E52; --warn-soft:#2E2718; --danger:#D96B6D; --danger-soft:#301F1F;
+  --info:#7BA3C9; --info-soft:#1B2530; --dry:#D6A25A; --wet:#7BA9CD;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+}
+
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  margin:0; background:var(--stage); color:var(--stage-ink);
+  font-family:var(--fs); overflow:hidden; -webkit-font-smoothing:antialiased;
+}
+button{font:inherit; color:inherit; background:none; border:none; cursor:pointer; padding:0}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
+
+/* ══ stage (desktop) ══ */
+.stage{display:flex; height:100dvh; align-items:stretch}
+.side{
+  flex:0 0 268px; border-inline-end:1px solid var(--stage-line);
+  padding:26px 20px; overflow-y:auto; background:var(--stage);
+}
+.brandmark{font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); font-weight:600}
+.brandname{font-size:24px; font-weight:700; letter-spacing:-.025em; margin:6px 0 4px}
+.brandnote{font-size:12.5px; color:var(--stage-muted); line-height:1.5; margin:0 0 22px}
+.grp{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--stage-muted);
+  font-weight:600; margin:20px 0 7px}
+.slink{
+  display:flex; align-items:center; gap:9px; width:100%; text-align:start;
+  padding:8px 10px; border-radius:8px; font-size:13.5px; color:var(--stage-ink);
+}
+.slink:hover{background:rgba(127,127,127,.1)}
+.slink.on{background:var(--accent); color:#fff; font-weight:500}
+.slink .n{font-size:10.5px; opacity:.6; font-variant-numeric:tabular-nums; min-width:14px}
+.sfoot{margin-top:26px; padding-top:18px; border-top:1px solid var(--stage-line);
+  font-size:11.5px; color:var(--stage-muted); line-height:1.6}
+
+.field{flex:1 1 auto; display:flex; flex-direction:column; align-items:center;
+  justify-content:center; gap:16px; padding:24px; min-width:0}
+.fieldbar{display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center}
+.tgl{
+  display:inline-flex; align-items:center; gap:6px; border:1px solid var(--stage-line);
+  border-radius:999px; padding:6px 13px; font-size:12.5px; color:var(--stage-muted);
+  background:var(--stage);
+}
+.tgl:hover{border-color:var(--accent); color:var(--accent)}
+.tgl b{font-weight:600; color:var(--stage-ink)}
+.caption{font-size:12px; color:var(--stage-muted); text-align:center; max-width:390px; line-height:1.5}
+
+/* ══ device ══ */
+.device{
+  width:390px; height:844px; max-height:calc(100dvh - 130px); flex:0 0 auto;
+  border-radius:42px; padding:11px; background:#26241F;
+  box-shadow:0 2px 4px rgba(0,0,0,.2), 0 30px 70px -30px rgba(0,0,0,.55);
+}
+:root[data-theme="dark"] .device, :root:not([data-theme="light"]) .device{background:#2E2B25}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .device{background:#26241F}}
+#app{
+  width:100%; height:100%; border-radius:32px; overflow:hidden; position:relative;
+  background:var(--bg); color:var(--text); display:flex; flex-direction:column;
+  font-size:16px; line-height:1.5;
+}
+#app[dir="rtl"]{font-family:var(--fh)}
+
+/* ══ mobile: prototype fills the viewport ══ */
+.mobar{display:none}
+@media (max-width:820px){
+  .side{display:none}
+  .stage{height:calc(100dvh - 46px)}
+  .field{padding:0; gap:0; height:100%; justify-content:flex-start}
+  .caption{display:none}
+  .fieldbar{display:none}
+  .device{width:100%; height:100%; max-height:none; border-radius:0; padding:0; box-shadow:none}
+  #app{border-radius:0}
+  .mobar{
+    display:flex; align-items:center; gap:8px; height:46px; flex:0 0 46px; width:100%;
+    padding:0 12px; border-top:1px solid var(--stage-line); background:var(--stage);
+  }
+  .mobar .mname{flex:1 1 auto; font-size:13px; font-weight:600; letter-spacing:-.01em;
+    text-align:start; display:flex; align-items:center; gap:7px; min-width:0}
+  .mobar .mname span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .mobar .mname::after{content:"▾"; font-size:10px; color:var(--stage-muted)}
+  .mbtn{border:1px solid var(--stage-line); border-radius:999px; padding:5px 11px;
+    font-size:12px; color:var(--stage-muted); flex:0 0 auto}
+  .picker{
+    position:fixed; inset:0; z-index:60; background:rgba(0,0,0,.45);
+    display:none; align-items:flex-end;
+  }
+  .picker.open{display:flex}
+  .picker-in{width:100%; background:var(--stage); border-radius:20px 20px 0 0;
+    padding:14px 14px calc(14px + env(safe-area-inset-bottom)); max-height:76dvh; overflow-y:auto}
+}
+@media (min-width:821px){ .picker{display:none !important} }
+@media (prefers-reduced-motion:reduce){*{animation:none !important; transition:none !important}}
+</style>
+<style>
+/* ══════════ in-app design system ══════════ */
+#app .scroll{flex:1 1 auto; overflow-y:auto; overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch; padding:0 16px 108px}
+#app .pad{padding-top:14px}
+
+/* top bar */
+#app .abar{
+  flex:0 0 auto; display:flex; align-items:center; gap:10px; padding:14px 16px 8px;
+  background:var(--bg); position:relative; z-index:2;
+}
+#app .abar h1{font-size:19px; font-weight:600; letter-spacing:-.02em; margin:0; flex:1 1 auto}
+#app .abar .back{font-size:20px; line-height:1; color:var(--muted); padding:4px 6px; margin-inline-start:-6px}
+#app [dir="rtl"] .back, #app[dir="rtl"] .back{transform:scaleX(-1)}
+#app .sync{display:inline-flex; align-items:center; gap:5px; font-size:11.5px; color:var(--faint)}
+#app .sync i{width:6px; height:6px; border-radius:50%; background:var(--accent); display:block}
+
+/* generic */
+#app .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  box-shadow:var(--shadow); padding:14px 15px; margin-bottom:12px}
+#app .lbl{font-size:11px; font-weight:600; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--faint); margin:20px 0 9px}
+#app .muted{color:var(--muted)}
+#app .tiny{font-size:12.5px; line-height:1.5}
+#app .num{font-variant-numeric:tabular-nums}
+#app .row{display:flex; align-items:center; gap:10px}
+#app .sp{flex:1 1 auto}
+
+#app .btn{
+  display:flex; align-items:center; justify-content:center; gap:8px; width:100%;
+  min-height:50px; border-radius:var(--r-sm); background:var(--accent); color:#fff;
+  font-size:16px; font-weight:600; letter-spacing:-.01em;
+}
+#app[data-app="dark"] .btn, :root[data-theme="dark"] #app .btn{color:#0F1512}
+#app .btn.ghost{background:transparent; color:var(--muted); border:1px solid var(--border); font-weight:500}
+#app .btn.soft{background:var(--accent-soft); color:var(--accent-ink); font-weight:600}
+#app .btn.sm{min-height:42px; font-size:14px}
+#app .btnrow{display:flex; gap:9px}
+#app .btnrow .btn{flex:1 1 0}
+
+#app .chip{
+  display:inline-flex; align-items:center; gap:5px; border:1px solid var(--border);
+  border-radius:999px; padding:5px 11px; font-size:12.5px; color:var(--muted);
+  background:var(--surface);
+}
+#app .chip.on{border-color:var(--accent); color:var(--accent); background:var(--accent-soft)}
+
+/* score card */
+#app .score{display:flex; align-items:flex-end; gap:12px}
+#app .score .v{font-size:34px; font-weight:700; letter-spacing:-.035em; line-height:1;
+  font-variant-numeric:tabular-nums}
+#app .score .d{font-size:13px; color:var(--muted); padding-bottom:4px}
+#app .spark{height:30px; width:100%; margin-top:10px; display:block}
+
+/* quick log grid */
+#app .qgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:9px}
+#app .qtile{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:12px 4px 10px; display:flex; flex-direction:column; align-items:center; gap:6px;
+  box-shadow:var(--shadow); min-height:76px; justify-content:center;
+}
+#app .qtile:active{background:var(--sunken)}
+#app .qtile .ic{width:26px; height:26px; color:var(--accent)}
+#app .qtile .t{font-size:11.5px; font-weight:500; letter-spacing:-.01em}
+
+/* usual tiles */
+#app .usual{display:grid; grid-template-columns:1fr 1fr; gap:9px}
+#app .utile{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--r-md);
+  padding:12px 13px; text-align:start; box-shadow:var(--shadow);
+}
+#app .utile .t{font-size:14px; font-weight:500; letter-spacing:-.01em; line-height:1.3}
+#app .utile .s{font-size:11.5px; color:var(--faint); margin-top:4px}
+
+/* event rows */
+#app .ev{display:flex; gap:11px; align-items:flex-start; padding:9px 2px;
+  border-bottom:1px solid var(--border)}
+#app .ev:last-child{border-bottom:none}
+#app .ev .tm{font-size:12.5px; color:var(--faint); font-variant-numeric:tabular-nums;
+  flex:0 0 40px; padding-top:2px}
+#app .ev .ic{flex:0 0 20px; width:20px; height:20px; color:var(--muted); margin-top:1px}
+#app .ev .bd{flex:1 1 auto; min-width:0}
+#app .ev .bd .t{font-size:14.5px; line-height:1.4}
+#app .ev .bd .s{display:block; font-size:12px; color:var(--faint); margin-top:2px}
+#app .ev .more{color:var(--faint); font-size:16px; padding:0 4px}
+
+/* trial strip */
+#app .phase{display:flex; gap:3px; margin:9px 0 6px; align-items:center}
+#app .pdot{width:9px; height:9px; border-radius:50%; background:var(--border); flex:0 0 auto}
+#app .pdot.done{background:var(--accent)}
+#app .psep{width:1px; height:12px; background:var(--border); margin:0 4px; flex:0 0 auto}
+
+/* fab */
+#app .fab{
+  position:absolute; inset-inline-end:18px; bottom:calc(66px + 16px); width:58px; height:58px;
+  border-radius:50%; background:var(--accent); color:#fff; display:flex; align-items:center;
+  justify-content:center; box-shadow:0 6px 20px -6px rgba(0,0,0,.45); z-index:4; font-size:28px;
+  font-weight:300; line-height:1;
+}
+#app[data-app="dark"] .fab, :root[data-theme="dark"] #app .fab{color:#0F1512}
+
+/* tab bar */
+#app .tabs{
+  flex:0 0 auto; display:flex; border-top:1px solid var(--border); background:var(--surface);
+  padding-bottom:env(safe-area-inset-bottom); z-index:5;
+}
+#app .tab{flex:1 1 0; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:9px 0 10px; color:var(--faint); font-size:10.5px; font-weight:500}
+#app .tab.on{color:var(--accent)}
+#app .tab svg{width:22px; height:22px}
+
+/* sheets */
+#app .veil{position:absolute; inset:0; background:rgba(0,0,0,.4); z-index:8; display:none}
+#app .veil.open{display:block}
+#app .sheet{
+  position:absolute; inset-inline:0; bottom:0; z-index:9; background:var(--bg);
+  border-radius:var(--r-lg) var(--r-lg) 0 0; max-height:94%; display:none;
+  flex-direction:column; box-shadow:0 -8px 30px -12px rgba(0,0,0,.4);
+}
+#app .sheet.open{display:flex}
+#app .sheet .sh{display:flex; align-items:center; gap:10px; padding:16px 16px 10px}
+#app .sheet .sh h2{font-size:17px; font-weight:600; margin:0; flex:1 1 auto; letter-spacing:-.015em}
+#app .sheet .sh .x{color:var(--muted); font-size:19px; padding:2px 6px}
+#app .sheet .sb{overflow-y:auto; padding:0 16px 20px; -webkit-overflow-scrolling:touch}
+#app .grab{width:38px; height:4px; border-radius:2px; background:var(--border);
+  margin:8px auto 0; flex:0 0 auto}
+
+/* bristol grid */
+#app .bgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:8px}
+#app .btile{
+  border:1px solid var(--border); border-radius:var(--r-md); background:var(--surface);
+  padding:9px 3px 8px; display:flex; flex-direction:column; align-items:center; gap:5px;
+}
+#app .btile svg{width:42px; height:26px}
+#app .btile .n{font-size:15px; font-weight:600; font-variant-numeric:tabular-nums; line-height:1}
+#app .btile .w{font-size:9.5px; color:var(--faint); text-align:center; line-height:1.25;
+  padding:0 2px; letter-spacing:-.01em}
+#app .btile.sel{border-color:var(--accent); background:var(--accent-soft); border-width:2px; padding:8px 2px 7px}
+#app .btile[data-tone="dry"] svg{color:var(--dry)}
+#app .btile[data-tone="mid"] svg{color:var(--accent)}
+#app .btile[data-tone="wet"] svg{color:var(--wet)}
+#app .norm{font-size:11.5px; color:var(--faint); text-align:center; margin:10px 0 0}
+
+/* saved strip */
+#app .saved{
+  display:flex; align-items:center; gap:8px; margin:14px 0 10px; padding:10px 12px;
+  background:var(--accent-soft); color:var(--accent-ink); border-radius:var(--r-sm);
+  font-size:13.5px; font-weight:500;
+}
+#app .saved .bar{flex:1 1 auto; height:2px; background:rgba(127,127,127,.25); border-radius:2px; overflow:hidden}
+#app .saved .bar i{display:block; height:100%; background:currentColor; width:100%;
+  transform-origin:left; animation:shrink 3s linear forwards}
+#app[dir="rtl"] .saved .bar i{transform-origin:right}
+@keyframes shrink{to{transform:scaleX(0)}}
+#app .flags{display:flex; flex-wrap:wrap; gap:7px; margin-top:4px}
+
+/* segmented scale */
+#app .seg{display:flex; gap:6px; margin:6px 0}
+#app .seg button{
+  flex:1 1 0; min-height:44px; border:1px solid var(--border); border-radius:var(--r-sm);
+  background:var(--surface); font-size:14px; color:var(--muted); font-variant-numeric:tabular-nums;
+}
+#app .seg button.on{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600}
+#app[data-app="dark"] .seg button.on, :root[data-theme="dark"] #app .seg button.on{color:#0F1512}
+#app .scalerow{margin-bottom:16px}
+#app .scalerow .hd{display:flex; align-items:center; gap:8px; font-size:14px; font-weight:500}
+#app .scalerow .hd .e{font-size:17px}
+#app .scalerow .hd .sp{flex:1 1 auto}
+
+/* meal composer */
+#app .mfield{
+  border:1px solid var(--border); border-radius:var(--r-sm); background:var(--surface);
+  padding:12px 13px; display:flex; gap:10px; align-items:flex-start; min-height:74px;
+}
+#app .mfield textarea{
+  flex:1 1 auto; border:none; background:none; resize:none; font:inherit; font-size:16px;
+  color:var(--text); outline:none; min-height:48px; line-height:1.45; padding:0; width:100%;
+}
+#app .mfield textarea::placeholder{color:var(--faint)}
+#app .mic{flex:0 0 auto; width:34px; height:34px; border-radius:50%; background:var(--sunken);
+  display:flex; align-items:center; justify-content:center; color:var(--muted)}
+#app .mrow{display:flex; gap:7px; margin:10px 0 4px; flex-wrap:wrap}
+#app .parsed{border-top:1px solid var(--border); margin-top:14px; padding-top:12px}
+#app .phead{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:600;
+  letter-spacing:.11em; text-transform:uppercase; color:var(--faint); margin-bottom:8px}
+#app .pi{
+  display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--border);
+  opacity:0; transform:translateY(6px); animation:rise .28s ease forwards;
+}
+@keyframes rise{to{opacity:1; transform:none}}
+#app .pi .e{font-size:19px; flex:0 0 24px; text-align:center}
+#app .pi .nm{flex:1 1 auto; font-size:15px; min-width:0}
+#app .pi .nm.low{text-decoration:underline dotted var(--warn); text-underline-offset:4px}
+#app .pi .qt{font-size:13.5px; color:var(--muted); font-variant-numeric:tabular-nums;
+  border:1px solid var(--border); border-radius:6px; padding:4px 8px; white-space:nowrap}
+#app .pi .rm{color:var(--faint); font-size:15px; padding:0 3px}
+#app .qmark{color:var(--warn); font-size:12px; font-weight:600; margin-inline-start:5px}
+#app .spin{display:inline-block; width:11px; height:11px; border:1.5px solid var(--border);
+  border-top-color:var(--accent); border-radius:50%; animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* insights */
+#app .meta{background:var(--sunken); border-radius:var(--r-sm); padding:11px 13px;
+  font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:8px; margin-bottom:6px}
+#app .conf{display:inline-flex; align-items:center; gap:6px; font-size:10.5px; font-weight:700;
+  letter-spacing:.09em; text-transform:uppercase}
+#app .dots{display:inline-flex; gap:2.5px}
+#app .dots i{width:6px; height:6px; border-radius:50%; background:currentColor; opacity:.22; display:block}
+#app .dots i.f{opacity:1}
+#app .c-med{color:var(--accent)} #app .c-low{color:var(--warn)} #app .c-high{color:var(--accent)}
+#app .c-done{color:var(--info)}
+#app .icard .h{display:flex; align-items:flex-start; gap:8px; margin-bottom:7px}
+#app .icard .nm{font-size:16.5px; font-weight:600; letter-spacing:-.015em; flex:1 1 auto; line-height:1.25}
+#app .icard .cl{font-size:13.5px; color:var(--muted); line-height:1.45; margin:0 0 10px}
+#app .cmp{margin:11px 0 12px}
+#app .cmp .lin{display:flex; align-items:center; gap:9px; margin-bottom:7px; font-size:12px}
+#app .cmp .k{flex:0 0 84px; color:var(--muted)}
+#app .cmp .tr{flex:1 1 auto; height:9px; border-radius:5px; background:var(--sunken); overflow:hidden}
+#app .cmp .tr i{display:block; height:100%; border-radius:5px}
+#app .cmp .p{flex:0 0 38px; text-align:end; font-variant-numeric:tabular-nums; font-weight:600}
+#app .cmp .lin.a i{background:var(--warn)} #app .cmp .lin.b i{background:var(--accent)}
+#app .srow{display:flex; align-items:center; gap:9px; padding:11px 0;
+  border-bottom:1px solid var(--border); font-size:14px}
+#app .srow:last-child{border-bottom:none}
+#app .srow .s{font-size:12px; color:var(--faint)}
+#app .fold{width:100%; display:flex; align-items:center; gap:7px; font-size:11px; font-weight:600;
+  letter-spacing:.11em; text-transform:uppercase; color:var(--faint); margin:22px 0 8px}
+#app .fold .ar{font-size:9px; transition:transform .2s}
+#app .fold.open .ar{transform:rotate(180deg)}
+
+/* evidence */
+#app .ehead{margin-bottom:16px}
+#app .ehead .cf{margin-bottom:6px}
+#app .ehead .sub{font-size:13.5px; color:var(--muted)}
+#app .sec{margin:20px 0 0}
+#app .sec .st{font-size:11px; font-weight:600; letter-spacing:.11em; text-transform:uppercase;
+  color:var(--faint); display:flex; align-items:center; gap:9px; margin-bottom:10px}
+#app .sec .st::after{content:""; flex:1 1 auto; height:1px; background:var(--border)}
+#app .big{display:flex; align-items:baseline; gap:8px; margin:12px 0 4px}
+#app .big .v{font-size:27px; font-weight:700; letter-spacing:-.03em; font-variant-numeric:tabular-nums}
+#app .big .u{font-size:13px; color:var(--muted)}
+#app .adj{display:flex; flex-wrap:wrap; gap:7px; margin-bottom:9px}
+#app .warnbox{background:var(--warn-soft); border-radius:var(--r-sm); padding:12px 13px;
+  font-size:13.5px; line-height:1.5; display:flex; gap:9px}
+#app .warnbox .i{color:var(--warn); flex:0 0 auto; font-size:15px; line-height:1.2}
+#app .plain{font-size:14.5px; line-height:1.6; color:var(--text)}
+#app .audit{width:100%; text-align:center; font-size:13.5px; color:var(--accent);
+  padding:13px; border:1px dashed var(--border); border-radius:var(--r-sm); margin-top:14px}
+
+/* trial */
+#app .ph{display:flex; gap:11px; padding:11px 0; border-bottom:1px solid var(--border)}
+#app .ph .d{flex:0 0 62px; font-size:12.5px; color:var(--muted); font-variant-numeric:tabular-nums;
+  font-weight:600; padding-top:1px}
+#app .ph .b{flex:1 1 auto; font-size:14px; line-height:1.4}
+#app .ph .b s{display:block; font-size:12.5px; color:var(--faint); text-decoration:none; margin-top:2px}
+#app .ph.rep .b s{color:var(--accent)}
+#app .lock{background:var(--sunken); border-radius:var(--r-sm); padding:13px;
+  font-size:13.5px; line-height:1.55; margin:14px 0}
+#app .lock b{font-weight:600}
+#app .verdict{
+  text-align:center; padding:22px 16px; border-radius:var(--r-md); background:var(--accent-soft);
+  color:var(--accent-ink); margin-bottom:14px;
+}
+#app .verdict .t{font-size:19px; font-weight:700; letter-spacing:-.02em; line-height:1.25}
+#app .verdict .p{font-size:13.5px; margin-top:7px; opacity:.85}
+#app .kv{display:flex; justify-content:space-between; gap:12px; padding:9px 0;
+  border-bottom:1px solid var(--border); font-size:14px}
+#app .kv:last-child{border-bottom:none}
+#app .kv b{font-weight:600; font-variant-numeric:tabular-nums}
+#app .limits{background:var(--sunken); border-radius:var(--r-sm); padding:13px;
+  font-size:13px; line-height:1.55; color:var(--muted); margin:16px 0}
+
+/* more */
+#app .lrow{display:flex; align-items:center; gap:11px; padding:13px 0;
+  border-bottom:1px solid var(--border)}
+#app .lrow:last-child{border-bottom:none}
+#app .lrow .nm{flex:1 1 auto; font-size:15px}
+#app .lrow .nm s{display:block; font-size:12px; color:var(--faint); text-decoration:none; margin-top:2px}
+#app .sw{width:44px; height:26px; border-radius:999px; background:var(--border); flex:0 0 auto;
+  position:relative; transition:background .18s}
+#app .sw i{position:absolute; top:3px; inset-inline-start:3px; width:20px; height:20px;
+  border-radius:50%; background:var(--surface); box-shadow:0 1px 3px rgba(0,0,0,.25);
+  transition:inset-inline-start .18s}
+#app .sw.on{background:var(--accent)}
+#app .sw.on i{inset-inline-start:21px}
+#app .egress{background:var(--info-soft); border-radius:var(--r-sm); padding:12px 13px;
+  font-size:12.5px; line-height:1.55; color:var(--text)}
+
+/* empty / misc */
+#app .redflag{background:var(--danger-soft); border:1px solid var(--danger); border-radius:var(--r-md);
+  padding:13px 14px; margin-bottom:12px}
+#app .redflag .t{font-size:14.5px; font-weight:600; color:var(--danger); margin-bottom:4px}
+#app .redflag .b{font-size:13px; line-height:1.5; color:var(--text)}
+#app .daysep{display:flex; align-items:center; gap:9px; margin:18px 0 4px;
+  font-size:12.5px; font-weight:600; color:var(--muted)}
+#app .daysep .sc{font-size:11.5px; color:var(--faint); font-weight:500; font-variant-numeric:tabular-nums}
+#app .daysep::after{content:""; flex:1 1 auto; height:1px; background:var(--border)}
+</style>
+<div class="stage">
+  <aside class="side">
+    <div class="brandmark">Prototype</div>
+    <div class="brandname">FoodTrack</div>
+    <p class="brandnote">Thirty-one screens, built to size. Every flow in <b>08-user-flows.md</b> has a picture here.</p>
+    <div id="sidenav"></div>
+    <div class="sfoot">Colours, type and tap targets from <b>05-ux-design.md</b>. Screens and controls from <b>09-screen-inventory.md</b>.</div>
+  </aside>
+
+  <div class="field">
+    <div class="device"><div id="app" dir="ltr"></div></div>
+    <div class="fieldbar">
+      <button class="tgl" id="tLang">Language <b id="tLangV">English</b></button>
+      <button class="tgl" id="tTheme">App theme <b id="tThemeV">System</b></button>
+      <button class="tgl" id="tReset">Reset</button>
+    </div>
+    <p class="caption" id="cap"></p>
+  </div>
+</div>
+
+<div class="mobar">
+  <button class="mname" id="mPick"><span id="mName">Today</span></button>
+  <button class="mbtn" id="mLang">א</button>
+  <button class="mbtn" id="mTheme">◐</button>
+</div>
+
+<div class="picker" id="picker"><div class="picker-in" id="pickerIn"></div></div>
+<script>
+(function(){
+"use strict";
+
+/* ─────────────── icons ─────────────── */
+var I = {
+  stool:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 20h7a3 3 0 0 0 .4-5.97A2.6 2.6 0 0 0 14.4 10 2.4 2.4 0 0 0 12 6.6 2.2 2.2 0 0 0 9.9 9.4 2.6 2.6 0 0 0 8 14a3 3 0 0 0 .5 6Z"/></svg>',
+  meal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3v8a2 2 0 0 0 4 0V3M8 11v10M17 3c-1.7 1-2.5 3-2.5 5.5S15.3 13 17 13.5V21"/></svg>',
+  symptom:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c4.5-3 8-6.2 8-10a4.6 4.6 0 0 0-8-3.1A4.6 4.6 0 0 0 4 11c0 3.8 3.5 7 8 10Z"/><path d="M7.5 11.5h2l1.2-2.2 1.6 4 1.2-1.8h3"/></svg>',
+  weight:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 20h15l-2-11h-11l-2 11Z"/><path d="M12 9V6M9.5 6h5"/></svg>',
+  coffee:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V8Z"/><path d="M17 9.5h1.6a2.4 2.4 0 0 1 0 4.8H17"/><path d="M7 3v2M11 3v2"/></svg>',
+  pill:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8.5" width="18" height="7" rx="3.5"/><path d="M12 8.5v7"/></svg>',
+  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5 9.5 17.5 19.5 7"/></svg>',
+  today:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 9.5h17M8 3v3.5M16 3v3.5"/><circle cx="12" cy="14.5" r="1.6" fill="currentColor" stroke="none"/></svg>',
+  line:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16"/><circle cx="7" cy="8" r="1.8"/><circle cx="7" cy="16" r="1.8"/><path d="M12 8h8M12 16h6"/></svg>',
+  bulb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17.5h6M10 20.5h4"/><path d="M12 3a6 6 0 0 0-3.4 10.9c.5.4.9 1 .9 1.6h5c0-.7.4-1.2.9-1.6A6 6 0 0 0 12 3Z"/></svg>',
+  dots:'<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5.5" cy="12" r="1.9"/><circle cx="12" cy="12" r="1.9"/><circle cx="18.5" cy="12" r="1.9"/></svg>',
+  mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="10" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>',
+  drop:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c3.2 3.6 6 6.8 6 9.8a6 6 0 0 1-12 0c0-3 2.8-6.2 6-9.8Z"/></svg>',
+  run:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="15" cy="4.6" r="1.9"/><path d="M9 21l2.5-5.5L9 12.5 10 8l3.5 2 2.5 3.5 2.5 1M10 8 6.5 9.5 5 13"/></svg>',
+  note:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5h14v11l-4.5 4.5H5Z"/><path d="M19 15.5h-4.5V20M8.5 9h7M8.5 12.5h5"/></svg>',
+  search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M15.5 15.5 20 20"/></svg>',
+  alert:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.5 21 20H3Z"/><path d="M12 10v4M12 17h.01"/></svg>',
+  flask:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3h4M10.5 3v6L5.5 18a2 2 0 0 0 1.8 3h9.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.6 14h8.8"/></svg>'
+};
+
+/* Bristol illustrations — stroke-based, inherit currentColor (spec §9 deliverable 2) */
+var B = [
+ '<svg viewBox="0 0 60 34" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="17" cy="17" r="5"/><circle cx="30" cy="14" r="4.2"/><circle cx="42" cy="18" r="4.6"/></svg>',
+ '<svg viewBox="0 0 60 34" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M9 17q0-6 5.5-6 3.5 0 4 3 1-3.5 5.5-3.5t5.5 3.5q.5-3.5 5-3.5t5 3.5q.5-3 4-3 5.5 0 5.5 6t-5.5 6q-3.5 0-4-3-.5 3.5-5 3.5t-5-3.5q-1 3.5-5.5 3.5T18.5 20q-.5 3-4 3Q9 23 9 17Z"/></svg>',
+ '<svg viewBox="0 0 60 34" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="10" y="11" width="40" height="12" rx="6"/><path d="M21 11.6v10.8M30 11.6v10.8M39 11.6v10.8"/></svg>',
+ '<svg viewBox="0 0 60 34" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="8" y="11" width="44" height="12" rx="6"/></svg>',
+ '<svg viewBox="0 0 60 34" fill="none" stroke="currentColor" stroke-width="1.7"><ellipse cx="17" cy="18" rx="8.5" ry="6"/><ellipse cx="32" cy="14.5" rx="7" ry="5"/><ellipse cx="45.5" cy="19" rx="7" ry="5.5"/></svg>',
+ '<svg viewBox="0 0 60 34" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M8 17.5 12 11.5l4 3.5 4-4.5 5 3.5 5-4 5 4 5-3.5 4 3.5 4-3 3 6.5-2 4-6 1-5 2.5-5-3-5 3-5-3-5 2.5-5-2-4 1Z"/></svg>',
+ '<svg viewBox="0 0 60 34" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M8 12c4-3.2 8-3.2 12 0s8 3.2 12 0 8-3.2 12 0"/><path d="M8 19c4-3.2 8-3.2 12 0s8 3.2 12 0 8-3.2 12 0"/><path d="M12 26c3.4-2.4 6.8-2.4 10.2 0s6.8 2.4 10.2 0"/></svg>'
+];
+var TONE = ['dry','dry','mid','mid','mid','wet','wet'];
+
+/* ─────────────── copy ─────────────── */
+var T = {
+ en:{
+  dir:'ltr', name:'English',
+  tabs:['Today','Timeline','Insights','More'],
+  date:'Thursday, 21 August', synced:'synced',
+  score:'Gut day so far', of100:'/ 100', last7:'last 7 days',
+  quicklog:'Quick log', ql:['Stool','Meal','Symptom','Weight'],
+  usual:'Usual for this time', logged:'logged',
+  usual1:'Coffee with milk', usual2:'Toast, avocado',
+  todayso:'Today so far',
+  ev:[['08:12','coffee','Coffee with milk',''],
+      ['09:40','stool','Bristol 4','normal · no urgency'],
+      ['13:05','meal','Pita, hummus, salad, iced coffee','4 items']],
+  trialCard:'Dairy trial', trialDay:'elimination · day 6 of 21', onTrack:'On track — 13 of 13 days clean',
+  checkinQ:'How was today?', checkinSub:'Three taps. Then you are done.',
+  energy:'Energy', mood:'Mood', sleep:'Sleep', stress:'Stress', addStress:'add stress',
+  nothing:'Nothing to report', done:'Done',
+  nothingWhy:'An explicit “all fine” is real data. It roughly doubles what the analysis can do with your week.',
+  quality:'quality',
+  mealTitle:'Log a meal', at:'at',
+  mealPh:'What did you eat? Type it however you say it.',
+  demo:'Try it', photo:'Photo', favs:'Favourites', repeat:'Repeat last',
+  parsed:'Parsed', parsing:'reading what you wrote',
+  demoText:'pita with hummus, vegetable salad and an iced coffee',
+  items:[['🫓','Pita','1 unit',1],['🥣','Hummus','3 tbsp',1],['🥗','Vegetable salad','1 bowl',0],['🧋','Iced coffee','1 cup',1]],
+  tags:'Tags', tag1:'lunch', tag2:'home', save:'Save',
+  neverBlocked:'Offline? It saves anyway and parses itself later. You are never blocked.',
+  stoolTitle:'Bowel movement',
+  bw:['Separate hard lumps','Lumpy sausage','Cracked sausage','Smooth sausage','Soft blobs','Mushy, ragged','Entirely liquid'],
+  bnorm:'Type 3–5 is the normal range',
+  savedTxt:'Saved', addMore:'anything to add?',
+  urgency:'Urgency', complete:'Complete', pain:'Pain', blood:'Blood', mucus:'Mucus',
+  oneTap:'One tap saved it. Everything below is optional and disappears on its own.',
+  tlTitle:'Timeline',
+  d20:'Wed 20 Aug', d19:'Tue 19 Aug', d18:'Mon 18 Aug', scoreWord:'score',
+  ev20:[['07:55','coffee','Coffee, black',''],
+        ['08:30','pill','Vitamin D',''],
+        ['09:10','stool','Bristol 6','urgent · incomplete'],
+        ['12:40','meal','Shawarma in lafa, chips, salad',''],
+        ['19:20','symptom','Bloating 7/10','lasted 3 hours'],
+        ['22:00','check','Check-in','energy 2 · slept 5h30m']],
+  ev19:[['08:05','meal','Yogurt, granola, banana',''],
+        ['10:15','stool','Bristol 4','normal'],
+        ['13:30','meal','Chicken, rice, salad',''],
+        ['21:40','check','Nothing to report','all clear']],
+  inTitle:'Insights',
+  basedOn:'Based on 98 days · 84 well-logged', lastRun:'Analysed 2 hours ago',
+  worth:'Worth testing', early:'Early signals — not findings yet',
+  ruled:'Ruled out', notEnough:'Not enough data yet',
+  medium:'medium', low:'low', high:'high', confidence:'confidence',
+  i1n:'Dairy (lactose)', i1c:'25 points more loose stools, 6–24 hours later',
+  i2n:'Large late meals', i2c:'19 points more mornings with bloating over 5/10',
+  withx:'With dairy', without:'Without',
+  e1:'Onion & garlic (fructans)', e1s:'63 days · effect too small to act on',
+  e2:'Coffee on an empty stomach', e2s:'22 days · needs more observations',
+  r1:'Gluten', r1s:'Trial completed — probably not a trigger for you. You can stop avoiding it.',
+  n1:'Eggs', n1s:'6 exposure days so far · about 4 more needed',
+  testIt:'Test this properly',
+  ruledWhy:'Giving food back is the most useful thing this app can do, so it gets a headline section — not a footnote.',
+  nvTitle:'Trial complete',
+  nvVerdict:'Dairy is probably fine for you.',
+  nvProb:'93% confident the effect is too small to matter',
+  nvBody:'Over 30 days, 12 challenge servings and 41 logged days, dairy made no difference we can measure to your gut score.',
+  nvReal:'That is a real answer, not a failed test.',
+  nvk:[['Loose stools, normally','31%'],['During elimination','29%'],['When you added it back','30%'],['Adherence','91%'],['Days logged','27 of 30']],
+  nvOutT:'What this rules out',
+  nvOut:'A big effect. If dairy were making your gut clearly worse, 30 days at this dose would have shown it.',
+  nvNotT:'What it does not',
+  nvNot:'A small effect could still be there and we would not catch it. A bigger portion, or a day when other things stack up, might go differently. This is about dairy on its own — not dairy on top of everything else.',
+  nvRemove:'Take dairy off the suspect list',
+  nvNext:'Test something else',
+  nvRetest:'Retest in 6 months',
+  nvWideT:'Six weeks in, nothing stands out.',
+  nvWideB:'I have tested 340 food–outcome combinations and none survives the check I apply. That is more common than the apps suggest, and it is worth knowing.',
+  nvW1:'Widen what you log', nvW2:'Test a suspect properly', nvW3:'Check your transit time',
+  gsTitle:'Week 2 is done',
+  gsSub:'Before we move on —',
+  gsQ:'What do you think was in envelope A2?',
+  gsReal:'The real thing', gsBlank:'The blank', gsNo:'No idea',
+  gsSure:'How sure?',
+  gsWhy:'There is no wrong answer. We compare your guesses to what was actually in there — that is part of the result.',
+  gsSave:'Save and carry on',
+  gsOpenT:'You knew this was the real thing.',
+  gsOpenQ:'How much do you think that affected how you rated the week?',
+  gsScale:['Not at all','A little','Some','Quite a bit','A lot'],
+  gsSureLo:'Just guessing', gsSureHi:'Certain',
+  evTitle:'Dairy (lactose)',
+  evLead:'Enough to test. Not enough to conclude.',
+  evOutcome:'Loose stool (Bristol 6–7) within 6–24 hours',
+  sec1:'What was observed', sec2:'What we accounted for', sec3:'What to be careful about', sec4:'In plain words',
+  diff:'percentage points difference', ci:'95% interval: +9 to +41',
+  adj:['Sleep under 6 hours','Alcohol','High stress','Anti-inflammatories'],
+  held:'The effect held after adjusting — it weakened by 12%.',
+  warnTxt:'8 of your 12 highest-dairy days were weekends, when you also eat out more. That is hard to separate from the dairy itself.',
+  plainTxt:'There is a real pattern here, but eating habits cluster. This could be dairy, or it could be something dairy travels with. Two weeks without it would separate them.',
+  audit:'See the 98 days behind this',
+  notInterested:'Not interested',
+  trTitle:'Test: Dairy', trSub:'Nothing starts until you say so.',
+  phases:[['14 days','Normal eating','baseline'],
+          ['21 days','No dairy at all','elimination'],
+          ['3 days','Still none — letting it settle','washout'],
+          ['3 days','Dairy back: 100ml → 250ml → 500ml milk','challenge'],
+          ['3 days','None again, watching for delayed effects','follow-up']],
+  reuse:'We can reuse your last 14 days as the baseline — saves a week.',
+  total:'44 days total — or 30 if we reuse your baseline.',
+  lockT:'Locked in before we start',
+  lockB:'Measuring loose stools. We will call it real if it moves by 20 points or more. Writing that down now means the answer cannot be moved later.',
+  needLog:'You will need to log on at least 5 days a week.',
+  adjust:'Adjust', start:'Start trial', notNow:'Not now',
+  vTitle:'Dairy trial complete',
+  vVerdict:'Likely a trigger for you', vProb:'92% probability of a real effect',
+  vk:[['Loose stools, normally','38%'],['During elimination','9%'],['When you added it back','41%'],['Adherence','93%'],['Days logged','21 of 23']],
+  vWhy:'The reintroduction is what makes this convincing: symptoms came back within 24 hours of the 250ml challenge, and again at 500ml.',
+  vLimT:'Limitations',
+  vLim:'You knew which phase you were in, which can influence how you rate symptoms. This is one person’s result — yours — and says nothing about anyone else. If this matters a lot, run it again in a few months.',
+  vAvoid:'Add to my avoid list', vAgain:'Run it again',
+  mTitle:'More', trackers:'Trackers', trackersSub:'Each one is a config file, not code',
+  tr:[['Meals','always on'],['Bowel movements','always on'],['Symptoms','6 tracked'],['Daily check-in','21:30'],['Weight','weekly'],['Meds & supplements','2 active'],['Exercise','on'],['Hydration','off']],
+  aiT:'AI provider', aiSub:'Where your words go',
+  aiBody:'Meal text goes to the parser you choose. Stool, symptoms, mood and weight never leave this server — not to any model, ever.',
+  aiNow:'Currently: Claude API for meal parsing · local model for explanations',
+  dataT:'Your data', dataRows:[['Export everything','JSON, CSV or a PDF for your doctor'],['Import','From a previous export'],['Delete everything','Irreversible']],
+  langT:'Language', langV:'English',
+  disc:'Wellness tool. Not a medical device. No diagnoses, ever.',
+  // ── v1.1 additions ──
+  day1Hi:'Nothing logged yet', day1Sub:'Start anywhere. There is no wrong first entry.',
+  day1T:'What happens next',
+  day1a:'Log for a few days — anything at all',
+  day1b:'After about 3 weeks I can start looking for patterns',
+  day1c:'Around 3–4 months a clear effect shows up. This is a slow tool.',
+  day1btn:'How this works',
+  pickTitle:'What do you want to log?', pickSearch:'Search',
+  trackers2:[['stool','Bowel movement','fastest — one tap'],['meal','Meal','type, say or photograph it'],
+    ['symptom','Symptom','bloating, pain, reflux…'],['check','Evening check-in','energy, mood, sleep'],
+    ['weight','Weight & body','weight, waist, blood pressure'],['drop','Water','one tap per glass'],
+    ['pill','Medication','and supplements'],['run','Exercise','type, duration, intensity'],
+    ['note','Note','anything the trackers miss']],
+  manage:'Manage trackers',
+  symTitle:'Symptom', symWhich:'Which?',
+  syms:['Bloating','Gas','Pain','Reflux','Nausea','Urgency','Fever','Can’t keep fluids down'],
+  started:'Started', lasted:'Lasted', where:'Where',
+  symNote:'Pick as many as you need — each one is saved separately so the analysis can tell them apart.',
+  wTitle:'Weight', wTrend:'78.9 → 78.4 over 14 days', wMore:'Add waist, body fat or blood pressure',
+  wNote:'Prefilled with your last reading. Change it or just save.',
+  medTitle:'Medication', medYours:'Yours', medAdd:'Add', medSched:'Scheduled today',
+  meds:[['Vitamin D','1000 IU'],['Omeprazole','20 mg']],
+  medClass:'Class: PPI — counted as a confounder',
+  medNote:'The class is what the analysis uses. We never suggest starting, stopping or changing anything.',
+  itemTitle:'Which one?', itemYouTyped:'You typed', itemAlts:'Closest matches',
+  alts:[['Mixed vegetable salad','in your library · logged 12×'],['Israeli salad','canonical food'],
+        ['Green salad','canonical food'],['Salad with tahini','in your library · logged 3×']],
+  itemCreate:'Create a new food', itemUse:'Use this',
+  itemLearn:'Picking one teaches your library. Next time these words resolve instantly.',
+  actTitle:'Pita, hummus, salad', actEdit:'Edit', actAgain:'Log this again now',
+  actDup:'Duplicate', actTime:'Change time', actSplit:'Split meal', actDel:'Delete',
+  daysTitle:'The days behind this', daysFilter:'All days',
+  daysCols:['exposed','outcome','weight'],
+  daysRows:[['Aug 14','dairy','Bristol 6','0.9','out'],['Aug 13','none','Bristol 4','1.0',''],
+            ['Aug 12','dairy','no stool logged','0.3','ex'],['Aug 11','none','Bristol 3','0.8',''],
+            ['Aug 10','dairy','Bristol 7','1.0','out'],['Aug 9','dairy','Bristol 4','0.9','']],
+  daysEx:'excluded — day too thinly logged', daysTap:'Tap any day to open it.',
+  trTitleC:'Trends', period:'90 days',
+  charts:[['Bristol distribution','where your stools land, 1–7'],
+          ['Symptom load','trial phases shaded'],
+          ['Weight','smoothed, not point-to-point'],
+          ['Gut day score','with a 7-day mean'],
+          ['Fibre vs stool quality','a picture, not a finding'],
+          ['Logging completeness','why your data is thick or thin']],
+  foodTitle:'Food library', foodAdd:'Add food',
+  foodDup:'2 possible duplicates', foodReview:'Review',
+  foods:[['Hummus','logged 47× · usual 3 tbsp',''],['Pita','logged 41× · usual 1 unit',''],
+         ['Coffee with milk','logged 34× · usual 1 cup',''],['“shakshuka”','logged 3× · never matched','q'],
+         ['Tahini','logged 19× · usual 2 tbsp','']],
+  foodNote:'This fills itself as you log. Every correction you make lands here.',
+  flagTitle:'Worth getting checked',
+  flagBody:'You logged blood in a bowel movement. That is something a doctor should look at — most causes are minor, but it is not something to work out from an app.',
+  flagCalm:'This will not affect anything else here.',
+  flagOk:'I’ve got it', flagWhy:'What triggered this',
+  flagWhyT:'What triggered this', flagWhyLead:'Two things you logged match a rule that says “get this looked at”.',
+  flagWhyRows:[['Today 09:40','Blood flagged on a bowel movement'],['Aug 18 07:20','Blood flagged on a bowel movement']],
+  flagWhyRule:'Why this rule exists: visible blood has many causes, most of them minor, but none of them are ones an app should try to sort out. That is all this card means.',
+  flagNoDx:'No condition is named here, and none will be.',
+  guardTitle:'One at a time',
+  guardBody:'You are already testing dairy — day 6 of 14. Running two trials at once means neither answer is trustworthy.',
+  guardSee:'See the dairy trial', guardCancel:'Cancel',
+  guardNote:'The button was never disabled. It explains instead.',
+  syncTitle:'Sync', syncPending:'3 waiting', syncLast:'Last synced 14 minutes ago',
+  syncRows:[['Meal · 13:05','waiting'],['Stool · 09:40','waiting'],['Photo · 13:05','uploading 60%']],
+  syncRetry:'Retry all now',
+  syncNote:'Everything here is already saved on this device. Syncing only copies it to your server.',
+  remTitle:'Reminders', remPerm:'Notifications are on',
+  remRows:[['Evening check-in','21:30'],['Meal nudges','off'],['Trial reminder','09:00'],['Weekly insight','Sunday 09:00']],
+  quiet:'Quiet hours', quietV:'22:30 – 07:30', pauseAll:'Pause all reminders',
+  remNote:'No streaks. No guilt. If you miss a few days we offer to pause instead of nagging.',
+  expTitle:'Export', expFormat:'Format',
+  expF:[['JSON','everything, importable'],['CSV','for a spreadsheet'],['PDF','for your doctor']],
+  expRange:'Range', expRangeV:'Last 90 days', expLang:'Language of the PDF',
+  expPhotos:'Include photos', expDeleted:'Include deleted entries', expGo:'Create export',
+  expNote:'The PDF has no AI writing in it. Clinicians want the numbers.',
+  onbTitle:'What are you trying to figure out?',
+  onbGoals:[['Which foods upset my gut','turns on stool, symptoms and the confounders that matter'],
+            ['What I eat and my weight','meals, weight, body metrics'],
+            ['Energy, sleep and mood','the daily check-in and its trends'],
+            ['Something else','pick your own trackers']],
+  onbSkip:'Skip', onbNext:'Continue', onbStep:'Step 2 of 8',
+  onbNote:'Every step after this one is skippable. Skipping still leaves you with a working app.',
+  redflagOn:'Show a red flag', today0:'Today · ', trialsTab:'Trials',
+  actNote:'Every destructive action here has an undo. Nothing needs a confirmation dialog except the irreversible ones.',
+  secTitle:'Security & keys', secOn:'Encryption is on',
+  secAlg:'xchacha20poly1305 · since 21 Aug 2026',
+  secWhat:'What’s encrypted',
+  secYes:[['What you typed','meal descriptions, notes, reasons'],['Your photos','every one'],['Your food library','the names you use']],
+  secNo:['Numbers — Bristol scores, severities, weights, times'],
+  secNoWhy:'The analysis has to read these. Someone with a copy of the database would see the shape of your data, not your words.',
+  secCard:'Your recovery card', secLast:'Last shown: never',
+  secShow:'Show the card', secCheck:'Check my saved card',
+  secKeep:'Keep it off this server and away from your backups.',
+  secCardBody:'created  2026-08-21\nalg      xchacha20poly1305/hkdf-sha256/v1\nkek      base64:kJ4x…9Qz\ndek(w)   base64:7Tm2…Lp0\ncheck    7F3A-91C4-2E08',
+  dbTitle:'Fill in Thursday 21 August', dbSub:'Everything you ate, in one pass.',
+  dbSlots:[['☕','Breakfast','~08:10','~','קפה עם חלב, טוסט עם אבוקדו','Avocado · Coffee with milk · Toast'],
+           ['🍽','Lunch','13:20','','פיתה עם חומוס וסלט','Pita · Hummus · Salad'],
+           ['🍽','Dinner','~19:45','~','',''],
+           ['🍪','Snacks','anytime','','','']],
+  dbAnother:'+ another meal', dbAlso:'Also that day',
+  dbLogged:'already logged', dbSave:'Save the day', dbCount:'3 meals',
+  dbTimes:'Times come from when you usually eat — not from a clock we made up. A ~ means we guessed it.',
+  dbPaste:'Paste several lines and they spread across the slots.',
+  dvTitle:'Wednesday 20 August', dvNothing:'nothing logged — add it',
+  dvRows:[['💊','08:30','Vitamin D',''],['💩','09:10','Bristol 6','urgent'],
+          ['😣','19:20','Bloating 7/10','lasted 3h'],
+          ['✅','22:00','Check-in','energy 2 · slept 5h30m']],
+  dvWeight:'Day weight 0.8', dvWeightWhy:'this day counts fully',
+  dvWeightLow:'This day counts at about a third — an evening check-in would fix that.',
+  dvAutosave:'Edits save as you go. No Save button on a day that already exists.',
+  clTitle:'What was that?', clRaw:'You wrote',
+  clLead:'I can’t tell what that was. Was it one of these?',
+  clOpts:[['🥜','Peanuts and Bamba','12 evenings'],['🍫','Chocolate','8 evenings'],
+          ['🧀','Cheese and crackers','5 evenings']],
+  clElse:'Something else — I’ll type it', clDunno:'I really don’t remember',
+  clFrom:'These come from what you’ve actually logged around this hour — not from a guess.',
+  clCost:'Saved either way. But an entry with no food in it can’t count toward finding patterns.'
+
+ },
+ he:{
+  dir:'rtl', name:'עברית',
+  tabs:['היום','ציר זמן','תובנות','עוד'],
+  date:'יום חמישי, 21 באוגוסט', synced:'מסונכרן',
+  score:'ציון היום עד עכשיו', of100:'/ 100', last7:'7 הימים האחרונים',
+  quicklog:'תיעוד מהיר', ql:['יציאה','ארוחה','תסמין','משקל'],
+  usual:'מה שרגיל בשעה הזו', logged:'תועד',
+  usual1:'קפה עם חלב', usual2:'טוסט, אבוקדו',
+  todayso:'מה שתועד היום',
+  ev:[['08:12','coffee','קפה עם חלב',''],
+      ['09:40','stool','בריסטול 4','תקין · בלי דחיפות'],
+      ['13:05','meal','פיתה, חומוס, סלט, קפה קר','4 פריטים']],
+  trialCard:'ניסוי מוצרי חלב', trialDay:'הימנעות · יום 6 מתוך 21', onTrack:'בדרך הנכונה — 13 מתוך 13 ימים נקיים',
+  checkinQ:'איך היה היום?', checkinSub:'שלוש נגיעות וזהו.',
+  energy:'אנרגיה', mood:'מצב רוח', sleep:'שינה', stress:'מתח', addStress:'הוספת מתח',
+  nothing:'אין מה לדווח', done:'סיימתי',
+  nothingWhy:'״הכול בסדר״ מפורש הוא נתון אמיתי. הוא כמעט מכפיל את מה שהניתוח יכול להוציא מהשבוע שלך.',
+  quality:'איכות',
+  mealTitle:'תיעוד ארוחה', at:'בשעה',
+  mealPh:'מה אכלת? כתוב איך שאתה אומר את זה.',
+  demo:'נסה', photo:'צילום', favs:'מועדפים', repeat:'חזרה על האחרונה',
+  parsed:'פוענח', parsing:'קורא מה שכתבת',
+  demoText:'פיתה עם חומוס, סלט ירקות וקפה הפוך',
+  items:[['🫓','פיתה','1 יחידה',1],['🥣','חומוס','3 כפות',1],['🥗','סלט ירקות','1 קערה',0],['🧋','קפה הפוך','1 כוס',1]],
+  tags:'תגיות', tag1:'צהריים', tag2:'בבית', save:'שמירה',
+  neverBlocked:'אין רשת? זה נשמר בכל מקרה ומפוענח אחר כך. אתה אף פעם לא תקוע.',
+  stoolTitle:'יציאה',
+  bw:['גושים קשים נפרדים','נקניק גושי','נקניק סדוק','נקניק חלק','גושים רכים','דייסתי','נוזלי לגמרי'],
+  bnorm:'טיפוס 3–5 הוא הטווח התקין',
+  savedTxt:'נשמר', addMore:'משהו להוסיף?',
+  urgency:'דחיפות', complete:'מלאה', pain:'כאב', blood:'דם', mucus:'ריר',
+  oneTap:'נגיעה אחת שמרה את זה. כל השאר אופציונלי ונעלם מעצמו.',
+  tlTitle:'ציר זמן',
+  d20:'רביעי 20 באוג׳', d19:'שלישי 19 באוג׳', d18:'שני 18 באוג׳', scoreWord:'ציון',
+  ev20:[['07:55','coffee','קפה שחור',''],
+        ['08:30','pill','ויטמין D',''],
+        ['09:10','stool','בריסטול 6','דחוף · לא מלאה'],
+        ['12:40','meal','שווארמה בלאפה, צ׳יפס, סלט',''],
+        ['19:20','symptom','נפיחות 7/10','נמשך 3 שעות'],
+        ['22:00','check','צ׳ק־אין','אנרגיה 2 · ישן 5:30']],
+  ev19:[['08:05','meal','יוגורט, גרנולה, בננה',''],
+        ['10:15','stool','בריסטול 4','תקין'],
+        ['13:30','meal','עוף, אורז, סלט',''],
+        ['21:40','check','אין מה לדווח','הכול בסדר']],
+  inTitle:'תובנות',
+  basedOn:'מבוסס על 98 ימים · 84 מתועדים היטב', lastRun:'נותח לפני שעתיים',
+  worth:'שווה לבדוק', early:'סימנים מוקדמים — עדיין לא ממצאים',
+  ruled:'נשלל', notEnough:'עוד אין מספיק נתונים',
+  medium:'בינוני', low:'נמוך', high:'גבוה', confidence:'ביטחון',
+  i1n:'מוצרי חלב (לקטוז)', i1c:'25 נקודות יותר יציאות רכות, 6–24 שעות אחר כך',
+  i2n:'ארוחות גדולות מאוחרות', i2c:'19 נקודות יותר בקרים עם נפיחות מעל 5/10',
+  withx:'עם מוצרי חלב', without:'בלי',
+  e1:'בצל ושום (פרוקטנים)', e1s:'63 ימים · האפקט קטן מדי כדי לפעול לפיו',
+  e2:'קפה על בטן ריקה', e2s:'22 ימים · צריך עוד תצפיות',
+  r1:'גלוטן', r1s:'הניסוי הושלם — כנראה לא טריגר עבורך. אפשר להפסיק להימנע ממנו.',
+  n1:'ביצים', n1s:'6 ימי חשיפה עד כה · חסרים בערך 4',
+  testIt:'בוא נבדוק את זה כמו שצריך',
+  ruledWhy:'להחזיר לך אוכל זה הדבר הכי שימושי שהאפליקציה הזו יכולה לעשות, ולכן זה מקבל כותרת ולא הערת שוליים.',
+  evTitle:'מוצרי חלב (לקטוז)',
+  evLead:'מספיק כדי לבדוק. לא מספיק כדי להסיק.',
+  evOutcome:'יציאה רכה (בריסטול 6–7) תוך 6–24 שעות',
+  sec1:'מה נצפה', sec2:'מה לקחנו בחשבון', sec3:'במה כדאי להיזהר', sec4:'במילים פשוטות',
+  diff:'נקודות אחוז הפרש', ci:'רווח 95%: 9+ עד 41+',
+  adj:['שינה מתחת ל־6 שעות','אלכוהול','מתח גבוה','נוגדי דלקת'],
+  held:'האפקט שרד את התיקנון — הוא נחלש ב־12% בלבד.',
+  warnTxt:'8 מתוך 12 הימים עם הכי הרבה מוצרי חלב היו סופי שבוע, שבהם אתה גם אוכל יותר בחוץ. קשה להפריד בין זה לבין מוצרי החלב עצמם.',
+  plainTxt:'יש כאן דפוס אמיתי, אבל הרגלי אכילה נוטים להצטבר יחד. זה יכול להיות מוצרי חלב, ויכול להיות משהו שנוסע איתם. שבועיים בלי יפרידו ביניהם.',
+  audit:'הצג את 98 הימים שמאחורי זה',
+  notInterested:'לא מעניין אותי',
+  trTitle:'בדיקה: מוצרי חלב', trSub:'שום דבר לא מתחיל עד שתאשר.',
+  phases:[['14 ימים','אכילה רגילה','בסיס'],
+          ['21 ימים','בלי מוצרי חלב בכלל','הימנעות'],
+          ['3 ימים','עדיין בלי — נותנים למצב להתייצב','התייצבות'],
+          ['3 ימים','חלב חוזר: 100 מ״ל ← 250 מ״ל ← 500 מ״ל','אתגר'],
+          ['3 ימים','שוב בלי, בודקים תגובות מאוחרות','מעקב']],
+  reuse:'אפשר להשתמש ב־14 הימים האחרונים שלך כבסיס — חוסך שבוע.',
+  total:'44 ימים בסך הכול — או 30 אם נשתמש בבסיס הקיים.',
+  lockT:'נקבע מראש, לפני שמתחילים',
+  lockB:'מודדים יציאות רכות. נקרא לזה אפקט אמיתי אם זה זז ב־20 נקודות או יותר. הכתיבה מראש היא מה שמונע להזיז את התשובה אחר כך.',
+  needLog:'צריך לתעד לפחות 5 ימים בשבוע.',
+  adjust:'שינוי', start:'התחלת הניסוי', notNow:'לא עכשיו',
+  vTitle:'ניסוי מוצרי החלב הושלם',
+  vVerdict:'ככל הנראה טריגר עבורך', vProb:'92% הסתברות לאפקט אמיתי',
+  vk:[['יציאות רכות, בדרך כלל','38%'],['בתקופת ההימנעות','9%'],['כשהחזרת את זה','41%'],['היצמדות לפרוטוקול','93%'],['ימים שתועדו','21 מתוך 23']],
+  vWhy:'ההחזרה ההדרגתית היא מה שהופך את זה למשכנע: התסמינים חזרו תוך 24 שעות מהאתגר של 250 מ״ל, ושוב ב־500 מ״ל.',
+  vLimT:'מגבלות',
+  vLim:'ידעת באיזה שלב אתה נמצא, וזה יכול להשפיע על איך שאתה מדרג תסמינים. זו תוצאה של אדם אחד — שלך — והיא לא אומרת כלום על אף אחד אחר. אם זה חשוב לך, כדאי לחזור על הניסוי בעוד כמה חודשים.',
+  vAvoid:'הוספה לרשימת ההימנעות', vAgain:'הרצה נוספת',
+  mTitle:'עוד', trackers:'מה מתועד', trackersSub:'כל אחד מהם הוא קובץ הגדרות, לא קוד',
+  tr:[['ארוחות','תמיד פעיל'],['יציאות','תמיד פעיל'],['תסמינים','6 במעקב'],['צ׳ק־אין יומי','21:30'],['משקל','שבועי'],['תרופות ותוספים','2 פעילים'],['פעילות גופנית','פעיל'],['שתייה','כבוי']],
+  aiT:'ספק ה־AI', aiSub:'לאן המילים שלך הולכות',
+  aiBody:'טקסט של ארוחות נשלח למפענח שתבחר. יציאות, תסמינים, מצב רוח ומשקל לא עוזבים את השרת הזה — לא לשום מודל, אף פעם.',
+  aiNow:'כרגע: Claude API לפענוח ארוחות · מודל מקומי להסברים',
+  dataT:'הנתונים שלך', dataRows:[['ייצוא הכול','JSON, CSV או PDF לרופא'],['ייבוא','מייצוא קודם'],['מחיקת הכול','בלתי הפיך']],
+  langT:'שפה', langV:'עברית',
+  disc:'כלי בריאות. לא מכשיר רפואי. בלי אבחנות, אף פעם.',
+  // ── v1.1 additions ──
+  day1Hi:'עוד לא תועד כלום', day1Sub:'אפשר להתחיל מכל מקום. אין רישום ראשון לא נכון.',
+  day1T:'מה קורה מכאן',
+  day1a:'תעד כמה ימים — כל דבר',
+  day1b:'אחרי כשלושה שבועות אפשר להתחיל לחפש דפוסים',
+  day1c:'תוך 3–4 חודשים אפקט ברור מתחיל להיראות. זה כלי אטי.',
+  day1btn:'איך זה עובד',
+  pickTitle:'מה לתעד?', pickSearch:'חיפוש',
+  trackers2:[['stool','יציאה','הכי מהיר — נגיעה אחת'],['meal','ארוחה','כתיבה, דיבור או צילום'],
+    ['symptom','תסמין','נפיחות, כאב, צרבת…'],['check','צ׳ק־אין ערב','אנרגיה, מצב רוח, שינה'],
+    ['weight','משקל וגוף','משקל, היקף, לחץ דם'],['drop','שתייה','נגיעה לכל כוס'],
+    ['pill','תרופות','ותוספים'],['run','פעילות גופנית','סוג, משך, עצימות'],
+    ['note','הערה','כל מה שהשאר לא מכסה']],
+  manage:'ניהול המעקבים',
+  symTitle:'תסמין', symWhich:'מה מרגיש?',
+  syms:['נפיחות','גזים','כאב','צרבת','בחילה','דחיפות','חום','לא מצליח לשתות'],
+  started:'התחיל', lasted:'נמשך', where:'איפה',
+  symNote:'אפשר לבחור כמה שצריך — כל אחד נשמר בנפרד כדי שהניתוח יבחין ביניהם.',
+  wTitle:'משקל', wTrend:'78.9 ← 78.4 במהלך 14 ימים', wMore:'הוספת היקף מותניים, אחוז שומן או לחץ דם',
+  wNote:'ממולא מראש מהמדידה הקודמת. שנה או פשוט שמור.',
+  medTitle:'תרופות', medYours:'שלך', medAdd:'הוספה', medSched:'מתוזמן להיום',
+  meds:[['ויטמין D','1000 יחב״ל'],['אומפרזול','20 מ״ג']],
+  medClass:'סיווג: PPI — נספר כגורם מבלבל',
+  medNote:'הסיווג הוא מה שהניתוח משתמש בו. אנחנו לעולם לא מציעים להתחיל, להפסיק או לשנות טיפול.',
+  itemTitle:'איזה מהם?', itemYouTyped:'כתבת', itemAlts:'ההתאמות הקרובות',
+  alts:[['סלט ירקות מעורב','בספרייה שלך · תועד 12×'],['סלט ישראלי','מזון קנוני'],
+        ['סלט ירוק','מזון קנוני'],['סלט עם טחינה','בספרייה שלך · תועד 3×']],
+  itemCreate:'יצירת מזון חדש', itemUse:'בחירה',
+  itemLearn:'בחירה מלמדת את הספרייה שלך. בפעם הבאה המילים האלה יזוהו מיד.',
+  actTitle:'פיתה, חומוס, סלט', actEdit:'עריכה', actAgain:'תעד את זה שוב עכשיו',
+  actDup:'שכפול', actTime:'שינוי שעה', actSplit:'פיצול הארוחה', actDel:'מחיקה',
+  daysTitle:'הימים שמאחורי זה', daysFilter:'כל הימים',
+  daysCols:['חשיפה','תוצאה','משקל'],
+  daysRows:[['14 באוג׳','חלב','בריסטול 6','0.9','out'],['13 באוג׳','ללא','בריסטול 4','1.0',''],
+            ['12 באוג׳','חלב','לא תועדה יציאה','0.3','ex'],['11 באוג׳','ללא','בריסטול 3','0.8',''],
+            ['10 באוג׳','חלב','בריסטול 7','1.0','out'],['9 באוג׳','חלב','בריסטול 4','0.9','']],
+  daysEx:'הוחרג — היום תועד בדלילות', daysTap:'נגיעה בכל יום פותחת אותו.',
+  trTitleC:'מגמות', period:'90 ימים',
+  charts:[['התפלגות בריסטול','איפה היציאות שלך נופלות, 1–7'],
+          ['עומס תסמינים','שלבי הניסוי מוצללים'],
+          ['משקל','מוחלק, לא נקודה לנקודה'],
+          ['ציון היום','עם ממוצע נע של 7 ימים'],
+          ['סיבים מול איכות יציאה','תמונה, לא ממצא'],
+          ['שלמות התיעוד','למה הנתונים שלך עבים או דלילים']],
+  foodTitle:'ספריית המזונות', foodAdd:'הוספת מזון',
+  foodDup:'2 כפילויות אפשריות', foodReview:'בדיקה',
+  foods:[['חומוס','תועד 47× · רגיל 3 כפות',''],['פיתה','תועד 41× · רגיל 1 יחידה',''],
+         ['קפה עם חלב','תועד 34× · רגיל 1 כוס',''],['״שקשוקה״','תועד 3× · לא זוהה','q'],
+         ['טחינה','תועד 19× · רגיל 2 כפות','']],
+  foodNote:'זה מתמלא מעצמו תוך כדי תיעוד. כל תיקון שאתה עושה נוחת כאן.',
+  flagTitle:'כדאי להיבדק',
+  flagBody:'תיעדת דם ביציאה. זה משהו שרופא צריך לראות — רוב הסיבות קלות, אבל זה לא משהו שמפענחים מאפליקציה.',
+  flagCalm:'זה לא משפיע על שום דבר אחר כאן.',
+  flagOk:'הבנתי', flagWhy:'מה גרם לזה',
+  flagWhyT:'מה גרם לזה', flagWhyLead:'שני דברים שתיעדת תואמים כלל שאומר ״כדאי שמישהו יסתכל על זה״.',
+  flagWhyRows:[['היום 09:40','סומן דם ביציאה'],['18 באוג׳ 07:20','סומן דם ביציאה']],
+  flagWhyRule:'למה הכלל הזה קיים: לדם נראה לעין יש הרבה סיבות, רובן קלות, אבל אף אחת מהן היא לא משהו שאפליקציה צריכה לנסות למיין. זה כל מה שהכרטיס הזה אומר.',
+  flagNoDx:'לא מוזכרת כאן שום אבחנה, ולא תוזכר.',
+  guardTitle:'אחד בכל פעם',
+  guardBody:'אתה כבר בודק מוצרי חלב — יום 6 מתוך 14. שני ניסויים במקביל אומרים ששתי התשובות לא אמינות.',
+  guardSee:'לניסוי מוצרי החלב', guardCancel:'ביטול',
+  guardNote:'הכפתור אף פעם לא היה מושבת. הוא מסביר במקום.',
+  syncTitle:'סנכרון', syncPending:'3 ממתינים', syncLast:'סונכרן לפני 14 דקות',
+  syncRows:[['ארוחה · 13:05','ממתין'],['יציאה · 09:40','ממתין'],['תמונה · 13:05','מעלה 60%']],
+  syncRetry:'נסה הכול עכשיו',
+  syncNote:'הכול כאן כבר שמור על המכשיר. הסנכרון רק מעתיק את זה לשרת שלך.',
+  remTitle:'תזכורות', remPerm:'ההתראות פעילות',
+  remRows:[['צ׳ק־אין ערב','21:30'],['תזכורת לארוחה','כבוי'],['תזכורת ניסוי','09:00'],['תובנה שבועית','ראשון 09:00']],
+  quiet:'שעות שקט', quietV:'22:30 – 07:30', pauseAll:'השהיית כל התזכורות',
+  remNote:'בלי רצפים. בלי אשמה. אם פספסת כמה ימים נציע להשהות במקום להציק.',
+  expTitle:'ייצוא', expFormat:'פורמט',
+  expF:[['JSON','הכול, ניתן לייבוא'],['CSV','לגיליון אלקטרוני'],['PDF','לרופא שלך']],
+  expRange:'טווח', expRangeV:'90 הימים האחרונים', expLang:'שפת ה־PDF',
+  expPhotos:'לכלול תמונות', expDeleted:'לכלול רשומות שנמחקו', expGo:'יצירת הייצוא',
+  expNote:'ב־PDF אין שום טקסט שנוצר על ידי מודל. רופאים רוצים את המספרים.',
+  onbTitle:'מה אתה מנסה להבין?',
+  onbGoals:[['אילו מאכלים מפריעים לי לבטן','מפעיל יציאות, תסמינים והגורמים המבלבלים שחשובים'],
+            ['מה אני אוכל ומה המשקל שלי','ארוחות, משקל, מדדי גוף'],
+            ['אנרגיה, שינה ומצב רוח','הצ׳ק־אין היומי והמגמות שלו'],
+            ['משהו אחר','בחירת מעקבים בעצמך']],
+  onbSkip:'דילוג', onbNext:'המשך', onbStep:'שלב 2 מתוך 8',
+  onbNote:'כל שלב אחרי זה ניתן לדילוג. גם אם תדלג, תישאר עם אפליקציה עובדת.',
+  redflagOn:'הצג דגל אדום', today0:'היום · ', trialsTab:'ניסויים',
+  actNote:'לכל פעולה הרסנית כאן יש ביטול. שום דבר לא דורש חלון אישור חוץ מהדברים הבלתי הפיכים.',
+  secTitle:'אבטחה ומפתחות', secOn:'ההצפנה פעילה',
+  secAlg:'xchacha20poly1305 · מאז 21 באוג׳ 2026',
+  secWhat:'מה מוצפן',
+  secYes:[['מה שכתבת','תיאורי ארוחות, הערות, סיבות'],['התמונות שלך','כולן'],['ספריית המזונות','השמות שאתה משתמש בהם']],
+  secNo:['מספרים — ציוני בריסטול, עוצמות, משקלים, זמנים'],
+  secNoWhy:'הניתוח חייב לקרוא אותם. מי שיחזיק עותק של מסד הנתונים יראה את הצורה של הנתונים שלך, לא את המילים שלך.',
+  secCard:'כרטיס השחזור שלך', secLast:'הוצג לאחרונה: אף פעם',
+  secShow:'הצגת הכרטיס', secCheck:'בדיקת הכרטיס השמור שלי',
+  secKeep:'שמור אותו מחוץ לשרת הזה ורחוק מהגיבויים.',
+  secCardBody:'created  2026-08-21\nalg      xchacha20poly1305/hkdf-sha256/v1\nkek      base64:kJ4x…9Qz\ndek(w)   base64:7Tm2…Lp0\ncheck    7F3A-91C4-2E08',
+  dbTitle:'מילוי יום חמישי, 21 באוגוסט', dbSub:'כל מה שאכלת, בבת אחת.',
+  dbSlots:[['☕','בוקר','~08:10','~','קפה עם חלב, טוסט עם אבוקדו','אבוקדו · קפה עם חלב · טוסט'],
+           ['🍽','צהריים','13:20','','פיתה עם חומוס וסלט','פיתה · חומוס · סלט'],
+           ['🍽','ערב','~19:45','~','',''],
+           ['🍪','נשנושים','מתי שהוא','','','']],
+  dbAnother:'+ עוד ארוחה', dbAlso:'גם באותו יום',
+  dbLogged:'כבר תועד', dbSave:'שמירת היום', dbCount:'3 ארוחות',
+  dbTimes:'השעות מגיעות ממתי שאתה בדרך כלל אוכל — לא משעון שהמצאנו. ~ אומר שניחשנו.',
+  dbPaste:'אפשר להדביק כמה שורות והן יתפזרו בין הארוחות.',
+  nvTitle:'הניסוי הושלם',
+  nvVerdict:'מוצרי חלב כנראה בסדר בשבילך.',
+  nvProb:'93% בטוחים שההשפעה קטנה מכדי כדי להשפיע',
+  nvBody:'על פני 30 ימים, 12 מנות אתגר ו-41 ימים מתועדים, מוצרי חלב לא עשו הבדל שאפשר למדוד בציון הבטן שלך.',
+  nvReal:'זו תשובה אמיתית, לא ניסוי שנכשל.',
+  nvk:[['יציאות רכות, בדרך כלל','31%'],['בתקופת ההימנעות','29%'],['כשהחזרת את זה','30%'],['היצמדות לפרוטוקול','91%'],['ימים שתועדו','27 מתוך 30']],
+  nvOutT:'מה זה שולל',
+  nvOut:'השפעה גדולה. אם מוצרי חלב היו מחמירים את המצב באופן ברור, 30 יום במינון הזה היו מראים את זה.',
+  nvNotT:'מה זה לא שולל',
+  nvNot:'עדיין יכולה להיות השפעה קטנה שלא נתפוס. מנה גדולה יותר, או יום שבו דברים אחרים מצטברים, עשויים להיות שונים. זה על מוצרי חלב לבד — לא על חלב בנוסף לכל השאר.',
+  nvRemove:'להוציא מוצרי חלב מרשימת החשודים',
+  nvNext:'לבדוק משהו אחר',
+  nvRetest:'לבדוק שוב בעוד חצי שנה',
+  nvWideT:'אחרי שישה שבועות, שום דבר לא בולט.',
+  nvWideB:'בדקתי 340 צירופים של מזון ותוצאה ואף אחד לא עובר את הבדיקה. זה נפוץ יותר ממה שהאפליקציות מרמזות, ושווה לדעת.',
+  nvW1:'להרחיב מה שמתעדים', nvW2:'לבדוק חשוד כמו שצריך', nvW3:'לבדוק את זמן המעבר',
+  gsTitle:'שבוע 2 הסתיים',
+  gsSub:'לפני שממשיכים —',
+  gsQ:'מה לדעתך היה במעטפה A2?',
+  gsReal:'הדבר האמיתי', gsBlank:'הריקה', gsNo:'אין לי מושג',
+  gsSure:'כמה בטוחים?',
+  gsWhy:'אין תשובה לא נכונה. אנחנו משווים את הניחושים למה שבאמת היה שם — זה חלק מהתוצאה.',
+  gsSave:'לשמור ולהמשיך',
+  gsOpenT:'ידעת שזה הדבר האמיתי.',
+  gsOpenQ:'כמה לדעתך זה השפיע על איך שדירגת את השבוע?',
+  gsScale:['בכלל לא','קצת','במידה מסוימת','לא מעט','הרבה'],
+  gsSureLo:'ניחוש בעלמא', gsSureHi:'בטוח לגמרי',
+  dvTitle:'רביעי 20 באוגוסט', dvNothing:'לא תועד כלום — אפשר להוסיף',
+  dvRows:[['💊','08:30','ויטמין D',''],['💩','09:10','בריסטול 6','דחוף'],
+          ['😣','19:20','נפיחות 7/10','נמשך 3 שעות'],
+          ['✅','22:00','צ׳ק־אין','אנרגיה 2 · ישן 5:30']],
+  dvWeight:'משקל היום 0.8', dvWeightWhy:'היום הזה נספר במלואו',
+  dvWeightLow:'היום הזה נספר בערך בשליש — צ׳ק־אין ערב היה מתקן את זה.',
+  dvAutosave:'העריכות נשמרות תוך כדי. אין כפתור שמירה ליום שכבר קיים.',
+  clTitle:'מה זה היה?', clRaw:'כתבת',
+  clLead:'אני לא מצליח לזהות מה זה היה. אולי אחד מאלה?',
+  clOpts:[['🥜','בוטנים ובמבה','12 ערבים'],['🍫','שוקולד','8 ערבים'],
+          ['🧀','גבינה וקרקרים','5 ערבים']],
+  clElse:'משהו אחר — אני אכתוב', clDunno:'באמת לא זוכר',
+  clFrom:'אלה באים ממה שבאמת תיעדת בסביבות השעה הזו — לא מניחוש.',
+  clCost:'נשמר בכל מקרה. אבל רשומה בלי אוכל בתוכה לא יכולה לתרום למציאת דפוסים.'
+
+ }
+};
+
+/* ─────────────── state ─────────────── */
+var S = { guess:null, guessSure:null, guessOpen:false, lang:'en', theme:'system', tab:'today', sub:null, sheet:null,
+          bristol:null, saved:false, parse:0, fold:false, flag:false, card:false };
+var app = document.getElementById('app');
+
+function t(){ return T[S.lang]; }
+function esc(s){ return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+function dots(n,cls){ var o='<span class="dots">'; for(var i=0;i<5;i++) o+='<i class="'+(i<n?'f':'')+'"></i>'; return o+'</span>'; }
+function conf(level){
+  var L=t(), map={low:[2,'c-low',L.low],medium:[3,'c-med',L.medium],high:[4,'c-high',L.high]};
+  var m=map[level];
+  return '<span class="conf '+m[1]+'">'+dots(m[0])+' '+esc(m[2])+' '+esc(L.confidence)+'</span>';
+}
+
+/* ─────────────── screens ─────────────── */
+function scrToday(){
+  var L=t();
+  return '<div class="abar"><h1>'+esc(L.date)+'</h1>'+
+    '<span class="sync"><i></i>'+esc(L.synced)+'</span></div>'+
+  '<div class="scroll">'+
+    '<div class="card"><div class="score"><span class="v">78</span>'+
+      '<span class="d">'+esc(L.of100)+' · '+esc(L.score)+'</span></div>'+
+      spark()+'<div class="tiny" style="color:var(--faint);margin-top:2px">'+esc(L.last7)+'</div></div>'+
+
+    '<div class="lbl">'+esc(L.quicklog)+'</div>'+
+    '<div class="qgrid">'+
+      qt('stool',L.ql[0],'openStool')+qt('meal',L.ql[1],'openMeal')+
+      qt('symptom',L.ql[2],'')+qt('weight',L.ql[3],'')+
+    '</div>'+
+
+    '<div class="lbl">'+esc(L.usual)+'</div>'+
+    '<div class="usual">'+
+      '<button class="utile" data-go="openMeal"><div class="t">'+esc(L.usual1)+'</div><div class="s">'+esc(L.logged)+' 34×</div></button>'+
+      '<button class="utile" data-go="openMeal"><div class="t">'+esc(L.usual2)+'</div><div class="s">'+esc(L.logged)+' 21×</div></button>'+
+    '</div>'+
+
+    '<div class="lbl">'+esc(L.todayso)+'</div>'+
+    '<div class="card" style="padding:4px 15px">'+L.ev.map(evRow).join('')+'</div>'+
+
+    '<div class="card" data-go="verdictPeek" style="cursor:pointer">'+
+      '<div class="row"><span style="width:18px;height:18px;color:var(--accent)">'+I.flask+'</span>'+
+      '<b style="font-size:14.5px;letter-spacing:-.01em">'+esc(L.trialCard)+'</b></div>'+
+      '<div class="tiny muted" style="margin-top:3px">'+esc(L.trialDay)+'</div>'+
+      phaseStrip()+
+      '<div class="tiny" style="color:var(--accent)">'+esc(L.onTrack)+'</div>'+
+    '</div>'+
+
+    '<div class="lbl">'+esc(L.checkinQ)+'</div>'+
+    '<button class="btn soft" data-go="openCheckin">'+esc(L.checkinQ)+'</button>'+
+  '</div>'+
+  '<button class="fab" data-go="openMeal" aria-label="'+esc(L.mealTitle)+'">+</button>';
+}
+function qt(ic,label,go){
+  return '<button class="qtile" data-go="'+go+'"><span class="ic">'+I[ic]+'</span>'+
+         '<span class="t">'+esc(label)+'</span></button>';
+}
+function evRow(e){
+  return '<div class="ev"><span class="tm">'+esc(e[0])+'</span>'+
+    '<span class="ic">'+I[e[1]]+'</span><span class="bd"><span class="t">'+esc(e[2])+'</span>'+
+    (e[3]?'<span class="s">'+esc(e[3])+'</span>':'')+'</span>'+
+    '<span class="more">'+'·'.repeat(3)+'</span></div>';
+}
+function spark(){
+  var v=[52,61,44,73,68,81,78], w=100/(v.length-1), p=v.map(function(y,i){
+    return (i*w).toFixed(1)+','+(30-(y-40)/60*26).toFixed(1); }).join(' ');
+  return '<svg class="spark" viewBox="0 0 100 32" preserveAspectRatio="none" aria-hidden="true">'+
+    '<polyline points="'+p+'" fill="none" stroke="var(--accent)" stroke-width="1.6" '+
+    'stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>'+
+    '<circle cx="100" cy="'+(30-(78-40)/60*26).toFixed(1)+'" r="2.4" fill="var(--accent)"/></svg>';
+}
+function phaseStrip(){
+  var o='<div class="phase">';
+  for(var i=0;i<21;i++) o+='<span class="pdot'+(i<6?' done':'')+'"></span>';
+  o+='<span class="psep"></span>';
+  for(var j=0;j<3;j++) o+='<span class="pdot"></span>';
+  o+='<span class="psep"></span>';
+  for(var k=0;k<3;k++) o+='<span class="pdot"></span>';
+  return o+'</div>';
+}
+
+function scrTimeline(){
+  var L=t();
+  return '<div class="abar"><h1>'+esc(L.tlTitle)+'</h1></div><div class="scroll pad">'+
+    daySep(L.d20,L.scoreWord,62)+'<div class="card" style="padding:4px 15px">'+L.ev20.map(evRow).join('')+'</div>'+
+    daySep(L.d19,L.scoreWord,84)+'<div class="card" style="padding:4px 15px">'+L.ev19.map(evRow).join('')+'</div>'+
+    daySep(L.d18,L.scoreWord,79)+'<div class="card" style="padding:4px 15px">'+L.ev.map(evRow).join('')+'</div>'+
+  '</div>';
+}
+function daySep(d,sl,v){
+  return '<div class="daysep"><span>'+esc(d)+'</span><span class="sc">'+esc(sl)+' '+v+'</span></div>';
+}
+
+function scrInsights(){
+  var L=t();
+  return '<div class="abar"><h1>'+esc(L.inTitle)+'</h1></div><div class="scroll pad">'+
+    '<div class="meta">'+esc(L.basedOn)+'<span class="sp"></span>'+
+      '<span style="color:var(--faint)">'+esc(L.lastRun)+'</span></div>'+
+
+    '<div class="lbl">'+esc(L.worth)+'</div>'+
+    '<button class="card icard" data-go="evidence" style="width:100%;text-align:start;display:block">'+
+      '<div class="h"><span class="nm">'+esc(L.i1n)+'</span>'+conf('medium')+'</div>'+
+      '<p class="cl">'+esc(L.i1c)+'</p>'+
+      '<div class="cmp">'+
+        bar('a',L.withx,44,'41 '+(S.lang==='he'?'ימים':'days'))+
+        bar('b',L.without,19,'57 '+(S.lang==='he'?'ימים':'days'))+
+      '</div>'+
+      '<div class="btn sm soft">'+esc(L.testIt)+'</div>'+
+    '</button>'+
+    '<div class="card icard">'+
+      '<div class="h"><span class="nm">'+esc(L.i2n)+'</span>'+conf('medium')+'</div>'+
+      '<p class="cl">'+esc(L.i2c)+'</p>'+
+      '<div class="btn sm soft">'+esc(L.testIt)+'</div>'+
+    '</div>'+
+
+    '<button class="fold'+(S.fold?' open':'')+'" data-go="fold">'+esc(L.early)+
+      '<span class="sp" style="flex:1 1 auto"></span><span class="ar">▼</span></button>'+
+    (S.fold?'<div class="card">'+
+      srow(L.e1,L.e1s)+srow(L.e2,L.e2s)+'</div>':'')+
+
+    '<div class="lbl">'+esc(L.ruled)+'</div>'+
+    '<div class="card icard" style="border-color:var(--info)">'+
+      '<div class="h" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px">'+
+      '<span class="nm" style="font-size:16.5px;font-weight:600;flex:1 1 auto">'+esc(L.r1)+'</span>'+
+      '<span class="conf c-done">'+dots(4)+'</span></div>'+
+      '<p class="cl" style="margin:0">'+esc(L.r1s)+'</p></div>'+
+    '<p class="tiny muted" style="margin:-4px 0 4px">'+esc(L.ruledWhy)+'</p>'+
+
+    '<div class="lbl">'+esc(L.notEnough)+'</div>'+
+    '<div class="card">'+srow(L.n1,L.n1s)+'</div>'+
+  '</div>';
+}
+function bar(cls,k,pct,n){
+  return '<div class="lin '+cls+'"><span class="k">'+esc(k)+'</span>'+
+    '<span class="tr"><i style="width:'+pct+'%"></i></span>'+
+    '<span class="p">'+pct+'%</span></div>';
+}
+function srow(a,b){
+  return '<div class="srow"><span style="flex:1 1 auto"><span>'+esc(a)+'</span>'+
+    '<span class="s" style="display:block">'+esc(b)+'</span></span></div>';
+}
+
+function scrEvidence(){
+  var L=t();
+  return '<div class="abar"><button class="back" data-go="back">←</button>'+
+    '<h1>'+esc(L.evTitle)+'</h1></div><div class="scroll pad">'+
+    '<div class="ehead"><div class="cf">'+conf('medium')+'</div>'+
+      '<div class="sub">'+esc(L.evLead)+'</div></div>'+
+
+    '<div class="sec"><div class="st">'+esc(L.sec1)+'</div>'+
+      '<p class="tiny muted" style="margin:0 0 10px">'+esc(L.evOutcome)+'</p>'+
+      '<div class="cmp">'+bar('a',L.withx,44,'')+bar('b',L.without,19,'')+'</div>'+
+      '<div class="big"><span class="v">+25</span><span class="u">'+esc(L.diff)+'</span></div>'+
+      '<div class="tiny muted">'+esc(L.ci)+'</div></div>'+
+
+    '<div class="sec"><div class="st">'+esc(L.sec2)+'</div>'+
+      '<div class="adj">'+L.adj.map(function(a){
+        return '<span class="chip on">✓ '+esc(a)+'</span>';}).join('')+'</div>'+
+      '<p class="tiny muted" style="margin:0">'+esc(L.held)+'</p></div>'+
+
+    '<div class="sec"><div class="st">'+esc(L.sec3)+'</div>'+
+      '<div class="warnbox"><span class="i">▲</span><span>'+esc(L.warnTxt)+'</span></div></div>'+
+
+    '<div class="sec"><div class="st">'+esc(L.sec4)+'</div>'+
+      '<p class="plain" style="margin:0">'+esc(L.plainTxt)+'</p>'+
+      '<button class="audit" data-go="">'+esc(L.audit)+'</button></div>'+
+
+    '<div style="height:18px"></div>'+
+    '<button class="btn" data-go="trial">'+esc(L.testIt)+' →</button>'+
+    '<div style="height:9px"></div>'+
+    '<button class="btn ghost" data-go="back">'+esc(L.notInterested)+'</button>'+
+  '</div>';
+}
+
+function scrTrial(){
+  var L=t();
+  return '<div class="abar"><button class="back" data-go="back">←</button>'+
+    '<h1>'+esc(L.trTitle)+'</h1></div><div class="scroll pad">'+
+    '<p class="tiny muted" style="margin:0 0 12px">'+esc(L.trSub)+'</p>'+
+    '<div class="card" style="padding:4px 15px">'+
+      L.phases.map(function(p,i){
+        return '<div class="ph'+(i===0?' rep':'')+'"><span class="d">'+esc(p[0])+'</span>'+
+        '<span class="b">'+esc(p[1])+'<s>'+esc(p[2])+(i===0?' — '+esc(L.reuse):'')+'</s></span></div>';
+      }).join('')+'</div>'+
+    '<p class="tiny" style="font-weight:600;margin:0 0 4px">'+esc(L.total)+'</p>'+
+    '<div class="lock"><b>'+esc(L.lockT)+'</b><br>'+esc(L.lockB)+'</div>'+
+    '<p class="tiny muted">'+esc(L.needLog)+'</p>'+
+    '<div style="height:8px"></div>'+
+    '<button class="btn" data-go="verdict">'+esc(L.start)+'</button>'+
+    '<div style="height:9px"></div>'+
+    '<div class="btnrow"><button class="btn ghost sm">'+esc(L.adjust)+'</button>'+
+      '<button class="btn ghost sm" data-go="back">'+esc(L.notNow)+'</button></div>'+
+  '</div>';
+}
+
+function scrVerdict(){
+  var L=t();
+  return '<div class="abar"><button class="back" data-go="back">←</button>'+
+    '<h1>'+esc(L.vTitle)+'</h1></div><div class="scroll pad">'+
+    '<div class="verdict"><div class="t">'+esc(L.vVerdict)+'</div>'+
+      '<div class="p">'+esc(L.vProb)+'</div></div>'+
+    '<div class="card" style="padding:4px 15px">'+
+      L.vk.map(function(k){ return '<div class="kv"><span>'+esc(k[0])+'</span><b>'+esc(k[1])+'</b></div>';}).join('')+
+    '</div>'+
+    '<p class="plain">'+esc(L.vWhy)+'</p>'+
+    '<div class="limits"><b style="color:var(--text)">'+esc(L.vLimT)+'</b><br>'+esc(L.vLim)+'</div>'+
+    '<button class="btn" data-go="back">'+esc(L.vAvoid)+'</button>'+
+    '<div style="height:9px"></div>'+
+    '<button class="btn ghost" data-go="back">'+esc(L.vAgain)+'</button>'+
+  '</div>';
+}
+
+function scrNull(){
+  var L=t();
+  return '<div class="abar"><button class="back" data-go="back">←</button>'+
+    '<h1>'+esc(L.nvTitle)+'</h1></div><div class="scroll pad">'+
+    /* SAME .verdict component as a positive result. Never a muted variant. */
+    '<div class="verdict"><div class="t">'+esc(L.nvVerdict)+'</div>'+
+      '<div class="p">'+esc(L.nvProb)+'</div></div>'+
+    '<p class="plain">'+esc(L.nvBody)+'</p>'+
+    '<p class="plain" style="font-weight:600;color:var(--text)">'+esc(L.nvReal)+'</p>'+
+    '<div class="card" style="padding:4px 15px">'+
+      L.nvk.map(function(k){ return '<div class="kv"><span>'+esc(k[0])+'</span><b>'+esc(k[1])+'</b></div>';}).join('')+
+    '</div>'+
+    '<div class="limits"><b style="color:var(--text)">'+esc(L.nvOutT)+'</b><br>'+esc(L.nvOut)+'</div>'+
+    '<div class="limits"><b style="color:var(--text)">'+esc(L.nvNotT)+'</b><br>'+esc(L.nvNot)+'</div>'+
+    '<button class="btn" data-go="back">'+esc(L.nvRemove)+'</button>'+
+    '<div style="height:9px"></div>'+
+    '<button class="btn ghost" data-go="back">'+esc(L.nvNext)+'</button>'+
+    '<div style="height:9px"></div>'+
+    '<button class="btn ghost" data-go="back">'+esc(L.nvRetest)+'</button>'+
+    '<div style="height:26px"></div>'+
+    '<div class="lbl">'+esc(L.nvWideT)+'</div>'+
+    '<div class="card"><p class="tiny muted" style="margin:0 0 10px;line-height:1.6">'+esc(L.nvWideB)+'</p>'+
+      '<div class="seg"><button data-go="back">'+esc(L.nvW1)+'</button>'+
+      '<button data-go="back">'+esc(L.nvW2)+'</button></div>'+
+      '<div class="seg"><button data-go="back">'+esc(L.nvW3)+'</button></div></div>'+
+  '</div>';
+}
+
+function scrMore(){
+  var L=t();
+  return '<div class="abar"><h1>'+esc(L.mTitle)+'</h1></div><div class="scroll pad">'+
+    '<div class="lbl">'+esc(L.trackers)+'</div>'+
+    '<p class="tiny muted" style="margin:-4px 0 9px">'+esc(L.trackersSub)+'</p>'+
+    '<div class="card" style="padding:2px 15px">'+
+      L.tr.map(function(r,i){
+        var on = r[1]!=='off' && r[1]!=='כבוי';
+        return '<div class="lrow"><span class="nm">'+esc(r[0])+'<s>'+esc(r[1])+'</s></span>'+
+        '<span class="sw'+(on?' on':'')+'"><i></i></span></div>';
+      }).join('')+'</div>'+
+
+    '<div class="lbl">'+esc(L.aiT)+'</div>'+
+    '<div class="card"><div class="tiny muted" style="margin-bottom:8px">'+esc(L.aiSub)+'</div>'+
+      '<div class="egress">'+esc(L.aiBody)+'</div>'+
+      '<p class="tiny muted" style="margin:9px 0 0">'+esc(L.aiNow)+'</p></div>'+
+
+    '<div class="lbl">'+esc(L.dataT)+'</div>'+
+    '<div class="card" style="padding:2px 15px">'+
+      L.dataRows.map(function(r){
+        return '<div class="lrow"><span class="nm">'+esc(r[0])+'<s>'+esc(r[1])+'</s></span>'+
+        '<span style="color:var(--faint)">›</span></div>';}).join('')+'</div>'+
+
+    '<div class="lbl">'+esc(L.langT)+'</div>'+
+    '<div class="card" style="padding:2px 15px"><div class="lrow">'+
+      '<span class="nm">'+esc(L.langT)+'<s>'+esc(L.langV)+'</s></span>'+
+      '<span style="color:var(--faint)">›</span></div></div>'+
+
+    '<p class="tiny" style="color:var(--faint);text-align:center;margin:22px 0 0">'+esc(L.disc)+'</p>'+
+  '</div>';
+}
+
+/* ─────────────── sheets ─────────────── */
+function shGuess(){
+  var L=t(), open = S.guessOpen;
+  var opts = open
+    ? [[ '1', L.gsScale[0] ],[ '2', L.gsScale[1] ],[ '3', L.gsScale[2] ],[ '4', L.gsScale[3] ],[ '5', L.gsScale[4] ]]
+    : [[ 'real', L.gsReal ],[ 'blank', L.gsBlank ],[ 'no', L.gsNo ]];
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(open?L.gsOpenT:L.gsTitle)+'</h2>'+
+    '<span class="tiny muted">'+esc(open?'':L.gsSub)+'</span>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<p class="plain" style="margin-top:0">'+esc(open?L.gsOpenQ:L.gsQ)+'</p>'+
+    '<div class="seg" style="flex-wrap:wrap">'+
+      opts.map(function(o){
+        return '<button data-go="guessPick" data-v="'+o[0]+'"'+
+               (S.guess===o[0]?' class="on"':'')+'>'+esc(o[1])+'</button>';
+      }).join('')+
+    '</div>'+
+    (open ? '' :
+      '<div class="lbl" style="margin-top:14px">'+esc(L.gsSure)+'</div>'+
+      '<div class="seg">'+[1,2,3,4,5].map(function(n){
+         return '<button data-go="guessSure" data-v="'+n+'"'+(S.guessSure===n?' class="on"':'')+'>'+n+'</button>';
+       }).join('')+'</div>'+
+      '<div class="tiny muted" style="display:flex;justify-content:space-between;margin-top:4px">'+
+        '<span>'+esc(L.gsSureLo)+'</span><span>'+esc(L.gsSureHi)+'</span></div>')+
+    '<div class="limits" style="margin:16px 0 0">'+esc(L.gsWhy)+'</div>'+
+    '<button class="btn" data-go="close" style="margin-top:14px">'+esc(L.gsSave)+'</button>'+
+  '</div>';
+}
+function shMeal(){
+  var L=t(), showParse = S.parse>0;
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.mealTitle)+'</h2>'+
+    '<span class="tiny muted">'+esc(L.at)+' 13:05</span>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<div class="mfield"><textarea id="mealText" rows="2" placeholder="'+esc(L.mealPh)+'">'+
+      (showParse?esc(L.demoText):'')+'</textarea>'+
+      '<span class="mic">'+I.mic+'</span></div>'+
+    '<div class="mrow"><button class="chip" data-go="parse">✨ '+esc(L.demo)+'</button>'+
+      '<span class="chip">◎ '+esc(L.photo)+'</span>'+
+      '<span class="chip">★ '+esc(L.favs)+'</span>'+
+      '<span class="chip">↻ '+esc(L.repeat)+'</span></div>'+
+    (S.parse===1?'<div class="parsed"><div class="phead"><span class="spin"></span>'+esc(L.parsing)+'</div></div>':'')+
+    (S.parse===2?'<div class="parsed"><div class="phead">'+esc(L.parsed)+'</div>'+
+      L.items.map(function(it,i){
+        return '<div class="pi" style="animation-delay:'+(i*70)+'ms">'+
+          '<span class="e">'+it[0]+'</span>'+
+          '<span class="nm'+(it[3]?'':' low')+'">'+esc(it[1])+(it[3]?'':'<span class="qmark">?</span>')+'</span>'+
+          '<span class="qt">'+esc(it[2])+' ▾</span><span class="rm">✕</span></div>';
+      }).join('')+
+      '<div class="mrow" style="margin-top:14px"><span class="tiny muted" style="align-self:center;margin-inline-end:4px">'+esc(L.tags)+'</span>'+
+      '<span class="chip on">'+esc(L.tag1)+'</span><span class="chip on">'+esc(L.tag2)+'</span>'+
+      '<span class="chip">+</span></div></div>':'')+
+    '<div style="height:16px"></div>'+
+    '<button class="btn" data-go="close">'+esc(L.save)+'</button>'+
+    '<p class="tiny muted" style="margin:11px 0 0;text-align:center">'+esc(L.neverBlocked)+'</p>'+
+  '</div>';
+}
+
+function shStool(){
+  var L=t();
+  var tiles = B.map(function(svg,i){
+    var n=i+1, sel = S.bristol===n;
+    return '<button class="btile'+(sel?' sel':'')+'" data-tone="'+TONE[i]+'" data-bristol="'+n+'">'+
+      svg+'<span class="n">'+n+'</span><span class="w">'+esc(L.bw[i])+'</span></button>';
+  }).join('');
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.stoolTitle)+'</h2>'+
+    '<span class="tiny muted">09:40 ▾</span>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<div class="bgrid">'+tiles+'</div>'+
+    '<p class="norm">'+esc(L.bnorm)+'</p>'+
+    (S.saved?
+      '<div class="saved"><span>✓ '+esc(L.savedTxt)+'</span><span class="muted" style="font-weight:400;font-size:12.5px">'+esc(L.addMore)+'</span>'+
+      '<span class="bar"><i></i></span></div>'+
+      '<div class="scalerow"><div class="hd">'+esc(L.urgency)+'</div>'+
+        '<div class="seg">'+[0,1,2,3,4].map(function(n){
+          return '<button class="'+(n===2?'on':'')+'">'+n+'</button>';}).join('')+'</div></div>'+
+      '<div class="flags"><span class="chip">'+esc(L.complete)+'</span>'+
+        '<span class="chip">'+esc(L.pain)+'</span><span class="chip">'+esc(L.blood)+'</span>'+
+        '<span class="chip">'+esc(L.mucus)+'</span></div>'+
+      '<p class="tiny muted" style="margin:14px 0 0;text-align:center">'+esc(L.oneTap)+'</p>'
+      : '<p class="tiny muted" style="margin:16px 0 0;text-align:center">'+esc(L.oneTap)+'</p>')+
+  '</div>';
+}
+
+function shCheckin(){
+  var L=t();
+  function scale(label, emo, sel, n){
+    var o='<div class="scalerow"><div class="hd"><span class="e">'+emo[0]+'</span>'+
+      '<span>'+esc(label)+'</span><span class="sp"></span><span class="e">'+emo[1]+'</span></div><div class="seg">';
+    for(var i=1;i<=(n||5);i++) o+='<button class="'+(i===sel?'on':'')+'">'+i+'</button>';
+    return o+'</div></div>';
+  }
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.checkinQ)+'</h2>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<p class="tiny muted" style="margin:0 0 14px">'+esc(L.checkinSub)+'</p>'+
+    scale(L.energy,['😴','⚡'],3)+
+    scale(L.mood,['☹️','🙂'],4)+
+    '<div class="scalerow"><div class="hd"><span>'+esc(L.sleep)+'</span><span class="sp"></span>'+
+      '<span class="qt" style="font-size:13px;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:3px 8px">6h 30m ▾</span></div>'+
+      '<div class="seg">'+[1,2,3,4,5].map(function(n){
+        return '<button class="'+(n===3?'on':'')+'">'+n+'</button>';}).join('')+'</div>'+
+      '<div class="tiny muted" style="margin-top:4px">'+esc(L.quality)+'</div></div>'+
+    '<button class="chip" style="margin-bottom:16px">+ '+esc(L.addStress)+'</button>'+
+    '<div class="btnrow"><button class="btn ghost" data-go="close">'+esc(L.nothing)+'</button>'+
+      '<button class="btn" data-go="close">'+esc(L.done)+'</button></div>'+
+    '<p class="tiny muted" style="margin:12px 0 0;text-align:center">'+esc(L.nothingWhy)+'</p>'+
+  '</div>';
+}
+
+
+/* ═══════════ v1.1 screens ═══════════ */
+
+function scrToday1(){                                    // day-one empty state
+  var L=t();
+  return '<div class="abar"><h1>'+esc(L.date)+'</h1></div><div class="scroll pad">'+
+    '<div style="padding:6px 0 18px"><div style="font-family:inherit;font-size:22px;font-weight:600;'+
+      'letter-spacing:-.02em">'+esc(L.day1Hi)+'</div>'+
+      '<div class="tiny muted" style="margin-top:5px">'+esc(L.day1Sub)+'</div></div>'+
+    '<div class="lbl">'+esc(L.quicklog)+'</div>'+
+    '<div class="qgrid">'+qt('stool',L.ql[0],'openStool')+qt('meal',L.ql[1],'openMeal')+
+      qt('symptom',L.ql[2],'openSymptom')+qt('dots','','openPicker')+'</div>'+
+    '<div class="card" style="margin-top:20px">'+
+      '<div style="font-size:15px;font-weight:600;margin-bottom:10px">'+esc(L.day1T)+'</div>'+
+      ['day1a','day1b','day1c'].map(function(k){
+        return '<div class="row" style="align-items:flex-start;margin-bottom:8px">'+
+        '<span style="color:var(--accent);line-height:1.4">●</span>'+
+        '<span class="tiny" style="flex:1 1 auto">'+esc(L[k])+'</span></div>';}).join('')+
+      '<button class="btn sm soft" style="margin-top:6px">'+esc(L.day1btn)+'</button></div>'+
+  '</div><button class="fab" data-go="openMeal">+</button>';
+}
+
+function shPicker(){                                     // the reachability fix
+  var L=t();
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.pickTitle)+'</h2>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<div class="mfield" style="min-height:0;padding:9px 12px;margin-bottom:12px">'+
+      '<span style="width:18px;height:18px;color:var(--faint)">'+I.search+'</span>'+
+      '<span class="tiny muted" style="align-self:center">'+esc(L.pickSearch)+'</span></div>'+
+    '<div class="card" style="padding:2px 15px">'+
+      L.trackers2.map(function(r){
+        var go = r[0]==='stool'?'openStool':r[0]==='meal'?'openMeal':r[0]==='symptom'?'openSymptom':
+                 r[0]==='check'?'openCheckin':r[0]==='weight'?'openWeight':r[0]==='pill'?'openMed':'';
+        return '<button class="lrow" style="width:100%;text-align:start" data-go="'+go+'">'+
+          '<span style="width:21px;height:21px;color:var(--accent);flex:0 0 21px">'+(I[r[0]]||I.note)+'</span>'+
+          '<span class="nm">'+esc(r[1])+'<s>'+esc(r[2])+'</s></span>'+
+          '<span style="color:var(--faint)">›</span></button>';}).join('')+'</div>'+
+    '<button class="btn ghost sm" style="margin-top:10px">'+esc(L.manage)+'</button>'+
+  '</div>';
+}
+
+function shSymptom(){
+  var L=t(), sel=[0,2];
+  function block(i){
+    var v = i===0?7:4;
+    return '<div class="card" style="margin-top:10px"><div class="row" style="margin-bottom:8px">'+
+      '<b style="font-size:15px;flex:1 1 auto">'+esc(L.syms[i])+'</b>'+
+      '<span class="num" style="font-weight:700;color:var(--accent)">'+v+'/10</span></div>'+
+      '<div class="seg">'+[1,2,3,4,5,6,7,8,9,10].map(function(n){
+        return '<button class="'+(n===v?'on':'')+'" style="min-height:36px;font-size:11.5px;flex:1 1 0;padding:0">'+n+'</button>';
+      }).join('')+'</div>'+
+      '<div class="mrow" style="margin-top:9px"><span class="chip">'+esc(L.started)+' 19:20 ▾</span>'+
+      '<span class="chip">'+esc(L.lasted)+' 3h ▾</span>'+
+      (i===2?'<span class="chip">'+esc(L.where)+' ▾</span>':'')+'</div></div>';
+  }
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.symTitle)+'</h2>'+
+    '<span class="tiny muted">'+esc(L.today0)+'19:20 ▾</span>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<div class="tiny muted" style="margin-bottom:7px">'+esc(L.symWhich)+'</div>'+
+    '<div class="mrow">'+L.syms.map(function(n,i){
+      return '<span class="chip'+(sel.indexOf(i)>-1?' on':'')+'">'+esc(n)+'</span>';}).join('')+'</div>'+
+    sel.map(block).join('')+
+    '<div style="height:14px"></div><button class="btn" data-go="close">'+esc(L.save)+'</button>'+
+    '<p class="tiny muted" style="margin:11px 0 0;text-align:center">'+esc(L.symNote)+'</p>'+
+  '</div>';
+}
+
+function shWeight(){
+  var L=t();
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.wTitle)+'</h2>'+
+    '<span class="tiny muted">'+esc(L.today0)+'07:10 ▾</span>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<div class="card" style="text-align:center;padding:20px 15px">'+
+      '<div class="row" style="justify-content:center;gap:16px">'+
+        '<button class="seg" style="display:block"><span style="display:flex;width:44px;height:44px;'+
+        'border:1px solid var(--border);border-radius:8px;align-items:center;justify-content:center;font-size:20px">–</span></button>'+
+        '<span class="num" style="font-size:40px;font-weight:700;letter-spacing:-.03em">78.4</span>'+
+        '<span class="muted" style="align-self:flex-end;padding-bottom:8px">kg</span>'+
+        '<button class="seg" style="display:block"><span style="display:flex;width:44px;height:44px;'+
+        'border:1px solid var(--border);border-radius:8px;align-items:center;justify-content:center;font-size:20px">+</span></button>'+
+      '</div>'+spark()+
+      '<div class="tiny muted" style="margin-top:4px">'+esc(L.wTrend)+'</div></div>'+
+    '<button class="btn ghost sm">+ '+esc(L.wMore)+'</button>'+
+    '<div style="height:14px"></div><button class="btn" data-go="close">'+esc(L.save)+'</button>'+
+    '<p class="tiny muted" style="margin:11px 0 0;text-align:center">'+esc(L.wNote)+'</p>'+
+  '</div>';
+}
+
+function shMed(){
+  var L=t();
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.medTitle)+'</h2>'+
+    '<span class="tiny muted">'+esc(L.today0)+'08:30 ▾</span>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<div class="tiny muted" style="margin-bottom:7px">'+esc(L.medYours)+'</div>'+
+    '<div class="mrow">'+L.meds.map(function(m){
+      return '<span class="chip on">'+esc(m[0])+' '+esc(m[1])+'</span>';}).join('')+
+      '<span class="chip">+ '+esc(L.medAdd)+'</span></div>'+
+    '<div class="tiny muted" style="margin:16px 0 7px">'+esc(L.medSched)+'</div>'+
+    '<div class="card" style="padding:2px 15px">'+
+      L.meds.map(function(m,i){
+        return '<div class="lrow"><span class="nm">'+esc(m[0])+'<s>'+esc(m[1])+' · '+(i?'20:00':'08:00')+'</s></span>'+
+        '<span class="sw'+(i?'':' on')+'"><i></i></span></div>';}).join('')+'</div>'+
+    '<div class="egress" style="margin-top:12px">'+esc(L.medClass)+'</div>'+
+    '<div style="height:14px"></div><button class="btn" data-go="close">'+esc(L.save)+'</button>'+
+    '<p class="tiny muted" style="margin:11px 0 0;text-align:center">'+esc(L.medNote)+'</p>'+
+  '</div>';
+}
+
+function shItem(){
+  var L=t();
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.itemTitle)+'</h2>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<div class="egress" style="margin-bottom:12px"><b>'+esc(L.itemYouTyped)+':</b> "'+esc(L.items[2][1])+'"</div>'+
+    '<div class="mfield" style="min-height:0;padding:9px 12px">'+
+      '<span style="width:18px;height:18px;color:var(--faint)">'+I.search+'</span>'+
+      '<span class="tiny muted" style="align-self:center">'+esc(L.pickSearch)+'</span></div>'+
+    '<div class="lbl" style="margin:16px 0 7px">'+esc(L.itemAlts)+'</div>'+
+    '<div class="card" style="padding:2px 15px">'+
+      L.alts.map(function(a,i){
+        return '<button class="lrow" style="width:100%;text-align:start"><span class="nm">'+esc(a[0])+
+        '<s>'+esc(a[1])+'</s></span>'+(i===0?'<span style="color:var(--accent)">✓</span>':
+        '<span style="color:var(--faint)">›</span>')+'</button>';}).join('')+'</div>'+
+    '<button class="btn ghost sm" style="margin-top:10px">+ '+esc(L.itemCreate)+'</button>'+
+    '<div style="height:14px"></div><button class="btn" data-go="close">'+esc(L.itemUse)+'</button>'+
+    '<p class="tiny muted" style="margin:11px 0 0;text-align:center">'+esc(L.itemLearn)+'</p>'+
+  '</div>';
+}
+
+function shActions(){
+  var L=t(), rows=[['actEdit',''],['actAgain',''],['actDup',''],['actTime',''],['actSplit',''],['actDel','d']];
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.actTitle)+'</h2>'+
+    '<span class="tiny muted">13:05</span><button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<div class="card" style="padding:2px 15px">'+rows.map(function(r){
+      return '<button class="lrow" style="width:100%;text-align:start'+(r[1]?';color:var(--danger)':'')+'" '+
+      'data-go="close"><span class="nm">'+esc(L[r[0]])+'</span></button>';}).join('')+'</div>'+
+    '<p class="tiny muted" style="margin:11px 0 0;text-align:center">'+esc(L.actNote)+'</p>'+
+  '</div>';
+}
+
+function scrDays(){
+  var L=t();
+  return '<div class="abar"><button class="back" data-go="back">←</button><h1>'+esc(L.daysTitle)+'</h1></div>'+
+  '<div class="scroll pad">'+
+    '<div class="mrow" style="margin-bottom:10px"><span class="chip on">'+esc(L.daysFilter)+' ▾</span></div>'+
+    '<div class="card" style="padding:2px 15px">'+L.daysRows.map(function(r){
+      var mark = r[4]==='out'?'<span style="color:var(--warn);font-weight:600">●</span>':
+                 r[4]==='ex' ?'<span style="color:var(--faint)">⌁</span>':
+                              '<span style="color:var(--border)">○</span>';
+      return '<button class="lrow" style="width:100%;text-align:start"><span class="tm" style="flex:0 0 62px;'+
+      'font-size:12.5px;color:var(--faint)">'+esc(r[0])+'</span>'+
+      '<span class="nm" style="font-size:14px">'+esc(r[1])+' → '+esc(r[2])+
+      (r[4]==='ex'?'<s>'+esc(L.daysEx)+'</s>':'')+'</span>'+
+      '<span class="num tiny muted">'+esc(r[3])+'</span>'+mark+'</button>';}).join('')+'</div>'+
+    '<p class="tiny muted" style="margin:10px 0 0;text-align:center">'+esc(L.daysTap)+'</p>'+
+  '</div>';
+}
+
+function bars(){
+  var v=[3,6,14,31,26,12,8], m=Math.max.apply(null,v);
+  return '<svg viewBox="0 0 100 40" preserveAspectRatio="none" style="width:100%;height:52px;display:block">'+
+    v.map(function(y,i){
+      var h=Math.max(1.5, y/m*36), good=(i>=2&&i<=4);
+      return '<rect x="'+(i*14.3+2)+'" y="'+(36-h)+'" width="10.3" height="'+h+'" rx="1.2" fill="'+
+      (good?'var(--accent)':'var(--border)')+'"/>'+
+      '<text x="'+(i*14.3+7.1)+'" y="39.6" font-size="3.4" fill="var(--faint)" text-anchor="middle">'+(i+1)+'</text>';
+    }).join('')+'</svg>';
+}
+function heat(){
+  var o='<svg viewBox="0 0 100 30" style="width:100%;height:40px;display:block">', k=0;
+  for(var r=0;r<4;r++) for(var c=0;c<20;c++){
+    var lv=(k*37)%100, col = lv>70?'var(--accent)':lv>40?'var(--accent-soft)':'var(--border)';
+    o+='<rect x="'+(c*5)+'" y="'+(r*7.5)+'" width="4" height="6" rx="1" fill="'+col+'"/>'; k++;
+  }
+  return o+'</svg>';
+}
+function line(v,band){
+  var mn=Math.min.apply(null,v), mx=Math.max.apply(null,v), rg=(mx-mn)||1, w=100/(v.length-1);
+  var pts=v.map(function(y,i){return (i*w).toFixed(1)+','+(34-(y-mn)/rg*28).toFixed(1);}).join(' ');
+  return '<svg viewBox="0 0 100 38" preserveAspectRatio="none" style="width:100%;height:52px;display:block">'+
+    (band?'<rect x="30" y="0" width="34" height="38" fill="var(--accent-soft)"/>':'')+
+    '<polyline points="'+pts+'" fill="none" stroke="var(--accent)" stroke-width="1.6" stroke-linecap="round" '+
+    'stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>';
+}
+function scatter(){
+  var pts=[[8,26],[16,21],[22,28],[30,18],[38,22],[45,14],[52,19],[60,11],[68,15],[76,9],[85,12],[92,7]];
+  return '<svg viewBox="0 0 100 38" preserveAspectRatio="none" style="width:100%;height:52px;display:block">'+
+    '<line x1="4" y1="28" x2="96" y2="9" stroke="var(--accent)" stroke-width="1.4" '+
+    'stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>'+
+    pts.map(function(q){return '<circle cx="'+q[0]+'" cy="'+q[1]+'" r="1.6" fill="var(--wet)"/>';}).join('')+'</svg>';
+}
+function scrTrends(){
+  var L=t(), art=[bars(),
+    line([12,31,44,38,52,61,40,29,34,22,18,25],true),
+    line([80.1,79.8,79.9,79.4,79.2,79.3,78.9,78.8,78.6,78.7,78.4,78.4]),
+    line([54,61,44,73,68,58,81,66,72,78,74,78]),
+    scatter(), heat()];
+  return '<div class="abar"><h1>'+esc(L.trTitleC)+'</h1></div><div class="scroll pad">'+
+    '<div class="mrow" style="margin-bottom:12px">'+
+      '<span class="chip">'+esc(L.inTitle)+'</span><span class="chip on">'+esc(L.trTitleC)+'</span>'+
+      '<span class="chip">'+esc(L.trialsTab)+'</span>'+
+      '<span class="sp"></span><span class="chip">'+esc(L.period)+' ▾</span></div>'+
+    L.charts.map(function(c,i){
+      return '<div class="card"><div style="font-size:14.5px;font-weight:600;letter-spacing:-.01em">'+esc(c[0])+'</div>'+
+      '<div class="tiny muted" style="margin:2px 0 10px">'+esc(c[1])+'</div>'+art[i]+'</div>';}).join('')+
+  '</div>';
+}
+
+function scrFoods(){
+  var L=t();
+  return '<div class="abar"><button class="back" data-go="back">←</button><h1>'+esc(L.foodTitle)+'</h1></div>'+
+  '<div class="scroll pad">'+
+    '<div class="mfield" style="min-height:0;padding:9px 12px;margin-bottom:10px">'+
+      '<span style="width:18px;height:18px;color:var(--faint)">'+I.search+'</span>'+
+      '<span class="tiny muted" style="align-self:center">'+esc(L.pickSearch)+'</span></div>'+
+    '<div class="warnbox" style="margin-bottom:12px"><span class="i">▲</span>'+
+      '<span style="flex:1 1 auto">'+esc(L.foodDup)+'</span>'+
+      '<span style="color:var(--warn);font-weight:600">'+esc(L.foodReview)+' ›</span></div>'+
+    '<div class="card" style="padding:2px 15px">'+L.foods.map(function(f){
+      return '<button class="lrow" style="width:100%;text-align:start"><span class="nm">'+esc(f[0])+
+      (f[2]==='q'?'<span class="qmark">?</span>':'')+'<s>'+esc(f[1])+'</s></span>'+
+      '<span style="color:var(--faint)">›</span></button>';}).join('')+'</div>'+
+    '<button class="btn ghost sm" style="margin-top:10px">+ '+esc(L.foodAdd)+'</button>'+
+    '<p class="tiny muted" style="margin:11px 0 0;text-align:center">'+esc(L.foodNote)+'</p>'+
+  '</div>';
+}
+
+function flagBanner(){
+  var L=t();
+  return '<div class="redflag"><div class="t">'+esc(L.flagTitle)+'</div>'+
+    '<div class="b">'+esc(L.flagBody)+'</div>'+
+    '<div class="b" style="color:var(--muted);margin-top:6px">'+esc(L.flagCalm)+'</div>'+
+    '<div class="btnrow" style="margin-top:11px">'+
+      '<button class="btn ghost sm" data-go="clearFlag">'+esc(L.flagOk)+'</button>'+
+      '<button class="btn sm soft" data-go="flagWhy">'+esc(L.flagWhy)+'</button></div></div>';
+}
+function scrFlag(){
+  var L=t();
+  return '<div class="abar"><button class="back" data-go="back">←</button><h1>'+esc(L.flagWhyT)+'</h1></div>'+
+  '<div class="scroll pad">'+
+    '<p class="plain" style="margin-top:0">'+esc(L.flagWhyLead)+'</p>'+
+    '<div class="card" style="padding:2px 15px">'+L.flagWhyRows.map(function(r){
+      return '<button class="lrow" style="width:100%;text-align:start">'+
+      '<span style="width:19px;height:19px;color:var(--danger);flex:0 0 19px">'+I.alert+'</span>'+
+      '<span class="nm">'+esc(r[1])+'<s>'+esc(r[0])+'</s></span>'+
+      '<span style="color:var(--faint)">›</span></button>';}).join('')+'</div>'+
+    '<div class="limits">'+esc(L.flagWhyRule)+'</div>'+
+    '<p class="tiny" style="color:var(--faint);text-align:center">'+esc(L.flagNoDx)+'</p>'+
+  '</div>';
+}
+
+function shGuard(){
+  var L=t();
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.guardTitle)+'</h2>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<p class="plain">'+esc(L.guardBody)+'</p>'+
+    '<button class="btn" data-go="closeToVerdict">'+esc(L.guardSee)+'</button>'+
+    '<div style="height:9px"></div>'+
+    '<button class="btn ghost" data-go="close">'+esc(L.guardCancel)+'</button>'+
+    '<p class="tiny muted" style="margin:11px 0 0;text-align:center">'+esc(L.guardNote)+'</p>'+
+  '</div>';
+}
+
+function shSync(){
+  var L=t();
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.syncTitle)+'</h2>'+
+    '<span class="tiny muted">'+esc(L.syncPending)+'</span>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<p class="tiny muted" style="margin:0 0 10px">'+esc(L.syncLast)+'</p>'+
+    '<div class="card" style="padding:2px 15px">'+L.syncRows.map(function(r){
+      return '<div class="lrow"><span class="nm">'+esc(r[0])+'<s>'+esc(r[1])+'</s></span>'+
+      '<span class="chip">↻</span></div>';}).join('')+'</div>'+
+    '<div style="height:12px"></div><button class="btn" data-go="close">'+esc(L.syncRetry)+'</button>'+
+    '<p class="tiny muted" style="margin:11px 0 0;text-align:center">'+esc(L.syncNote)+'</p>'+
+  '</div>';
+}
+
+function scrReminders(){
+  var L=t();
+  return '<div class="abar"><button class="back" data-go="back">←</button><h1>'+esc(L.remTitle)+'</h1></div>'+
+  '<div class="scroll pad">'+
+    '<div class="egress" style="margin-bottom:12px">✓ '+esc(L.remPerm)+'</div>'+
+    '<div class="card" style="padding:2px 15px">'+L.remRows.map(function(r,i){
+      var off = r[1]==='off'||r[1]==='כבוי';
+      return '<div class="lrow"><span class="nm">'+esc(r[0])+'<s>'+esc(r[1])+'</s></span>'+
+      '<span class="sw'+(off?'':' on')+'"><i></i></span></div>';}).join('')+'</div>'+
+    '<div class="lbl">'+esc(L.quiet)+'</div>'+
+    '<div class="card" style="padding:2px 15px"><div class="lrow">'+
+      '<span class="nm">'+esc(L.quiet)+'<s>'+esc(L.quietV)+'</s></span>'+
+      '<span style="color:var(--faint)">›</span></div>'+
+      '<div class="lrow"><span class="nm">'+esc(L.pauseAll)+'</span><span class="sw"><i></i></span></div></div>'+
+    '<p class="tiny muted" style="margin:12px 0 0;text-align:center">'+esc(L.remNote)+'</p>'+
+  '</div>';
+}
+
+function shExport(){
+  var L=t();
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.expTitle)+'</h2>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<div class="tiny muted" style="margin-bottom:7px">'+esc(L.expFormat)+'</div>'+
+    '<div class="card" style="padding:2px 15px">'+L.expF.map(function(f,i){
+      return '<div class="lrow"><span class="nm">'+esc(f[0])+'<s>'+esc(f[1])+'</s></span>'+
+      '<span style="color:'+(i===2?'var(--accent)':'var(--border)')+';font-size:17px">'+(i===2?'◉':'○')+'</span></div>';
+    }).join('')+'</div>'+
+    '<div class="card" style="padding:2px 15px;margin-top:12px">'+
+      '<div class="lrow"><span class="nm">'+esc(L.expRange)+'<s>'+esc(L.expRangeV)+'</s></span><span style="color:var(--faint)">›</span></div>'+
+      '<div class="lrow"><span class="nm">'+esc(L.expLang)+'<s>'+esc(L.langV)+'</s></span><span style="color:var(--faint)">›</span></div>'+
+      '<div class="lrow"><span class="nm">'+esc(L.expPhotos)+'</span><span class="sw"><i></i></span></div>'+
+      '<div class="lrow"><span class="nm">'+esc(L.expDeleted)+'</span><span class="sw on"><i></i></span></div></div>'+
+    '<div style="height:14px"></div><button class="btn" data-go="close">'+esc(L.expGo)+'</button>'+
+    '<p class="tiny muted" style="margin:11px 0 0;text-align:center">'+esc(L.expNote)+'</p>'+
+  '</div>';
+}
+
+function scrOnboard(){
+  var L=t();
+  return '<div class="abar"><h1 style="font-size:15px;color:var(--faint);font-weight:500">'+esc(L.onbStep)+'</h1></div>'+
+  '<div class="scroll pad">'+
+    '<div style="font-size:25px;font-weight:600;letter-spacing:-.025em;line-height:1.2;margin-bottom:18px">'+
+      esc(L.onbTitle)+'</div>'+
+    L.onbGoals.map(function(g,i){
+      return '<button class="card" style="width:100%;text-align:start;display:block;'+
+      (i===0?'border-color:var(--accent);background:var(--accent-soft)':'')+'">'+
+      '<div style="font-size:16px;font-weight:600;letter-spacing:-.015em">'+esc(g[0])+'</div>'+
+      '<div class="tiny muted" style="margin-top:4px">'+esc(g[1])+'</div></button>';}).join('')+
+    '<div style="height:8px"></div>'+
+    '<button class="btn" data-go="finishOnboard">'+esc(L.onbNext)+'</button>'+
+    '<div style="height:9px"></div>'+
+    '<button class="btn ghost" data-go="finishOnboard">'+esc(L.onbSkip)+'</button>'+
+    '<p class="tiny muted" style="margin:12px 0 0;text-align:center">'+esc(L.onbNote)+'</p>'+
+  '</div>';
+}
+
+
+function scrSecurity(){
+  var L=t();
+  return '<div class="abar"><button class="back" data-go="back">←</button><h1>'+esc(L.secTitle)+'</h1></div>'+
+  '<div class="scroll pad">'+
+    '<div class="egress" style="margin-bottom:14px"><b>● '+esc(L.secOn)+'</b><br>'+
+      '<span style="font-family:ui-monospace,monospace;font-size:11.5px">'+esc(L.secAlg)+'</span></div>'+
+
+    '<div class="lbl" style="margin-top:0">'+esc(L.secWhat)+'</div>'+
+    '<div class="card" style="padding:2px 15px">'+
+      L.secYes.map(function(r){
+        return '<div class="lrow"><span style="color:var(--accent);flex:0 0 18px;font-weight:700">✓</span>'+
+        '<span class="nm">'+esc(r[0])+'<s>'+esc(r[1])+'</s></span></div>';}).join('')+
+      L.secNo.map(function(r){
+        return '<div class="lrow"><span style="color:var(--faint);flex:0 0 18px;font-weight:700">✗</span>'+
+        '<span class="nm" style="color:var(--muted)">'+esc(r)+'</span></div>';}).join('')+
+    '</div>'+
+    '<p class="tiny muted" style="margin:-2px 0 0">'+esc(L.secNoWhy)+'</p>'+
+
+    '<div class="lbl">'+esc(L.secCard)+'</div>'+
+    (S.card?
+      '<pre style="background:var(--sunken);border:1px solid var(--border);border-radius:8px;'+
+      'padding:13px;font-size:11px;line-height:1.7;overflow-x:auto;margin:0 0 10px;'+
+      'font-family:ui-monospace,SFMono-Regular,monospace;color:var(--text)">'+esc(L.secCardBody)+'</pre>'+
+      '<div class="btnrow"><button class="btn ghost sm">Copy</button>'+
+      '<button class="btn ghost sm" data-go="hideCard">Done</button></div>'
+      :
+      '<div class="card"><div class="tiny muted" style="margin-bottom:10px">'+esc(L.secLast)+'</div>'+
+      '<button class="btn sm" data-go="showCard">'+esc(L.secShow)+'</button>'+
+      '<div style="height:8px"></div>'+
+      '<button class="btn ghost sm">'+esc(L.secCheck)+'</button></div>')+
+    '<div class="warnbox" style="margin-top:10px"><span class="i">▲</span><span>'+esc(L.secKeep)+'</span></div>'+
+  '</div>';
+}
+
+
+function shClarify(){
+  var L=t();
+  return '<div class="grab"></div><div class="sh"><h2>'+esc(L.clTitle)+'</h2>'+
+    '<button class="x" data-go="close">✕</button></div><div class="sb">'+
+    '<div class="egress" style="margin-bottom:14px"><b>'+esc(L.clRaw)+':</b> '+
+      '"'+esc('נשנשתי כל הערב')+'"</div>'+
+    '<p class="plain" style="margin:0 0 12px">'+esc(L.clLead)+'</p>'+
+    '<div class="card" style="padding:2px 15px">'+
+      L.clOpts.map(function(o){
+        return '<button class="lrow" style="width:100%;text-align:start" data-go="close">'+
+        '<span style="font-size:20px;flex:0 0 26px">'+o[0]+'</span>'+
+        '<span class="nm">'+esc(o[1])+'</span>'+
+        '<span class="tiny" style="color:var(--faint)">'+esc(o[2])+'</span></button>';
+      }).join('')+'</div>'+
+    '<p class="tiny muted" style="margin:2px 0 16px">'+esc(L.clFrom)+'</p>'+
+    '<button class="btn ghost" data-go="close">'+esc(L.clElse)+'</button>'+
+    '<div style="height:9px"></div>'+
+    '<button class="btn ghost" data-go="close">'+esc(L.clDunno)+'</button>'+
+    '<div class="warnbox" style="margin-top:14px"><span class="i">▲</span>'+
+      '<span>'+esc(L.clCost)+'</span></div>'+
+  '</div>';
+}
+
+
+/* ═══════════ v1.6 — day builder & day view ═══════════ */
+
+function slotRow(sl, editable){
+  var L=t(), est = sl[3] === '~';
+  return '<div class="card" style="margin-bottom:10px">'+
+    '<div class="row" style="margin-bottom:8px">'+
+      '<span style="font-size:17px">'+sl[0]+'</span>'+
+      '<b style="font-size:14.5px;letter-spacing:-.01em">'+esc(sl[1])+'</b>'+
+      '<span class="sp"></span>'+
+      '<span class="chip" style="font-size:12px'+(est?';border-style:dashed':'')+'">'+
+        esc(sl[2])+' ▾</span></div>'+
+    '<div class="mfield" style="min-height:0;padding:10px 12px;'+
+      (sl[4]?'':'border-style:dashed')+'">'+
+      (sl[4]
+        ? '<span style="flex:1 1 auto;font-size:15px;line-height:1.4">'+esc(sl[4])+'</span>'
+        : '<span class="tiny" style="flex:1 1 auto;color:var(--faint);align-self:center">'+
+          esc(L.dvNothing)+'</span>')+
+    '</div>'+
+    (sl[5]?'<div class="tiny" style="color:var(--accent);margin-top:7px">'+esc(sl[5])+'</div>':'')+
+  '</div>';
+}
+
+function scrDayBuilder(){
+  var L=t();
+  return '<div class="abar"><button class="back" data-go="back">←</button>'+
+    '<h1 style="font-size:17px">'+esc(L.dbTitle)+'</h1></div>'+
+  '<div class="scroll pad">'+
+    '<p class="tiny muted" style="margin:0 0 14px">'+esc(L.dbSub)+'</p>'+
+    L.dbSlots.map(function(sl){ return slotRow(sl, true); }).join('')+
+    '<button class="btn ghost sm">'+esc(L.dbAnother)+'</button>'+
+    '<p class="tiny muted" style="margin:10px 0 0">'+esc(L.dbTimes)+'</p>'+
+    '<p class="tiny muted" style="margin:6px 0 0">'+esc(L.dbPaste)+'</p>'+
+
+    '<div class="lbl">'+esc(L.dbAlso)+'</div>'+
+    '<div class="card" style="padding:2px 15px">'+
+      '<div class="lrow"><span style="width:19px;flex:0 0 19px;color:var(--muted)">'+I.stool+'</span>'+
+        '<span class="nm">09:40 · '+esc(L.bw[3])+'<s>'+esc(L.dbLogged)+'</s></span>'+
+        '<span style="color:var(--accent)">✓</span></div>'+
+      '<div class="lrow"><span style="width:19px;flex:0 0 19px;color:var(--faint)">'+I.symptom+'</span>'+
+        '<span class="nm" style="color:var(--muted)">'+esc(L.symTitle)+'</span>'+
+        '<span class="chip">+</span></div>'+
+      '<div class="lrow"><span style="width:19px;flex:0 0 19px;color:var(--faint)">'+I.check+'</span>'+
+        '<span class="nm" style="color:var(--muted)">'+esc(L.checkinQ)+'</span>'+
+        '<span class="chip">+</span></div>'+
+    '</div>'+
+    '<div style="height:14px"></div>'+
+    '<button class="btn" data-go="back">'+esc(L.dbSave)+' · '+esc(L.dbCount)+'</button>'+
+  '</div>';
+}
+
+function scrDayView(){
+  var L=t();
+  var slots = [L.dbSlots[0], L.dbSlots[1],
+               [L.dbSlots[2][0], L.dbSlots[2][1], '~19:30', '~', '', '']];
+  return '<div class="abar"><button class="back" data-go="back">←</button>'+
+    '<h1 style="font-size:17px">'+esc(L.dvTitle)+'</h1>'+
+    '<span class="tiny muted">'+esc(L.scoreWord)+' 62</span></div>'+
+  '<div class="scroll pad">'+
+    slots.map(function(sl){ return slotRow(sl, true); }).join('')+
+
+    '<div class="lbl">'+esc(L.dbAlso)+'</div>'+
+    '<div class="card" style="padding:2px 15px">'+
+      L.dvRows.map(function(r){
+        return '<button class="lrow" style="width:100%;text-align:start" data-go="openActions">'+
+        '<span style="font-size:15px;flex:0 0 22px">'+r[0]+'</span>'+
+        '<span class="tm" style="flex:0 0 44px;font-size:12.5px;color:var(--faint)">'+esc(r[1])+'</span>'+
+        '<span class="nm">'+esc(r[2])+(r[3]?'<s>'+esc(r[3])+'</s>':'')+'</span>'+
+        '<span class="more" style="color:var(--faint)">⋯</span></button>';}).join('')+
+    '</div>'+
+    '<div class="mrow" style="margin-top:10px">'+
+      '<span class="chip">💩 +</span><span class="chip">😣 +</span>'+
+      '<span class="chip">⚖️ +</span><span class="chip">📝 +</span></div>'+
+
+    '<div class="egress" style="margin-top:16px">'+
+      '<b>'+esc(L.dvWeight)+'</b> — '+esc(L.dvWeightWhy)+'</div>'+
+    '<p class="tiny muted" style="margin:10px 0 0;text-align:center">'+esc(L.dvAutosave)+'</p>'+
+  '</div>';
+}
+
+/* ─────────────── render ─────────────── */
+function tabs(){
+  var L=t(), ic=[I.today,I.line,I.bulb,I.dots], k=['today','timeline','insights','more'];
+  return '<div class="tabs">'+k.map(function(key,i){
+    return '<button class="tab'+(S.tab===key&&!S.sub?' on':'')+'" data-tab="'+key+'">'+
+      ic[i]+'<span>'+esc(L.tabs[i])+'</span></button>';}).join('')+'</div>';
+}
+function render(){
+  var main;
+  if(S.tab==='onboard') main=scrOnboard();
+  else if(S.sub==='days') main=scrDays();
+  else if(S.sub==='trends') main=scrTrends();
+  else if(S.sub==='foods') main=scrFoods();
+  else if(S.sub==='flagwhy') main=scrFlag();
+  else if(S.sub==='reminders') main=scrReminders();
+  else if(S.sub==='security') main=scrSecurity();
+  else if(S.sub==='daybuild') main=scrDayBuilder();
+  else if(S.sub==='dayview') main=scrDayView();
+  else if(S.sub==='evidence') main=scrEvidence();
+  else if(S.sub==='trial') main=scrTrial();
+  else if(S.sub==='verdict') main=scrVerdict();
+  else if(S.sub==='nullverdict') main=scrNull();
+  else if(S.tab==='timeline') main=scrTimeline();
+  else if(S.tab==='insights') main=scrInsights();
+  else if(S.tab==='more') main=scrMore();
+  else if(S.tab==='day1') main=scrToday1();
+  else main=scrToday();
+
+  var sheet='';
+  if(S.sheet==='meal') sheet=shMeal();
+  else if(S.sheet==='stool') sheet=shStool();
+  else if(S.sheet==='checkin') sheet=shCheckin();
+  else if(S.sheet==='picker') sheet=shPicker();
+  else if(S.sheet==='symptom') sheet=shSymptom();
+  else if(S.sheet==='weight') sheet=shWeight();
+  else if(S.sheet==='med') sheet=shMed();
+  else if(S.sheet==='item') sheet=shItem();
+  else if(S.sheet==='actions') sheet=shActions();
+  else if(S.sheet==='guard') sheet=shGuard();
+  else if(S.sheet==='sync') sheet=shSync();
+  else if(S.sheet==='export') sheet=shExport();
+  else if(S.sheet==='clarify') sheet=shClarify();
+  else if(S.sheet==='guess') sheet=shGuess();
+
+  app.setAttribute('dir', t().dir);
+  app.setAttribute('data-app', S.theme==='system'?'':S.theme);
+  if(S.flag && S.tab==='today' && !S.sub){
+    main = main.replace('<div class="scroll">', '<div class="scroll"><div style="padding-top:6px"></div>'+flagBanner());
+  }
+  var noTabs = S.tab==='onboard';
+  app.innerHTML = main + (noTabs?'':tabs()) +
+    '<div class="veil'+(S.sheet?' open':'')+'" data-go="close"></div>'+
+    '<div class="sheet'+(S.sheet?' open':'')+'">'+sheet+'</div>';
+  syncChrome();
+}
+
+/* ─────────────── nav ─────────────── */
+var ACT = {
+  openMeal:function(){ S.sheet='meal'; S.parse=0; },
+  openStool:function(){ S.sheet='stool'; S.bristol=null; S.saved=false; },
+  openCheckin:function(){ S.sheet='checkin'; },
+  close:function(){ S.sheet=null; S.parse=0; S.bristol=null; S.saved=false; },
+  parse:function(){ S.parse=1; render(); setTimeout(function(){ S.parse=2; render(); }, 900); },
+  evidence:function(){ S.sub='evidence'; },
+  trial:function(){ S.sub='trial'; },
+  verdict:function(){ S.sub='verdict'; },
+  guessPick:function(){},
+  guessSure:function(){},
+  verdictPeek:function(){ S.sub='verdict'; },
+  back:function(){
+    if(S.sub==='days'){ S.sub='evidence'; return; }
+    if(S.sub==='trends'||S.sub==='foods'||S.sub==='flagwhy'||S.sub==='reminders'||S.sub==='security'||S.sub==='daybuild'||S.sub==='dayview'){ S.sub=null; return; }
+    S.sub = S.sub==='verdict'?'trial': S.sub==='trial'?'evidence':null;
+    if(S.sub==='evidence'&&S.tab!=='insights') S.tab='insights';
+  },
+  fold:function(){ S.fold=!S.fold; },
+  openPicker:function(){ S.sheet='picker'; },
+  openSymptom:function(){ S.sheet='symptom'; },
+  openWeight:function(){ S.sheet='weight'; },
+  openMed:function(){ S.sheet='med'; },
+  openItem:function(){ S.sheet='item'; },
+  openActions:function(){ S.sheet='actions'; },
+  openGuard:function(){ S.sheet='guard'; },
+  openSync:function(){ S.sheet='sync'; },
+  openExport:function(){ S.sheet='export'; },
+  openClarify:function(){ S.sheet='clarify'; },
+  days:function(){ S.sub='days'; },
+  trends:function(){ S.tab='insights'; S.sub='trends'; },
+  foods:function(){ S.sub='foods'; },
+  flagWhy:function(){ S.sub='flagwhy'; },
+  clearFlag:function(){ S.flag=false; },
+  reminders:function(){ S.sub='reminders'; },
+  security:function(){ S.sub='security'; },
+  dayBuild:function(){ S.tab='today'; S.sub='daybuild'; },
+  dayView:function(){ S.tab='timeline'; S.sub='dayview'; },
+  showCard:function(){ S.card=true; },
+  hideCard:function(){ S.card=false; },
+  closeToVerdict:function(){ S.sheet=null; S.tab='insights'; S.sub='verdict'; },
+  finishOnboard:function(){ S.tab='day1'; S.sub=null; }
+};
+app.addEventListener('click', function(e){
+  var tb = e.target.closest('[data-tab]');
+  if(tb){ S.tab=tb.getAttribute('data-tab'); S.sub=null; S.sheet=null; render(); return; }
+  var bt = e.target.closest('[data-bristol]');
+  if(bt){ S.bristol=+bt.getAttribute('data-bristol'); S.saved=true; render(); return; }
+  var g = e.target.closest('[data-go]');
+  if(!g) return;
+  var k = g.getAttribute('data-go');
+  if(!k || !ACT[k]) return;
+  if(k==='parse'){ ACT.parse(); return; }
+  if(k==='guessPick'){ S.guess=g.getAttribute('data-v'); render(); return; }
+  if(k==='guessSure'){ S.guessSure=parseInt(g.getAttribute('data-v'),10); render(); return; }
+  ACT[k](); render();
+});
+
+/* ─────────────── chrome ─────────────── */
+var SCREENS = [
+  ['onboard','Onboarding','הגדרה ראשונית',function(){S.tab='onboard';S.sub=null;S.sheet=null;}],
+  ['day1','Day one','היום הראשון',function(){S.tab='day1';S.sub=null;S.sheet=null;}],
+  ['today','Today','היום',function(){S.tab='today';S.sub=null;S.sheet=null;}],
+  ['picker','Tracker picker','בחירת מעקב',function(){S.tab='today';S.sub=null;S.sheet='picker';}],
+  ['meal','Meal composer','תיעוד ארוחה',function(){S.tab='today';S.sub=null;S.sheet='meal';S.parse=2;}],
+  ['item','Item editor','עריכת פריט',function(){S.tab='today';S.sub=null;S.sheet='item';}],
+  ['clarify','Clarify a vague meal','בירור ארוחה מעורפלת',function(){S.tab='today';S.sub=null;S.sheet='clarify';}],
+  ['stool','Stool — one tap','יציאה — נגיעה אחת',function(){S.tab='today';S.sub=null;S.sheet='stool';S.bristol=6;S.saved=true;}],
+  ['symptom','Symptom','תסמין',function(){S.tab='today';S.sub=null;S.sheet='symptom';}],
+  ['checkin','Evening check-in','צ׳ק־אין ערב',function(){S.tab='today';S.sub=null;S.sheet='checkin';}],
+  ['weight','Weight & body','משקל וגוף',function(){S.tab='today';S.sub=null;S.sheet='weight';}],
+  ['med','Medication','תרופות',function(){S.tab='today';S.sub=null;S.sheet='med';}],
+  ['daybuild','Fill in a whole day','מילוי יום שלם',function(){S.tab='today';S.sub='daybuild';S.sheet=null;}],
+  ['timeline','Timeline','ציר זמן',function(){S.tab='timeline';S.sub=null;S.sheet=null;}],
+  ['dayview','Edit a past day','עריכת יום קודם',function(){S.tab='timeline';S.sub='dayview';S.sheet=null;}],
+  ['actions','Entry actions','פעולות על רשומה',function(){S.tab='timeline';S.sub=null;S.sheet='actions';}],
+  ['insights','Insights','תובנות',function(){S.tab='insights';S.sub=null;S.sheet=null;}],
+  ['evidence','Evidence card','כרטיס ראיות',function(){S.tab='insights';S.sub='evidence';S.sheet=null;}],
+  ['days','The days behind it','הימים שמאחורי',function(){S.tab='insights';S.sub='days';S.sheet=null;}],
+  ['trends','Trends','מגמות',function(){S.tab='insights';S.sub='trends';S.sheet=null;}],
+  ['trial','Trial proposal','הצעת ניסוי',function(){S.tab='insights';S.sub='trial';S.sheet=null;}],
+  ['verdict','Trial verdict','תוצאת הניסוי',function(){S.tab='insights';S.sub='verdict';S.sheet=null;}],
+  ['nullverdict','Null verdict — nothing found','תוצאה ריקה',function(){S.tab='insights';S.sub='nullverdict';S.sheet=null;}],
+  ['guess','Blinding guess','ניחוש הסמיות',function(){S.tab='insights';S.sub='verdict';S.sheet='guess';S.guessOpen=false;S.guess=null;S.guessSure=null;}],
+  ['guessopen','Guess — open-label version','ניחוש — ניסוי גלוי',function(){S.tab='insights';S.sub='verdict';S.sheet='guess';S.guessOpen=true;S.guess=null;S.guessSure=null;}],
+  ['guard','Guardrail','מעצור בטיחות',function(){S.tab='insights';S.sub=null;S.sheet='guard';}],
+  ['flag','Red flag','דגל אדום',function(){S.tab='today';S.sub=null;S.sheet=null;S.flag=true;}],
+  ['flagwhy','What triggered it','מה גרם לזה',function(){S.tab='today';S.sub='flagwhy';S.sheet=null;S.flag=true;}],
+  ['foods','Food library','ספריית מזונות',function(){S.tab='more';S.sub='foods';S.sheet=null;}],
+  ['sync','Sync','סנכרון',function(){S.tab='today';S.sub=null;S.sheet='sync';}],
+  ['reminders','Reminders','תזכורות',function(){S.tab='more';S.sub='reminders';S.sheet=null;}],
+  ['security','Security & keys','אבטחה ומפתחות',function(){S.tab='more';S.sub='security';S.sheet=null;S.card=false;}],
+  ['export','Export','ייצוא',function(){S.tab='more';S.sub=null;S.sheet='export';}],
+  ['more','Settings','הגדרות',function(){S.tab='more';S.sub=null;S.sheet=null;}]
+];
+var CAPS = {
+  onboard:'Four goals, not a questionnaire. Choosing one turns on a matching set of trackers — including the confounders, which is what most food apps skip.',
+  day1:'Day one is honest: no fake score, no empty chart. It tells you when the analysis will start being worth anything.',
+  today:'One tap to anything. The "usual for this time" tiles learn from your own history — by week three most logs are a single tap.',
+  picker:'Eleven trackers behind four tiles was the biggest hole in v1.0. This sheet guarantees every tracker is two taps from Today.',
+  meal:'Type it however you say it. The parser runs library-first and only falls back to a model, so it stays fast and works offline.',
+  clarify:'A meal with no food in it is not data. The app asks once — and the three options come from your OWN logged history at this hour, never from the model. That distinction is what keeps it a memory aid rather than a fabrication.',
+  item:'The learning loop. Correcting a parse writes an alias to your library, so the same words resolve instantly next time.',
+  stool:'Tap a tile and it is already saved — no confirm button exists. The ✕ is there from the moment it opens, for accidental taps.',
+  symptom:'Several symptoms in one pass, each saved separately so the analysis can tell them apart. Fever and fluids are here because the safety rules read them.',
+  weight:'Prefilled with your last reading, so the common case is open-and-save. Body metrics expand inline rather than living somewhere else.',
+  med:'The class — PPI, NSAID, antibiotic — is what the analysis consumes as a confounder. The app never suggests changing anything.',
+  daybuild:'Logging at night is probably the normal case, and v1.3 treated it as an edge case. One screen, one Save, one undo — and the times come from when you actually eat, not from a clock we made up.',
+  dayview:'The same screen in edit mode. Fix, fill or delete anything from one place. The day-weight line at the bottom tells you which past days are pulling their weight and what would fix the ones that are not.',
+  timeline:'Everything in one chronology, with the day score alongside. Long-press any row for the action sheet.',
+  actions:'Edit, duplicate, change time, split, delete. Every destructive action has an undo toast; only the irreversible ones get a dialog.',
+  insights:'Note the order: things worth testing, then hints, then what has been ruled out. No causal language anywhere.',
+  evidence:'Sample sizes, interval, adjusted confounders, and an explicit "be careful about this".',
+  days:'What makes "auditable" true rather than a claim. Every day behind the number, including the ones that were excluded and why.',
+  trends:'Six charts. The last one — logging completeness — is the honest answer to "why is my data thin?".',
+  trial:'The hypothesis and the threshold are written down before the trial starts. That is what stops the answer moving later.',
+  verdict:'A probability, not a verdict dressed as fact — with the limitations stated plainly and permanently attached.',
+  guard:'The button was never disabled. Hitting a guardrail explains, and offers the way forward.',
+  flag:'Above everything, including the trial. Fixed copy, no condition named, and it says plainly that it changes nothing else here.',
+  flagwhy:'Shows exactly which entries fired the rule and why the rule exists. Still no diagnosis, still no probability.',
+  foods:'Your real asset. It fills itself as you log, and every correction you make lands here.',
+  sync:'Everything is already saved on the device. This sheet only explains what has not yet reached your server.',
+  security:'L2 encryption, stated in plain words: your sentences and photos are encrypted, your numbers are not, because the engine reads them. The recovery card is shown here and nowhere else.',
+  reminders:'No streaks, no badges. If you miss several days the app offers to pause rather than escalate.',
+  export:'Three formats. The clinician PDF deliberately contains no AI writing — clinicians want the numbers.',
+  more:'Every tracker is a config file. The AI panel states exactly what leaves your server, in plain words.'
+};
+var current='today';
+function goScreen(id){
+  var s = SCREENS.filter(function(x){return x[0]===id;})[0];
+  if(!s) return;
+  S.parse=0; S.bristol=null; S.saved=false; S.flag=false; S.card=false;
+  s[3](); current=id; render();
+}
+function sideNav(){
+  var he = S.lang==='he';
+  document.getElementById('sidenav').innerHTML =
+    '<div class="grp">Screens</div>'+
+    SCREENS.map(function(s,i){
+      return '<button class="slink'+(s[0]===current?' on':'')+'" data-screen="'+s[0]+'">'+
+        '<span class="n">'+(i+1)+'</span><span>'+esc(he?s[2]:s[1])+'</span></button>';
+    }).join('');
+  document.getElementById('pickerIn').innerHTML =
+    SCREENS.map(function(s,i){
+      return '<button class="slink'+(s[0]===current?' on':'')+'" data-screen="'+s[0]+'" '+
+        'style="padding:12px 12px;font-size:15px">'+
+        '<span class="n">'+(i+1)+'</span><span>'+esc(he?s[2]:s[1])+'</span></button>';
+    }).join('');
+}
+function deriveCurrent(){
+  if(S.sheet) return S.sheet;
+  if(S.sub) return S.sub;
+  if(S.tab==='today' && S.flag) return 'flag';
+  return S.tab;
+}
+function syncChrome(){
+  var he = S.lang==='he';
+  current = deriveCurrent();
+  var s = SCREENS.filter(function(x){return x[0]===current;})[0];
+  document.getElementById('mName').textContent = s ? (he?s[2]:s[1]) : '';
+  document.getElementById('cap').textContent = CAPS[current]||'';
+  document.getElementById('tLangV').textContent = T[S.lang].name;
+  document.getElementById('tThemeV').textContent =
+    S.theme==='system'?(he?'לפי המכשיר':'System'):S.theme==='dark'?(he?'כהה':'Dark'):(he?'בהיר':'Light');
+  sideNav();
+}
+document.addEventListener('click', function(e){
+  var sc = e.target.closest('[data-screen]');
+  if(sc){ goScreen(sc.getAttribute('data-screen'));
+          document.getElementById('picker').classList.remove('open'); return; }
+});
+function toggleLang(){ S.lang = S.lang==='en'?'he':'en'; render(); }
+function toggleTheme(){ S.theme = S.theme==='system'?'light':S.theme==='light'?'dark':'system'; render(); }
+document.getElementById('tLang').onclick = toggleLang;
+document.getElementById('mLang').onclick = toggleLang;
+document.getElementById('tTheme').onclick = toggleTheme;
+document.getElementById('mTheme').onclick = toggleTheme;
+document.getElementById('tReset').onclick = function(){ goScreen('today'); };
+document.getElementById('mPick').onclick = function(){
+  document.getElementById('picker').classList.toggle('open'); };
+document.getElementById('picker').onclick = function(e){
+  if(e.target === this) this.classList.remove('open'); };
+
+render();
+})();
+</script>

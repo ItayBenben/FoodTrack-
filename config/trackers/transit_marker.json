@@ -1,0 +1,126 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "transit_marker",
+  "version": 1,
+  "category": "calibration",
+  "icon": "timer",
+  "cardinality": "occasional",
+  "quick_log": {
+    "enabled": false
+  },
+  "labels": {
+    "en": {
+      "name": "Transit-time test",
+      "short": "Transit"
+    },
+    "he": {
+      "name": "בדיקת זמן מעבר",
+      "short": "זמן מעבר"
+    }
+  },
+  "fields": [
+    {
+      "key": "stage",
+      "type": "enum",
+      "required": true,
+      "labels": {
+        "en": "Step",
+        "he": "שלב"
+      },
+      "options": [
+        {
+          "value": "ingested",
+          "labels": {
+            "en": "Ate the marker",
+            "he": "אכלתי את הסמן"
+          }
+        },
+        {
+          "value": "first_seen",
+          "labels": {
+            "en": "First saw it",
+            "he": "ראיתי אותו לראשונה"
+          }
+        },
+        {
+          "value": "abandoned",
+          "labels": {
+            "en": "Gave up on this one",
+            "he": "ויתרתי על המדידה"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "meta"
+      }
+    },
+    {
+      "key": "marker",
+      "type": "enum",
+      "labels": {
+        "en": "Marker",
+        "he": "סמן"
+      },
+      "options": [
+        {
+          "value": "blue_dye",
+          "labels": {
+            "en": "Blue food dye",
+            "he": "צבע מאכל כחול"
+          }
+        },
+        {
+          "value": "sweetcorn",
+          "labels": {
+            "en": "Sweetcorn",
+            "he": "תירס"
+          }
+        },
+        {
+          "value": "beetroot",
+          "labels": {
+            "en": "Beetroot",
+            "he": "סלק"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "meta"
+      }
+    },
+    {
+      "key": "hours",
+      "type": "number",
+      "min": 1,
+      "max": 120,
+      "step": 0.1,
+      "unit": "h",
+      "labels": {
+        "en": "Transit time",
+        "he": "זמן מעבר"
+      },
+      "analysis": {
+        "role": "calibration",
+        "min_observations": 3,
+        "shift_cap_pct": 50
+      }
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "hours",
+        "op": "last",
+        "field": "hours",
+        "analysis": {
+          "role": "calibration",
+          "type": "continuous",
+          "labels": {
+            "en": "Transit time",
+            "he": "זמן מעבר"
+          }
+        }
+      }
+    ]
+  }
+}

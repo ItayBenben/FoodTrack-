@@ -1,0 +1,462 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "symptom",
+  "version": 1,
+  "category": "gut",
+  "icon": "symptom",
+  "cardinality": "many_per_day",
+  "all_clear": {
+    "field": "kind",
+    "value": "none"
+  },
+  "counts_as_outcome_record": true,
+  "group_by_field": "kind",
+  "quick_log": {
+    "enabled": true,
+    "primary_field": "severity",
+    "home_shortcut": true
+  },
+  "labels": {
+    "en": {
+      "name": "Symptoms",
+      "short": "Symptom"
+    },
+    "he": {
+      "name": "תסמינים",
+      "short": "תסמין"
+    }
+  },
+  "fields": [
+    {
+      "key": "kind",
+      "type": "enum",
+      "required": true,
+      "labels": {
+        "en": "Symptom",
+        "he": "תסמין"
+      },
+      "options": [
+        {
+          "value": "bloating",
+          "labels": {
+            "en": "Bloating",
+            "he": "נפיחות"
+          }
+        },
+        {
+          "value": "gas",
+          "labels": {
+            "en": "Gas",
+            "he": "גזים"
+          }
+        },
+        {
+          "value": "pain",
+          "labels": {
+            "en": "Abdominal pain",
+            "he": "כאב בטן"
+          }
+        },
+        {
+          "value": "cramping",
+          "labels": {
+            "en": "Cramping",
+            "he": "התכווצויות"
+          }
+        },
+        {
+          "value": "reflux",
+          "labels": {
+            "en": "Reflux / heartburn",
+            "he": "צרבת"
+          }
+        },
+        {
+          "value": "nausea",
+          "labels": {
+            "en": "Nausea",
+            "he": "בחילה"
+          }
+        },
+        {
+          "value": "urgency",
+          "labels": {
+            "en": "Urgency",
+            "he": "דחיפות"
+          }
+        },
+        {
+          "value": "fatigue",
+          "labels": {
+            "en": "Fatigue",
+            "he": "עייפות"
+          }
+        },
+        {
+          "value": "none",
+          "labels": {
+            "en": "Nothing to report",
+            "he": "אין מה לדווח"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "outcome_selector"
+      }
+    },
+    {
+      "key": "severity",
+      "type": "scale",
+      "min": 0,
+      "max": 10,
+      "required": true,
+      "labels": {
+        "en": "How bad?",
+        "he": "כמה חזק?"
+      },
+      "show_when": {
+        "field": "kind",
+        "in": [
+          "bloating",
+          "gas",
+          "pain",
+          "cramping",
+          "reflux",
+          "nausea",
+          "urgency",
+          "fatigue"
+        ]
+      },
+      "safety": {
+        "persistent": {
+          "gte": 8,
+          "days": 3,
+          "rule": "red_flag_persistent_pain",
+          "where": {
+            "field": "kind",
+            "in": [
+              "pain",
+              "cramping"
+            ]
+          }
+        }
+      },
+      "analysis": {
+        "role": "outcome",
+        "direction": "higher_is_worse"
+      }
+    },
+    {
+      "key": "duration",
+      "type": "duration",
+      "min": 0,
+      "max": 86400,
+      "labels": {
+        "en": "How long?",
+        "he": "כמה זמן?"
+      },
+      "advanced": true,
+      "show_when": {
+        "field": "kind",
+        "in": [
+          "bloating",
+          "gas",
+          "pain",
+          "cramping",
+          "reflux",
+          "nausea",
+          "urgency",
+          "fatigue"
+        ]
+      },
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "location",
+      "type": "body_map",
+      "labels": {
+        "en": "Where?",
+        "he": "איפה?"
+      },
+      "advanced": true,
+      "show_when": {
+        "field": "kind",
+        "in": [
+          "pain",
+          "cramping",
+          "bloating"
+        ]
+      },
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "nocturnal",
+      "type": "boolean",
+      "labels": {
+        "en": "Woke me at night",
+        "he": "העיר אותי בלילה"
+      },
+      "advanced": true,
+      "safety": {
+        "flag": "red_flag_nocturnal_pain_check"
+      },
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "fever",
+      "type": "boolean",
+      "labels": {
+        "en": "Fever",
+        "he": "חום"
+      },
+      "advanced": true,
+      "safety": {
+        "flag": "red_flag_fever_gi"
+      },
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "temperature",
+      "type": "number",
+      "min": 34,
+      "max": 43,
+      "step": 0.1,
+      "unit": "°C",
+      "labels": {
+        "en": "Temperature",
+        "he": "חום (מעלות)"
+      },
+      "advanced": true,
+      "show_when": {
+        "field": "fever",
+        "in": [
+          true
+        ]
+      },
+      "safety": {
+        "threshold": {
+          "gte": 38,
+          "rule": "red_flag_fever_gi"
+        }
+      },
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "cannot_keep_fluids",
+      "type": "boolean",
+      "labels": {
+        "en": "Can't keep fluids down",
+        "he": "לא מצליח/ה לשמור נוזלים"
+      },
+      "advanced": true,
+      "safety": {
+        "flag": "red_flag_fluids"
+      },
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "note",
+      "type": "text",
+      "labels": {
+        "en": "Note",
+        "he": "הערה"
+      },
+      "max_length": 500,
+      "sensitive": true,
+      "analysis": {
+        "role": "meta"
+      },
+      "advanced": true
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "count",
+        "op": "count"
+      },
+      {
+        "key": "all_clear",
+        "op": "any",
+        "field": "kind",
+        "in": [
+          "none"
+        ]
+      },
+      {
+        "key": "load",
+        "op": "sum",
+        "field": "severity",
+        "scale": 1.25,
+        "analysis": {
+          "role": "outcome",
+          "type": "continuous",
+          "scale_max": 100,
+          "score_component": "symptom_load",
+          "labels": {
+            "en": "Overall symptom load",
+            "he": "עומס תסמינים כולל"
+          }
+        }
+      },
+      {
+        "key": "bloating",
+        "op": "max",
+        "field": "severity",
+        "where": {
+          "field": "kind",
+          "in": [
+            "bloating"
+          ]
+        },
+        "analysis": {
+          "role": "outcome",
+          "type": "continuous",
+          "notable_threshold": 5,
+          "labels": {
+            "en": "Bloating",
+            "he": "נפיחות"
+          }
+        }
+      },
+      {
+        "key": "gas",
+        "op": "max",
+        "field": "severity",
+        "where": {
+          "field": "kind",
+          "in": [
+            "gas"
+          ]
+        },
+        "analysis": {
+          "role": "outcome",
+          "type": "continuous",
+          "notable_threshold": 5,
+          "labels": {
+            "en": "Gas",
+            "he": "גזים"
+          }
+        }
+      },
+      {
+        "key": "pain",
+        "op": "max",
+        "field": "severity",
+        "where": {
+          "field": "kind",
+          "in": [
+            "pain"
+          ]
+        },
+        "analysis": {
+          "role": "outcome",
+          "type": "continuous",
+          "notable_threshold": 5,
+          "labels": {
+            "en": "Abdominal pain",
+            "he": "כאב בטן"
+          }
+        }
+      },
+      {
+        "key": "cramping",
+        "op": "max",
+        "field": "severity",
+        "where": {
+          "field": "kind",
+          "in": [
+            "cramping"
+          ]
+        },
+        "analysis": {
+          "role": "outcome",
+          "type": "continuous",
+          "notable_threshold": 5,
+          "labels": {
+            "en": "Cramping",
+            "he": "התכווצויות"
+          }
+        }
+      },
+      {
+        "key": "reflux",
+        "op": "max",
+        "field": "severity",
+        "where": {
+          "field": "kind",
+          "in": [
+            "reflux"
+          ]
+        },
+        "analysis": {
+          "role": "outcome",
+          "type": "continuous",
+          "notable_threshold": 5,
+          "labels": {
+            "en": "Reflux / heartburn",
+            "he": "צרבת"
+          }
+        }
+      },
+      {
+        "key": "nausea",
+        "op": "max",
+        "field": "severity",
+        "where": {
+          "field": "kind",
+          "in": [
+            "nausea"
+          ]
+        },
+        "analysis": {
+          "role": "outcome",
+          "type": "continuous",
+          "notable_threshold": 5,
+          "labels": {
+            "en": "Nausea",
+            "he": "בחילה"
+          }
+        }
+      },
+      {
+        "key": "urgency",
+        "op": "max",
+        "field": "severity",
+        "where": {
+          "field": "kind",
+          "in": [
+            "urgency"
+          ]
+        },
+        "analysis": {
+          "role": "outcome",
+          "type": "continuous",
+          "notable_threshold": 5,
+          "labels": {
+            "en": "Urgency",
+            "he": "דחיפות"
+          }
+        }
+      }
+    ]
+  },
+  "charts": [
+    {
+      "type": "line",
+      "aggregation": "load"
+    }
+  ]
+}

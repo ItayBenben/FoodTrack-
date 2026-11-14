@@ -1,0 +1,8 @@
+{
+  "name": "@foodtrack/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { "./tokens.json": "./tokens.json", "./tokens.css": "./dist/tokens.css", "./theme.css": "./dist/theme.css" },
+  "scripts": { "build": "node build.mjs", "postinstall": "node build.mjs", "typecheck": "true", "lint": "true", "test": "true" }
+}

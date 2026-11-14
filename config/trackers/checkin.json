@@ -1,0 +1,188 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "checkin",
+  "version": 1,
+  "category": "wellbeing",
+  "icon": "checkin",
+  "cardinality": "one_per_day",
+  "all_clear": {
+    "field": "all_clear",
+    "value": true
+  },
+  "counts_as_checkin": true,
+  "quick_log": {
+    "enabled": true,
+    "home_shortcut": true
+  },
+  "labels": {
+    "en": {
+      "name": "Evening check-in",
+      "short": "Check-in"
+    },
+    "he": {
+      "name": "צ'ק-אין ערב",
+      "short": "צ'ק-אין"
+    }
+  },
+  "fields": [
+    {
+      "key": "energy",
+      "type": "scale",
+      "min": 1,
+      "max": 5,
+      "labels": {
+        "en": "Energy",
+        "he": "אנרגיה"
+      },
+      "analysis": {
+        "role": "covariate",
+        "direction": "higher_is_better"
+      }
+    },
+    {
+      "key": "mood",
+      "type": "scale",
+      "min": 1,
+      "max": 5,
+      "labels": {
+        "en": "Mood",
+        "he": "מצב רוח"
+      },
+      "analysis": {
+        "role": "covariate",
+        "direction": "higher_is_better"
+      }
+    },
+    {
+      "key": "stress",
+      "type": "scale",
+      "min": 1,
+      "max": 5,
+      "labels": {
+        "en": "Stress",
+        "he": "לחץ"
+      },
+      "analysis": {
+        "role": "confounder",
+        "direction": "higher_is_worse"
+      }
+    },
+    {
+      "key": "sleep_hours",
+      "type": "number",
+      "min": 0,
+      "max": 16,
+      "step": 0.5,
+      "unit": "h",
+      "labels": {
+        "en": "Sleep last night",
+        "he": "שינה בלילה האחרון"
+      },
+      "analysis": {
+        "role": "confounder"
+      }
+    },
+    {
+      "key": "sleep_quality",
+      "type": "scale",
+      "min": 1,
+      "max": 5,
+      "labels": {
+        "en": "Sleep quality",
+        "he": "איכות שינה"
+      },
+      "advanced": true,
+      "analysis": {
+        "role": "covariate",
+        "direction": "higher_is_better"
+      }
+    },
+    {
+      "key": "all_clear",
+      "type": "boolean",
+      "labels": {
+        "en": "Gut was fine today",
+        "he": "הבטן הייתה בסדר היום"
+      },
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "note",
+      "type": "text",
+      "labels": {
+        "en": "Note",
+        "he": "הערה"
+      },
+      "max_length": 500,
+      "sensitive": true,
+      "analysis": {
+        "role": "meta"
+      },
+      "advanced": true
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "present",
+        "op": "count"
+      },
+      {
+        "key": "sleep_lt_6h",
+        "op": "any",
+        "field": "sleep_hours",
+        "lt": 6,
+        "analysis": {
+          "role": "confounder",
+          "type": "binary",
+          "adjust": true,
+          "labels": {
+            "en": "Slept under 6 h",
+            "he": "פחות מ-6 שעות שינה"
+          }
+        }
+      },
+      {
+        "key": "stress_high",
+        "op": "any",
+        "field": "stress",
+        "gte": 4,
+        "analysis": {
+          "role": "confounder",
+          "type": "binary",
+          "adjust": true,
+          "labels": {
+            "en": "High stress",
+            "he": "לחץ גבוה"
+          }
+        }
+      },
+      {
+        "key": "energy",
+        "op": "mean",
+        "field": "energy",
+        "analysis": {
+          "role": "outcome",
+          "type": "continuous",
+          "direction": "higher_is_better",
+          "labels": {
+            "en": "Energy",
+            "he": "אנרגיה"
+          }
+        }
+      },
+      {
+        "key": "mood",
+        "op": "mean",
+        "field": "mood"
+      },
+      {
+        "key": "all_clear",
+        "op": "any",
+        "field": "all_clear"
+      }
+    ]
+  }
+}

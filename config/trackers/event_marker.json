@@ -1,0 +1,157 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "event_marker",
+  "version": 1,
+  "category": "context",
+  "icon": "flag",
+  "cardinality": "occasional",
+  "quick_log": {
+    "enabled": false
+  },
+  "labels": {
+    "en": {
+      "name": "Life event",
+      "short": "Event"
+    },
+    "he": {
+      "name": "אירוע",
+      "short": "אירוע"
+    }
+  },
+  "fields": [
+    {
+      "key": "kind",
+      "type": "enum",
+      "required": true,
+      "labels": {
+        "en": "What happened",
+        "he": "מה קרה"
+      },
+      "options": [
+        {
+          "value": "antibiotics",
+          "labels": {
+            "en": "Course of antibiotics",
+            "he": "טיפול אנטיביוטי"
+          }
+        },
+        {
+          "value": "travel",
+          "labels": {
+            "en": "Travel",
+            "he": "נסיעה"
+          }
+        },
+        {
+          "value": "illness",
+          "labels": {
+            "en": "Illness / stomach bug",
+            "he": "מחלה / וירוס בטן"
+          }
+        },
+        {
+          "value": "cycle",
+          "labels": {
+            "en": "Cycle phase",
+            "he": "שלב במחזור"
+          }
+        },
+        {
+          "value": "procedure",
+          "labels": {
+            "en": "Medical procedure",
+            "he": "פרוצדורה רפואית"
+          }
+        },
+        {
+          "value": "other",
+          "labels": {
+            "en": "Other",
+            "he": "אחר"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "covariate"
+      }
+    },
+    {
+      "key": "label",
+      "type": "text",
+      "max_length": 200,
+      "sensitive": true,
+      "labels": {
+        "en": "Details",
+        "he": "פרטים"
+      },
+      "analysis": {
+        "role": "meta"
+      }
+    },
+    {
+      "key": "ended_at",
+      "type": "datetime",
+      "labels": {
+        "en": "Ended",
+        "he": "הסתיים"
+      },
+      "analysis": {
+        "role": "meta"
+      }
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "antibiotics",
+        "op": "any",
+        "field": "kind",
+        "in": [
+          "antibiotics"
+        ],
+        "analysis": {
+          "role": "covariate",
+          "type": "binary",
+          "persist_days": 14,
+          "labels": {
+            "en": "Antibiotics course",
+            "he": "טיפול אנטיביוטי"
+          }
+        }
+      },
+      {
+        "key": "travel",
+        "op": "any",
+        "field": "kind",
+        "in": [
+          "travel"
+        ],
+        "analysis": {
+          "role": "covariate",
+          "type": "binary",
+          "labels": {
+            "en": "Travel",
+            "he": "נסיעה"
+          }
+        }
+      },
+      {
+        "key": "illness",
+        "op": "any",
+        "field": "kind",
+        "in": [
+          "illness"
+        ],
+        "analysis": {
+          "role": "covariate",
+          "type": "binary",
+          "persist_days": 3,
+          "labels": {
+            "en": "Illness",
+            "he": "מחלה"
+          }
+        }
+      }
+    ]
+  }
+}

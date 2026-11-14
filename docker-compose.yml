@@ -1,0 +1,95 @@
+# FoodTrack — full stack. `docker compose up -d` from a fresh clone (after `cp .env.example .env`).
+# Only caddy publishes ports (06 §5.5, enforced by scripts/compose-lint.mjs).
+name: foodtrack
+
+x-app-env: &app-env
+  NODE_ENV: production
+  DATABASE_URL: postgres://foodtrack_app:${FOODTRACK_DB_APP_PASSWORD}@postgres:5432/foodtrack
+  DATABASE_OWNER_URL: postgres://foodtrack:${FOODTRACK_DB_OWNER_PASSWORD}@postgres:5432/foodtrack
+  SESSION_SECRET: ${SESSION_SECRET}
+  FOODTRACK_KEK: ${FOODTRACK_KEK}
+  ANALYSIS_URL: http://analysis:8000
+  MEDIA_DIR: /data/media
+  PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-https://localhost}
+  AUTH_MODE: ${AUTH_MODE:-single}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  ANTHROPIC_MODEL_TEXT: ${ANTHROPIC_MODEL_TEXT:-}
+  ANTHROPIC_MODEL_VISION: ${ANTHROPIC_MODEL_VISION:-}
+  OPENAI_COMPAT_URL: ${OPENAI_COMPAT_URL:-}
+  OPENAI_COMPAT_MODEL: ${OPENAI_COMPAT_MODEL:-}
+  VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+  VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_SUPERUSER_PASSWORD}
+      FOODTRACK_DB_OWNER_PASSWORD: ${FOODTRACK_DB_OWNER_PASSWORD}
+      FOODTRACK_DB_APP_PASSWORD: ${FOODTRACK_DB_APP_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql
+      - ./infra/postgres/00-roles.sh:/docker-entrypoint-initdb.d/00-roles.sh:ro
+      - ./infra/postgres/init.sql.tpl:/docker-entrypoint-initdb.d/init.sql.tpl:ro
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U postgres -d foodtrack"], interval: 10s, timeout: 5s, retries: 10 }
+    networks: [internal]
+    restart: unless-stopped
+
+  api:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    environment:
+      <<: *app-env
+      WORKER_INPROCESS: "false"
+    depends_on: { postgres: { condition: service_healthy } }
+    volumes: [media:/data/media]
+    healthcheck: { test: ["CMD", "node", "-e", "fetch('http://localhost:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"], interval: 15s, timeout: 5s, retries: 5 }
+    networks: [internal]
+    restart: unless-stopped
+
+  worker:
+    build: { context: ., dockerfile: apps/api/Dockerfile }
+    command: ["node", "dist/workers/index.js"]
+    environment: *app-env
+    depends_on: { api: { condition: service_healthy } }
+    volumes: [media:/data/media]
+    networks: [internal]
+    restart: unless-stopped
+
+  analysis:
+    build: { context: ., dockerfile: apps/analysis/Dockerfile }
+    environment:
+      DATABASE_URL: postgresql://foodtrack_app:${FOODTRACK_DB_APP_PASSWORD}@postgres:5432/foodtrack
+    depends_on: { postgres: { condition: service_healthy } }
+    healthcheck: { test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"], interval: 15s, timeout: 5s, retries: 5 }
+    networks: [internal]
+    restart: unless-stopped
+
+  web:
+    build: { context: ., dockerfile: apps/web/Dockerfile }
+    environment:
+      API_INTERNAL_URL: http://api:4000
+    depends_on: { api: { condition: service_healthy } }
+    healthcheck: { test: ["CMD", "node", "-e", "fetch('http://localhost:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"], interval: 15s, timeout: 5s, retries: 5 }
+    networks: [internal]
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    ports: ["80:80", "443:443", "443:443/udp"]
+    environment:
+      FOODTRACK_DOMAIN: ${FOODTRACK_DOMAIN:-localhost}
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+    depends_on: [web, api]
+    networks: [internal]
+    restart: unless-stopped
+
+networks:
+  internal: {}
+
+volumes:
+  pgdata: {}
+  media: {}
+  caddydata: {}

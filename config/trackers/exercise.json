@@ -1,0 +1,139 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "exercise",
+  "version": 1,
+  "category": "activity",
+  "icon": "exercise",
+  "cardinality": "many_per_day",
+  "quick_log": {
+    "enabled": true
+  },
+  "labels": {
+    "en": {
+      "name": "Exercise",
+      "short": "Exercise"
+    },
+    "he": {
+      "name": "פעילות גופנית",
+      "short": "ספורט"
+    }
+  },
+  "fields": [
+    {
+      "key": "kind",
+      "type": "enum",
+      "required": true,
+      "labels": {
+        "en": "Activity",
+        "he": "פעילות"
+      },
+      "options": [
+        {
+          "value": "walk",
+          "labels": {
+            "en": "Walk",
+            "he": "הליכה"
+          }
+        },
+        {
+          "value": "run",
+          "labels": {
+            "en": "Run",
+            "he": "ריצה"
+          }
+        },
+        {
+          "value": "cycle",
+          "labels": {
+            "en": "Cycling",
+            "he": "אופניים"
+          }
+        },
+        {
+          "value": "strength",
+          "labels": {
+            "en": "Strength",
+            "he": "כוח"
+          }
+        },
+        {
+          "value": "swim",
+          "labels": {
+            "en": "Swim",
+            "he": "שחייה"
+          }
+        },
+        {
+          "value": "yoga",
+          "labels": {
+            "en": "Yoga / stretching",
+            "he": "יוגה / מתיחות"
+          }
+        },
+        {
+          "value": "other",
+          "labels": {
+            "en": "Other",
+            "he": "אחר"
+          }
+        }
+      ],
+      "analysis": {
+        "role": "context"
+      }
+    },
+    {
+      "key": "minutes",
+      "type": "number",
+      "required": true,
+      "min": 1,
+      "max": 600,
+      "unit": "min",
+      "labels": {
+        "en": "Minutes",
+        "he": "דקות"
+      },
+      "analysis": {
+        "role": "confounder"
+      }
+    },
+    {
+      "key": "intensity",
+      "type": "scale",
+      "min": 1,
+      "max": 5,
+      "labels": {
+        "en": "Intensity",
+        "he": "עצימות"
+      },
+      "advanced": true,
+      "analysis": {
+        "role": "context"
+      }
+    }
+  ],
+  "aggregation": {
+    "daily": [
+      {
+        "key": "minutes",
+        "op": "sum",
+        "field": "minutes"
+      },
+      {
+        "key": "long_session",
+        "op": "any",
+        "field": "minutes",
+        "gte": 60,
+        "analysis": {
+          "role": "confounder",
+          "type": "binary",
+          "adjust": true,
+          "labels": {
+            "en": "Exercise ≥ 60 min",
+            "he": "פעילות של 60 דקות ומעלה"
+          }
+        }
+      }
+    ]
+  }
+}
