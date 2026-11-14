@@ -3,7 +3,15 @@
 Everything here runs on the machine that hosts FoodTrack. Two entries — **passphrase reset** and **restore** — must be
 tried once before the first real week of use: an untested recovery path is not a recovery path.
 
-## 1. First install
+## 0. Cheapest: one VM you already have
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ItayBenben/FoodTrack-/main/scripts/deploy-vm.sh | sudo bash
+```
+
+Adds swap on small instances, installs Docker, generates every secret, builds, migrates, creates the keys (recovery card in `/root/foodtrack-recovery-card.txt`), seeds foods and starts. Without a domain it serves `https://<ip-with-dashes>.sslip.io` with a real certificate. Open ports 80 and 443 in the security group.
+
+## 1. First install (manual)
 
 ```bash
 cp .env.example .env            # fill in passwords, SESSION_SECRET (openssl rand -base64 32), FOODTRACK_DOMAIN
