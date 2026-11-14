@@ -18,7 +18,7 @@ notes, photos) is encrypted at rest.
 | `apps/analysis` | Python (FastAPI, numpy/scipy/statsmodels) — the association engine and Bayesian trial verdicts |
 | `packages/` | `shared` (zod schemas, day maths, copy rules) · `tracker-schema` (the tracker meta-schema) · `tokens` |
 | `config/` | 14 tracker definitions, 4 packs, 131 seed foods, FODMAP classes, engine parameters — trackers are data, not code |
-| `docs/` | the specifications (the contract), `impl-notes.md` (decisions taken while building), `runbook.md` |
+| `docs/` | the specifications (the contract), `impl-notes.md` (decisions taken while building), `runbook.md`, `deployment.md` (production: where it runs, how to deploy and verify) |
 
 ## Run it
 

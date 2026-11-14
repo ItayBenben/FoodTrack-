@@ -9,7 +9,7 @@ tried once before the first real week of use: an untested recovery path is not a
 curl -fsSL https://raw.githubusercontent.com/ItayBenben/FoodTrack-/main/scripts/deploy-vm.sh | sudo bash
 ```
 
-Adds swap on small instances, installs Docker, generates every secret, builds, migrates, creates the keys (recovery card in `/root/foodtrack-recovery-card.txt`), seeds foods and starts. Without a domain it serves `https://<ip-with-dashes>.sslip.io` with a real certificate. Open ports 80 and 443 in the security group.
+Adds swap on small instances, installs Docker, generates every secret, builds, migrates, creates the keys (recovery card in `/root/foodtrack-recovery-card.txt`), seeds foods and starts. Without a domain it serves `https://<ip-with-dashes>.sslip.io` with a real certificate. Open ports 80 and 443 in the security group. The current production install, its AWS resources and operating notes are in [`deployment.md`](deployment.md).
 
 ## 1. First install (manual)
 
