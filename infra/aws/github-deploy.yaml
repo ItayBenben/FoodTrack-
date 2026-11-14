@@ -1,0 +1,53 @@
+# One-time AWS setup for .github/workflows/deploy.yml (docs/deployment.md §2).
+# Lets GitHub Actions — only this repository, only jobs in its `production` environment — assume a
+# short-lived role that can do exactly one thing: SSM Run Command (AWS-RunShellScript) on the
+# production instance. No access keys exist anywhere.
+#
+#   aws cloudformation deploy --region eu-central-1 --stack-name foodtrack-github-deploy \
+#     --template-file infra/aws/github-deploy.yaml --capabilities CAPABILITY_NAMED_IAM \
+#     --parameter-overrides CreateOidcProvider=true      # false if the account already has the GitHub provider
+AWSTemplateFormatVersion: '2010-09-09'
+Description: FoodTrack CD - GitHub OIDC role that may run SSM commands on the production VM
+Parameters:
+  Repository: { Type: String, Default: ItayBenben/FoodTrack- }
+  InstanceId: { Type: String, Default: i-0c7d5a650b99b55e4 }
+  CreateOidcProvider: { Type: String, Default: 'true', AllowedValues: ['true', 'false'] }
+Conditions:
+  MakeProvider: !Equals [!Ref CreateOidcProvider, 'true']
+Resources:
+  GitHubOidc:
+    Type: AWS::IAM::OIDCProvider
+    Condition: MakeProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+  DeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: foodtrack-github-deploy
+      MaxSessionDuration: 7200
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com' }
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                token.actions.githubusercontent.com:sub: !Sub 'repo:${Repository}:environment:production'
+      Policies:
+        - PolicyName: ssm-run-on-production-only
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ssm:SendCommand
+                Resource:
+                  - !Sub 'arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${InstanceId}'
+                  - !Sub 'arn:aws:ssm:${AWS::Region}::document/AWS-RunShellScript'
+              - Effect: Allow
+                Action: [ssm:GetCommandInvocation, ssm:ListCommandInvocations]
+                Resource: '*'
+Outputs:
+  RoleArn: { Value: !GetAtt DeployRole.Arn }
