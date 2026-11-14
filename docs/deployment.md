@@ -41,7 +41,17 @@ Gotchas learned the hard way:
 - Under build load the agent answers slowly; send the command, read the result in a separate call.
 - Parameters of every Run Command are kept in SSM command history (~30 days) and visible to anyone with SSM access to the account. **Don't pass secrets as command text** unless you accept that; rotate them afterwards if you do.
 
-### Deploy / upgrade (standing rule: merge green PRs and deploy without asking — see `CLAUDE.md`)
+### Deploy / upgrade — automatic
+
+Every push to `main` that passes `ci` is deployed by `.github/workflows/deploy.yml`:
+
+1. GitHub's OIDC token is exchanged for the role **`foodtrack-github-deploy`** (created by `infra/aws/github-deploy.yaml`, a one-time CloudFormation stack). Its only permission is SSM Run Command (`AWS-RunShellScript`) on this instance — no SSH, no stored keys.
+2. The job runs `deploy-vm.sh` on the box via SSM with `DEPLOY_SHA` = the commit CI tested, waits for it (up to ~60 min), and prints the log tail.
+3. Smoke test: `/` and `/api/v1/health` must return 200.
+
+Re-deploy by hand from the Actions tab (`deploy` → *Run workflow*). Deploys never overlap (`concurrency: production`). Standing rule: merge green PRs and let this deploy them — see `CLAUDE.md`.
+
+Manual fallback (only if Actions or the role is broken):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ItayBenben/FoodTrack-/main/scripts/deploy-vm.sh -o /root/deploy-vm.sh
@@ -79,7 +89,7 @@ Expect `provider anthropic`, `degraded false`. `deterministic` / `true` means ev
 
 ### Anthropic key and model
 
-In `/opt/foodtrack/.env`: `ANTHROPIC_API_KEY=…` and `ANTHROPIC_MODEL_TEXT=<model id>`. After changing either: `docker compose up -d api worker`. Rotate the key in the Anthropic console, replace it in `.env`, restart, then delete the old key. Meal parses take 4–6 s against an 8 s timeout (`config/llm.json`); if parses start degrading, pick a faster model rather than raising the timeout.
+In `/opt/foodtrack/.env`: `ANTHROPIC_API_KEY=…` and `ANTHROPIC_MODEL_TEXT=<model id>`. Photo reading is on (`config/llm.json` → `vision.enabled`) and uses the text model unless `ANTHROPIC_MODEL_VISION` is set. After changing either: `docker compose up -d api worker`. Rotate the key in the Anthropic console, replace it in `.env`, restart, then delete the old key. Meal parses take 4–6 s against an 8 s timeout (`config/llm.json`); if parses start degrading, pick a faster model rather than raising the timeout.
 
 ### Backups
 
@@ -107,6 +117,7 @@ Created at first install in `/root/foodtrack-recovery-card.txt`. It must be copi
    - **LLM schema rejected**: the meal-parse JSON schema put `enum` on a `["string","null"]` type union; the structured-output API answers 400, and the router fell back to `deterministic` on every parse — invisible from the UI. Fixed with `anyOf`, plus `apps/api/test/llm-schema.test.ts` to keep it fixed.
 6. Installed the Anthropic key in `.env`, verified English and Hebrew meal parsing go through Claude.
 7. Merged PR #2, redeployed from `main`, re-verified.
+8. Gallery photos (PR #4); photo reading turned on and continuous deployment added (I-29, I-30).
 
 ## 5. Open follow-ups
 

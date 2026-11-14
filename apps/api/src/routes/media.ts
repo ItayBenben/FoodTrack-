@@ -8,8 +8,11 @@ import { uuidv7 } from '@foodtrack/shared';
 import { withUser } from '../db/pool.js';
 import { HttpProblem, notFound } from '../lib/problem.js';
 import { getUser } from '../services/users.js';
+import { MealParser } from '../services/meal-parse.js';
 
 const MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
+/** What the vision model can read. HEIC is stored but not analysed (the client converts to JPEG first). */
+const VISION_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 export async function mediaRoutes(app: FastifyInstance) {
   const { deps } = app;
@@ -45,8 +48,11 @@ export async function mediaRoutes(app: FastifyInstance) {
     const buf = await file.toBuffer();
     const media_id = await store(req.userId, buf, file.mimetype);
     if (!deps.llm.describe().vision) return { media_id, items: [], vision: 'off' };
+    if (!VISION_MIMES.has(file.mimetype)) return { media_id, items: [], vision: 'unavailable' };
     const locale = await withUser(deps.db, req.userId, async (tx) => (await getUser(tx)).locale);
     const r = await deps.llm.parsePhoto({ image: buf, mime: file.mimetype, locale });
-    return { media_id, items: r.items.map((i) => ({ ...i, resolved_by: 'vision', portion_precision: 'estimated' })), vision: r.degraded ? 'unavailable' : 'on' };
+    if (r.degraded) return { media_id, items: [], vision: 'unavailable' };
+    const items = await withUser(deps.db, req.userId, (tx) => new MealParser(tx, deps, locale).resolveVision(r.items));
+    return { media_id, items, vision: 'on' };
   });
 }

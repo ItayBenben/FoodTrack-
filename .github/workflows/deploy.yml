@@ -1,0 +1,78 @@
+# Continuous deployment (docs/deployment.md §2). When `ci` passes on a push to main, deploy that exact
+# commit to the production VM. No SSH and no stored AWS keys: GitHub's OIDC token is exchanged for a
+# short-lived role (infra/aws/github-deploy.yaml) that may only run SSM Run Command on the one instance.
+name: deploy
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:          # manual re-deploy of main from the Actions tab
+
+permissions:
+  id-token: write             # OIDC → AWS
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false   # never interrupt a deploy half-way; the next one waits
+
+env:
+  AWS_REGION: eu-central-1
+  INSTANCE_ID: i-0c7d5a650b99b55e4
+  ROLE_ARN: arn:aws:iam::730335461967:role/foodtrack-github-deploy
+  SITE: https://18-157-228-96.sslip.io
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 70
+    steps:
+      - name: Which commit
+        id: sha
+        run: echo "sha=${{ github.event.workflow_run.head_sha || github.sha }}" >> "$GITHUB_OUTPUT"
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: foodtrack-deploy-${{ github.run_id }}
+
+      - name: Run the deploy script on the VM (SSM Run Command)
+        id: send
+        env: { SHA: "${{ steps.sha.outputs.sha }}" }
+        run: |
+          # AWS-RunShellScript runs under sh; the script itself is bash. It pins the commit CI tested.
+          cmd="curl -fsSL https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${SHA}/scripts/deploy-vm.sh -o /root/deploy-vm.sh && DEPLOY_SHA=${SHA} bash /root/deploy-vm.sh > /var/log/foodtrack-deploy.log 2>&1; rc=\$?; tail -n 60 /var/log/foodtrack-deploy.log; exit \$rc"
+          params=$(jq -nc --arg c "$cmd" '{commands: [$c], executionTimeout: ["3600"]}')
+          id=$(aws ssm send-command --instance-ids "$INSTANCE_ID" --document-name AWS-RunShellScript \
+                 --comment "foodtrack deploy ${SHA:0:7}" --timeout-seconds 600 --parameters "$params" \
+                 --query Command.CommandId --output text)
+          echo "command_id=$id" >> "$GITHUB_OUTPUT"
+          echo "SSM command $id"
+
+      - name: Wait for it (builds take 5–30 min on this box)
+        env: { ID: "${{ steps.send.outputs.command_id }}" }
+        run: |
+          for i in $(seq 1 200); do
+            sleep 20
+            status=$(aws ssm get-command-invocation --command-id "$ID" --instance-id "$INSTANCE_ID" --query Status --output text 2>/dev/null || echo Pending)
+            case "$status" in Pending|InProgress|Delayed) echo "… $status ($((i*20))s)"; continue;; esac
+            break
+          done
+          aws ssm get-command-invocation --command-id "$ID" --instance-id "$INSTANCE_ID" --query StandardOutputContent --output text
+          echo "final status: $status"
+          [ "$status" = "Success" ]
+
+      - name: Smoke test
+        run: |
+          for i in $(seq 1 18); do
+            web=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/" || true)
+            api=$(curl -s -o /dev/null -w '%{http_code}' "$SITE/api/v1/health" || true)
+            echo "web $web · api $api"
+            [ "$web" = 200 ] && [ "$api" = 200 ] && exit 0
+            sleep 10
+          done
+          exit 1

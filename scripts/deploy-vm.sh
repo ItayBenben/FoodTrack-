@@ -10,6 +10,7 @@
 set -euo pipefail
 REPO="${REPO:-https://github.com/ItayBenben/FoodTrack-.git}"
 BRANCH="${BRANCH:-main}"
+DEPLOY_SHA="${DEPLOY_SHA:-}"   # CD pins the exact commit CI tested; unset = tip of $BRANCH
 DIR="${DIR:-/opt/foodtrack}"
 
 log() { echo -e "\n==> $*"; }
@@ -40,8 +41,9 @@ fi
 command -v git >/dev/null || (apt-get install -y -qq git 2>/dev/null || dnf install -y git)
 
 log "3/7 code"
-if [[ -d $DIR/.git ]]; then git -C "$DIR" fetch -q origin "$BRANCH" && git -C "$DIR" checkout -q "$BRANCH" && git -C "$DIR" reset -q --hard "origin/$BRANCH"
-else git clone -q -b "$BRANCH" "$REPO" "$DIR"; fi
+if [[ -d $DIR/.git ]]; then git -C "$DIR" fetch -q origin "$BRANCH" && git -C "$DIR" checkout -q "$BRANCH" && git -C "$DIR" reset -q --hard "${DEPLOY_SHA:-origin/$BRANCH}"
+else git clone -q -b "$BRANCH" "$REPO" "$DIR"; [[ -z $DEPLOY_SHA ]] || git -C "$DIR" reset -q --hard "$DEPLOY_SHA"; fi
+echo "deploying $(git -C "$DIR" rev-parse --short HEAD)"
 cd "$DIR"
 
 log "4/7 .env (secrets generated once, never overwritten)"

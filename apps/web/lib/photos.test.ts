@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { admit, fitWithin } from './photos';
+import { admit, fitWithin, mergeItems } from './photos';
 
 describe('fitWithin', () => {
   it('shrinks the long edge to the limit and keeps the ratio', () => {
@@ -14,4 +14,14 @@ describe('admit', () => {
   it('takes what fits and reports the rest', () => expect(admit(2, 4, ['a', 'b', 'c'])).toEqual({ take: ['a', 'b'], dropped: 1 }));
   it('takes nothing when full', () => expect(admit(4, 4, ['a'])).toEqual({ take: [], dropped: 1 }));
   it('takes everything when there is room', () => expect(admit(0, 4, ['a', 'b'])).toEqual({ take: ['a', 'b'], dropped: 0 }));
+});
+
+describe('mergeItems', () => {
+  const it_ = (food_id: string | null, canonical_name: string | null, raw_text: string) => ({ food_id, canonical_name, raw_text });
+  it('adds what the photo saw that the text did not mention', () => {
+    expect(mergeItems([it_('f1', 'Hummus', 'חומוס')], [it_('f1', 'Hummus', 'hummus'), it_('f2', 'Pita bread', 'פיתה')]).map((x) => x.food_id)).toEqual(['f1', 'f2']);
+  });
+  it('treats the same name as the same food even without ids', () => {
+    expect(mergeItems([it_(null, 'Green salad', 'סלט')], [it_(null, 'green salad', 'salad')])).toHaveLength(1);
+  });
 });

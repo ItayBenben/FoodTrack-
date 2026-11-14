@@ -397,9 +397,13 @@ PREVIEW screen — the photo, full-bleed
   ↓ Use photo
 photo written to IndexedDB media_queue immediately; a thumbnail appears in the composer
   ↓ upload + vision inference queued
-  ├─ vision on and reachable → items stream in, low-confidence ones flagged
-  ├─ vision disabled in settings → no inference; a note: "Vision is off. Add a description?"
-  └─ offline → thumbnail carries a ↑ badge; inference runs on reconnect
+  ├─ vision on and reachable → POST /meals/parse-photo uploads it at once; the foods the
+  │  model names are placed in the library/canonical table like typed text (a photographed
+  │  "hummus" is the same food as typed "חומוס") and merged into the item list, typed items
+  │  first, duplicates dropped; confidence capped at 0.9; portions marked estimated
+  ├─ vision disabled in settings → no inference; a note: "Photo reading is off — add a few words"
+  ├─ model unreachable / unreadable format → photo kept, note: "Couldn't read this photo right now"
+  └─ offline → photo stays in media_queue and uploads with the meal (no inference afterwards — I-29)
   ↓
 composer behaves exactly as the text path from here. Text and photo compose:
 typing a note re-parses text and photo together.

@@ -106,7 +106,10 @@
   "camera": "Take a photo",
   "gallery": "Choose from gallery",
   "photo_hint": "You can pick several — room for {n} more.",
-  "photo_limit": "Up to {n} photos per meal. The extra ones weren’t added — remove one to make room."
+  "photo_limit": "Up to {n} photos per meal. The extra ones weren’t added — remove one to make room.",
+  "photo_reading": "Looking at the photo…",
+  "photo_vision_off": "Photo reading is off — the photo is kept. Add a few words so the meal counts.",
+  "photo_vision_unavailable": "Couldn’t read this photo right now — it’s kept with the meal. Add a few words so it counts."
  },
  "units": {
   "g": "g",
