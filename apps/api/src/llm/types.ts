@@ -49,7 +49,8 @@ export const MEAL_JSON_SCHEMA = {
     required: ['raw_text', 'food_id', 'canonical_name', 'quantity', 'unit', 'grams_est', 'confidence', 'category'],
     properties: {
       raw_text: { type: 'string' }, food_id: { type: ['string', 'null'] }, canonical_name: { type: 'string' },
-      quantity: { type: ['number', 'null'] }, unit: { type: ['string', 'null'], enum: ['g', 'ml', 'unit', 'slice', 'portion', 'tbsp', 'tsp', 'cup', 'bowl', 'can', 'bag', 'bottle', 'glass', 'shot', 'clove', null] },
+      quantity: { type: ['number', 'null'] }, // the API rejects an enum on a type union: express "one of these units, or null" as anyOf
+      unit: { anyOf: [{ type: 'string', enum: ['g', 'ml', 'unit', 'slice', 'portion', 'tbsp', 'tsp', 'cup', 'bowl', 'can', 'bag', 'bottle', 'glass', 'shot', 'clove'] }, { type: 'null' }] },
       grams_est: { type: ['number', 'null'] }, confidence: { type: 'number' }, category: { type: ['string', 'null'] },
     } } } },
 } as const;
