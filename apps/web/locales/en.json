@@ -101,7 +101,12 @@
   "in_library": "logged {n}×",
   "quantity": "Quantity",
   "unit": "Unit",
-  "no_favourites": "Meals you log often will show up here."
+  "no_favourites": "Meals you log often will show up here.",
+  "photo_source": "Add a photo",
+  "camera": "Take a photo",
+  "gallery": "Choose from gallery",
+  "photo_hint": "You can pick several — room for {n} more.",
+  "photo_limit": "Up to {n} photos per meal. The extra ones weren’t added — remove one to make room."
  },
  "units": {
   "g": "g",
@@ -130,7 +135,8 @@
   "draft_kept": "Draft kept.",
   "item_removed": "Item removed.",
   "parse_completed": "Tidied up your {time} meal — {n} items.",
-  "saved": "Saved."
+  "saved": "Saved.",
+  "photo_removed": "Photo removed."
  },
  "sync": {
   "synced": "synced",

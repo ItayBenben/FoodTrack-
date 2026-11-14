@@ -105,9 +105,17 @@ export function scheduleDrain(ms = 1000) {
   timer = setTimeout(() => { timer = null; void drain(); }, ms);
 }
 
+/** A photo that hasn't uploaded yet has a `local_…` placeholder id; the server must never store one. */
+export const isLocalMediaId = (x: unknown) => typeof x === 'string' && x.startsWith('local_');
+export function serverValues(values: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(values)) out[k] = Array.isArray(v) && v.some(isLocalMediaId) ? v.filter((x) => !isLocalMediaId(x)) : v;
+  return out;
+}
+
 function toPayload(o: LocalObservation) {
   return { id: o.id, client_id: o.client_id, tracker_key: o.tracker_key, occurred_at: o.occurred_at, time_source: o.time_source, source: 'manual',
-    note: o.note, values: o.values, group_id: o.group_id ?? null, batch_id: o.batch_id ?? null, ...(o.specificity === 'unspecified' ? { specificity: 'unspecified' } : {}),
+    note: o.note, values: serverValues(o.values), group_id: o.group_id ?? null, batch_id: o.batch_id ?? null, ...(o.specificity === 'unspecified' ? { specificity: 'unspecified' } : {}),
     ...(o.meal_items ? { meal_items: o.meal_items.map(({ canonical_name: _c, ...i }) => i) } : {}) };
 }
 
@@ -182,9 +190,15 @@ async function uploadMedia() {
     try { r = await fetch('/api/v1/media', { method: 'POST', body: fd, headers: { authorization: `Bearer ${getAccessToken()}` } }); } catch { return; }
     if (!r.ok) continue;
     const { media_id } = await r.json() as { media_id: string };
-    await db().transaction('rw', db().observations, db().media_queue, async () => {
+    await db().transaction('rw', db().observations, db().media_queue, db().outbox, async () => {
       const o = await db().observations.get(m.observation_id);
-      if (o && Array.isArray(o.values.photos)) await db().observations.put({ ...o, values: { ...o.values, photos: (o.values.photos as string[]).map((x) => (x === m.id ? media_id : x)) } });
+      const field = o && Object.keys(o.values).find((k) => Array.isArray(o.values[k]) && (o.values[k] as unknown[]).includes(m.id));
+      if (o && field) {
+        await db().observations.put({ ...o, values: { ...o.values, [field]: (o.values[field] as string[]).map((x) => (x === m.id ? media_id : x)) }, sync: 'pending' });
+        // the row may already be on the server without this photo: make sure the real id follows it
+        const queued = await db().outbox.where('entity_id').equals(o.id).filter((r) => r.op === 'upsert' && r.status === 'pending').first();
+        if (!queued) await db().outbox.add({ mutation_id: `m_${uuidv7()}`, op: 'upsert', entity: 'observation', entity_id: o.id, base_revision: o.revision, recorded_at: new Date().toISOString(), attempts: 0, next_attempt_at: 0, status: 'pending' });
+      }
       await db().media_queue.delete(m.id);
     });
   }

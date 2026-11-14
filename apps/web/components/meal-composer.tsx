@@ -13,6 +13,7 @@ import { api } from '@/lib/api';
 import { db, type LocalObservation } from '@/lib/db/local';
 import { editObservation, saveObservation } from '@/lib/store';
 import { useParse, type ParsedItem } from '@/lib/meals';
+import { admit, prepareMealPhoto } from '@/lib/photos';
 import { Button, Chip, Sheet, useToasts } from './ui';
 import { TimestampControl } from './fields';
 import { Icon } from './icons';
@@ -34,7 +35,9 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
   const [listening, setListening] = useState(false);
   const push = useToasts((s) => s.push);
   const ref = useRef<HTMLTextAreaElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
+  const [photoSource, setPhotoSource] = useState(false);
   const parse = useParse(text, ts);
   const slotField = def.fields.find((f) => f.key === 'slot' && f.type === 'enum');
   const photoField = def.fields.find((f) => f.type === 'multi_photo');
@@ -82,10 +85,22 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
     await doSave();
   };
 
-  const addPhoto = async (f: File) => {
-    if (photos.length >= (photoField?.max_items ?? 4)) return;
-    setPhotos([...photos, { id: `local_${uuidv7()}`, url: URL.createObjectURL(f), blob: f }]);
+  const maxPhotos = photoField?.max_items ?? 4;
+  /** Camera gives one file, the library several. Each is shrunk on-device, then shown at once; nothing is uploaded until save. */
+  const addPhotos = async (files: File[]) => {
+    const { take, dropped } = admit(photos.length, maxPhotos, files.filter((f) => f.type.startsWith('image/') || f.type === ''));
+    if (dropped > 0) push({ text: t('meal.photo_limit', { n: maxPhotos }) });
+    for (const f of take) {
+      const blob = await prepareMealPhoto(f);
+      setPhotos((prev) => (prev.length >= maxPhotos ? prev : [...prev, { id: `local_${uuidv7()}`, url: URL.createObjectURL(blob), blob }]));
+    }
   };
+  const removePhoto = (id: string) => {
+    const prev = photos;
+    setPhotos(prev.filter((x) => x.id !== id));
+    push({ text: t('toast.photo_removed'), action: { label: t('common.undo'), run: () => setPhotos(prev) } });
+  };
+  const pick = (which: 'camera' | 'gallery') => { setPhotoSource(false); (which === 'camera' ? cameraRef : galleryRef).current?.click(); };
 
   const listen = () => {
     if (!SpeechRec) return;
@@ -120,14 +135,15 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
         {SpeechRec && <button aria-label={t('meal.voice')} aria-pressed={listening} onClick={listen} className={`absolute top-2 end-2 min-h-12 min-w-12 flex items-center justify-center ${listening ? 'text-danger' : 'text-text-muted'}`}><Icon name="symptom" size={20} /></button>}
       </div>
       <div className="flex flex-wrap gap-2 mt-2">
-        {photoField && <Chip onClick={() => fileRef.current?.click()}><span className="inline-flex items-center gap-1"><Icon name="photo" size={18} />{t('meal.photo')}</span></Chip>}
+        {photoField && <Chip onClick={() => (photos.length >= maxPhotos ? push({ text: t('meal.photo_limit', { n: maxPhotos }) }) : setPhotoSource(true))} data-testid="meal-photo"><span className="inline-flex items-center gap-1"><Icon name="photo" size={18} />{t('meal.photo')}</span></Chip>}
         <Chip onClick={() => setFavs(true)}><span className="inline-flex items-center gap-1"><Icon name="star" size={18} />{t('meal.favourites')}</span></Chip>
         <Chip onClick={() => void repeatLast()}><span className="inline-flex items-center gap-1"><Icon name="repeat" size={18} />{t('meal.repeat_last')}</span></Chip>
-        <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) void addPhoto(f); e.target.value = ''; }} />
+        <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" data-testid="photo-camera-input" onChange={(e) => { const f = Array.from(e.target.files ?? []); e.target.value = ''; void addPhotos(f); }} />
+        <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" data-testid="photo-gallery-input" onChange={(e) => { const f = Array.from(e.target.files ?? []); e.target.value = ''; void addPhotos(f); }} />
       </div>
-      {photos.length > 0 && <div className="flex gap-2 mt-2 overflow-x-auto">{photos.map((p) => (
+      {photos.length > 0 && <div className="flex gap-2 mt-2 overflow-x-auto" data-testid="meal-photos">{photos.map((p) => (
         <div key={p.id} className="relative shrink-0"><img src={p.url} alt={t('meal.photo')} className="h-20 w-20 object-cover rounded-chip" />
-          <button aria-label={t('meal.remove_photo')} className="absolute top-0 end-0 bg-text text-bg rounded-pill h-7 w-7 flex items-center justify-center" onClick={() => setPhotos(photos.filter((x) => x.id !== p.id))}><Icon name="close" size={14} /></button></div>))}</div>}
+          <button aria-label={t('meal.remove_photo')} className="absolute top-0 end-0 bg-text text-bg rounded-pill h-7 w-7 flex items-center justify-center" onClick={() => removePhoto(p.id)}><Icon name="close" size={14} /></button></div>))}</div>}
       {slotField && (
         <div className="flex flex-wrap gap-2 mt-2">
           {slotField.options!.map((o) => <Chip key={String(o.value)} on={slot === o.value} onClick={() => setSlot(slot === o.value ? null : String(o.value))}>{label(o.labels)}</Chip>)}
@@ -165,6 +181,14 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
           if (existing && saved?.id) { try { await api(`/meals/${existing.id}/items/${saved.id}`, { method: 'PATCH', body: { food_id: next.food_id, quantity: next.quantity, unit: next.unit, grams_est: next.grams_est, portion_precision: next.portion_precision } }); } catch { /* offline: the edit syncs with the meal */ } }
         }} />
       )}
+      <Sheet open={photoSource} onClose={() => setPhotoSource(false)} title={t('meal.photo_source')} testid="photo-source">
+        <div className="flex flex-col gap-2">
+          <Button onClick={() => pick('camera')} data-testid="photo-camera"><span className="inline-flex items-center gap-2"><Icon name="photo" size={18} />{t('meal.camera')}</span></Button>
+          <Button onClick={() => pick('gallery')} data-testid="photo-gallery">{t('meal.gallery')}</Button>
+          <p className="text-label text-text-muted">{t('meal.photo_hint', { n: maxPhotos - photos.length })}</p>
+          <button className="min-h-12 text-accent" onClick={() => setPhotoSource(false)}>{t('common.cancel')}</button>
+        </div>
+      </Sheet>
       <Favourites open={favs} onClose={() => setFavs(false)} onPick={(f) => { setText(f.label); setItems(f.items.map((i) => ({ ...i, confidence: 0.95, resolved_by: 'library', portion_precision: 'estimated' }))); setFavs(false); }} />
     </Sheet>
   );

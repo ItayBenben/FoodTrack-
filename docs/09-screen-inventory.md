@@ -126,7 +126,7 @@ The completeness checklist. Every screen, every control on it, what the control 
 | parsed row — qty `▾` | ⟳ popover: stepper · unit ▾ · 3 shortcuts from your history |
 | parsed row — `✕` | ⟳ remove + undo toast |
 | `+ add item` | ⟳ appends a row focused on search |
-| photo thumbnails | long-press → `Retake · Remove · View full` |
+| photo thumbnails | `✕` removes with an undo toast · long-press → `Retake · Remove · View full` |
 | tag chips · `+` | ⟳ chip picker + free text |
 | `Save` | ⟳ writes locally, closes ≤100 ms |
 
@@ -134,7 +134,7 @@ The completeness checklist. Every screen, every control on it, what the control 
 
 | ID | Screen | Controls |
 |---|---|---|
-| S25 | Photo source | `Camera` · `Choose from library` · `Cancel` |
+| S25 | Photo source | `Take a photo` (camera) · `Choose from gallery` (multi-select, fills the remaining slots up to the field's `max_items`) · hint "room for N more" · `Cancel`. Gallery picks skip S25b; every photo is shrunk on-device to ≤1600 px JPEG before it enters `media_queue`. Over the limit → toast naming the limit; nothing silently added or lost. |
 | S25b | Photo preview | `Retake` · `Use photo` · `Cancel` |
 | S26 | Favourites | search · most-logged rows · long-press → `Pin · Rename · Remove` |
 | S28 | Item editor | raw text shown · search field · 5 alternatives with match reason · `Create "«text»"` → S52 · `Use this` (writes `user_food.alias`) |

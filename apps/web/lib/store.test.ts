@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db, setMeta } from './db/local';
-import { deleteLocal, editObservation, saveObservation } from './store';
+import { deleteLocal, editObservation, saveObservation, serverValues } from './store';
 
 beforeEach(async () => { await db().delete(); await db().open(); await setMeta('user', { id: 'u', timezone: 'Asia/Jerusalem', day_rollover: '04:00', locale: 'he-IL', idle_lock_minutes: 15, display_name: null }); });
 
@@ -32,5 +32,9 @@ describe('the client write path (06 §4)', () => {
     await deleteLocal(o.id);
     const rows = await db().outbox.toArray();
     expect(rows.map((r) => r.op)).toEqual(['delete']);
+  });
+  it('placeholder photo ids never leave the device', () => {
+    expect(serverValues({ description: 'toast', photos: ['local_1', '0190-real', 'local_2'], tags: ['a'] }))
+      .toEqual({ description: 'toast', photos: ['0190-real'], tags: ['a'] });
   });
 });

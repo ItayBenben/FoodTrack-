@@ -9,7 +9,7 @@ import { withUser } from '../db/pool.js';
 import { HttpProblem, notFound } from '../lib/problem.js';
 import { getUser } from '../services/users.js';
 
-const MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic']);
+const MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
 
 export async function mediaRoutes(app: FastifyInstance) {
   const { deps } = app;
