@@ -80,6 +80,10 @@ pnpm test:stats          # the analysis validation suite — the release gate
 pnpm lint                # eslint + logical-property rule + copy lint
 ```
 
+## Shipping
+
+Standing instruction from the owner: when a change is ready and CI is green, **merge the PR and deploy to production without asking**. Production is a single VM (`scripts/deploy-vm.sh`, see `docs/runbook.md` §0) that tracks `main`; redeploy by re-running the script on the box. Secrets live only in the box's `/opt/foodtrack/.env` — never in git.
+
 ## Conventions
 
 - TypeScript strict, no `any`. Zod schemas in `packages/shared` are the single source of truth for types across web and api.
