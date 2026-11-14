@@ -434,3 +434,28 @@ Every product feature ID from `01-product-spec.md` §3 maps to at least one scre
 | X22 symptom-gated washout | S82 (trial card, conditional state) |
 | X23 null verdict | S135, S135b |
 | X27 trial report | S137 |
+
+---
+
+## Implementation map (build v1)
+
+Where each screen lives in `apps/web`. Controls are as listed above unless noted.
+
+| Screen | Route / component | Notes |
+|---|---|---|
+| Onboarding ①–⑦ | `components/onboarding.tsx` | ⑧ install and ⑨ done fold into first Today |
+| Unlock, forgot, can't reach server | `components/unlock.tsx` | lockout countdown persists |
+| Today | `app/(tabs)/today` | red flags, trial card, drafts, check-in prompt, score, quick grid, usual-for-now tiles, day-one card |
+| Capture sheets | `components/capture.tsx`, `meal-composer.tsx` | chosen from the definition (quick pick / grouped / form / meal) |
+| Tracker picker, sync sheet | `components/capture.tsx`, `components/sync.tsx` | |
+| Timeline (+ day deep link) | `app/(tabs)/timeline` | `?day=` from the insight drill-down |
+| Day builder | `app/(tabs)/more/day` | confirm-discard on leave |
+| Insights, evidence card, drill-down | `app/(tabs)/insights`, `insights/[id]` | Findings · Trends · Trials segments |
+| Trends | `app/(tabs)/insights/trends` | one chart per definition `charts` entry |
+| Trials list, proposal, detail/verdict, Design D prep | `app/(tabs)/more/trials/*` | |
+| Avoid list | `app/(tabs)/more/avoid` | |
+| Trackers & packs, Food library, Recently deleted | `app/(tabs)/more/{trackers,foods,deleted}` | |
+| Export & import, Clinician report | `app/(tabs)/more/export`, `app/report` | |
+| Reminders, Security & encryption | `app/(tabs)/more/{reminders,security}` | |
+| How this works | `app/(tabs)/more/how` | |
+| Not yet built | custom tracker builder UI (API exists: `/me/trackers/custom`), TOTP enrolment UI (API exists), trial report PDF (D44) | |

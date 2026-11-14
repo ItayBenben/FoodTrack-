@@ -8,10 +8,10 @@ import { contentHash, listOutcomes, parseTrackerDefinition, TrackerDefinitionErr
 const CONFIG = join(__dirname, '../../../config');
 
 describe('shipped config', () => {
-  it('loads all 13 tracker definitions and 3 packs', () => {
+  it('loads all 14 tracker definitions and 4 packs', () => {
     const t = loadTrackerDir(join(CONFIG, 'trackers'));
-    expect(t.map((x) => x.def.key).sort()).toEqual(['body', 'checkin', 'event_marker', 'exercise', 'hydration', 'meal', 'medication', 'note', 'stool', 'supplement', 'symptom', 'transit_marker', 'weight']);
-    expect(loadPackDir(join(CONFIG, 'packs'), new Set(t.map((x) => x.def.key)))).toHaveLength(3);
+    expect(t.map((x) => x.def.key).sort()).toEqual(['body', 'checkin', 'event_marker', 'exercise', 'hydration', 'meal', 'medication', 'migraine', 'note', 'stool', 'supplement', 'symptom', 'transit_marker', 'weight']);
+    expect(loadPackDir(join(CONFIG, 'packs'), new Set(t.map((x) => x.def.key)))).toHaveLength(4);
   });
   it('declares the outcome catalogue of 04 §3 from data alone', () => {
     const refs = listOutcomes(loadTrackerDir(join(CONFIG, 'trackers')).map((t) => t.def)).map((o) => o.ref);

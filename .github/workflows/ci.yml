@@ -37,14 +37,24 @@ jobs:
         run: pnpm lint
       - name: typecheck
         run: pnpm typecheck
-      - name: unit + integration
-        run: pnpm test
       - name: python deps
         run: pip install -r apps/analysis/requirements.txt pytest httpx
+      - name: unit + integration
+        run: pnpm test
       - name: analysis unit tests
         run: cd apps/analysis && python -m pytest tests -q -m "not gate and not slow"
       - name: statistical release gate (null-data test)
         run: cd apps/analysis && python -m pytest tests -q -m gate
+      - name: restore drill (verified restore is a release gate)
+        run: |
+          sudo apt-get install -y postgresql-client >/dev/null
+          echo "FOODTRACK_KEK=$(openssl rand -base64 32)" >> .env
+          psql -c "CREATE DATABASE foodtrack_src OWNER foodtrack"
+          psql -d foodtrack_src -c "CREATE EXTENSION citext; CREATE EXTENSION pg_trgm; CREATE EXTENSION pgcrypto; ALTER SCHEMA public OWNER TO foodtrack; GRANT USAGE ON SCHEMA public TO foodtrack_app;"
+          export DATABASE_OWNER_URL=postgres://foodtrack:foodtrack@localhost:5432/foodtrack_src DATABASE_URL=postgres://foodtrack_app:foodtrack_app@localhost:5432/foodtrack_src
+          pnpm db:migrate && pnpm --filter @foodtrack/api keys init && pnpm db:seed
+          pnpm --filter @foodtrack/api keys show > card.txt
+          PSQL="psql" SOURCE_DB_URL=$DATABASE_OWNER_URL MEDIA_DIR=./data/media CARD=$PWD/card.txt scripts/restore-drill.sh
       - name: build
         run: pnpm build
 
@@ -77,8 +87,8 @@ jobs:
           psql -c "CREATE ROLE foodtrack_app LOGIN PASSWORD 'foodtrack_app' NOSUPERUSER NOBYPASSRLS"
           psql -c "CREATE DATABASE foodtrack_e2e OWNER foodtrack"
           psql -d foodtrack_e2e -c "CREATE EXTENSION citext; CREATE EXTENSION pg_trgm; CREATE EXTENSION pgcrypto; ALTER SCHEMA public OWNER TO foodtrack; REVOKE ALL ON SCHEMA public FROM PUBLIC; GRANT USAGE ON SCHEMA public TO foodtrack_app;"
-      - run: pnpm --filter @foodtrack/web build
       - name: e2e (LTR + RTL, online + offline)
+        env: { E2E_DATABASE_URL: postgres://foodtrack_app:foodtrack_app@localhost:5432/foodtrack_e2e, E2E_DATABASE_OWNER_URL: postgres://foodtrack:foodtrack@localhost:5432/foodtrack_e2e }
         run: pnpm test:e2e
 
   compose:

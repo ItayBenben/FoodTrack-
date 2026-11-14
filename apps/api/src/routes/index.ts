@@ -12,6 +12,10 @@ import { dayBuilderRoutes } from './day-builder.js';
 import { mediaRoutes } from './media.js';
 import { insightRoutes } from './insights.js';
 import { trialRoutes } from './trials.js';
+import { exportRoutes, exportPublicRoutes } from './export.js';
+import { chartRoutes } from './charts.js';
+import { pushRoutes } from './push.js';
+import { securityRoutes } from './security.js';
 
 /** Route groups added by later milestones register here. */
 export const protectedGroups: ((app: FastifyInstance) => Promise<void>)[] = [];
@@ -19,6 +23,7 @@ export const protectedGroups: ((app: FastifyInstance) => Promise<void>)[] = [];
 export async function registerRoutes(app: FastifyInstance) {
   await app.register(healthRoutes);
   await app.register(authRoutes, { prefix: '/api/v1' });
+  await app.register(exportPublicRoutes, { prefix: '/api/v1' });
   await app.register(async (scope) => {
     scope.addHook('preHandler', requireAuth);
     await scope.register(trackerRoutes);
@@ -31,6 +36,10 @@ export async function registerRoutes(app: FastifyInstance) {
     await scope.register(mediaRoutes);
     await scope.register(insightRoutes);
     await scope.register(trialRoutes);
+    await scope.register(exportRoutes);
+    await scope.register(chartRoutes);
+    await scope.register(pushRoutes);
+    await scope.register(securityRoutes);
     for (const g of protectedGroups) await scope.register(g);
   }, { prefix: '/api/v1' });
 }

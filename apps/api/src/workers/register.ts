@@ -2,3 +2,5 @@
 import '../services/meal-jobs.js';
 import '../services/analysis.js';
 import '../services/trials.js';
+import '../services/export.js';
+import '../services/reminders.js';

@@ -71,6 +71,9 @@ export function InsightsScreen() {
   return (
     <div>
       <h1 className="text-title font-semibold">{t('tabs.insights')}</h1>
+      <nav className="flex gap-2 mt-2" aria-label={t('tabs.insights')}><span className="min-h-12 px-3 inline-flex items-center rounded-pill bg-accent-soft">{t('insights.seg_findings')}</span>
+        <Link className="min-h-12 px-3 inline-flex items-center rounded-pill border border-border" href="/insights/trends">{t('insights.seg_trends')}</Link>
+        <Link className="min-h-12 px-3 inline-flex items-center rounded-pill border border-border" href="/more/trials">{t('insights.seg_trials')}</Link></nav>
       {q.isError && <div className="mt-4"><Empty title={t('insights.offline_title')} body={q.error instanceof ApiError && q.error.offline ? t('insights.offline_body') : String(q.error)} /></div>}
       {d?.state === 'not_enough_days' && <div className="mt-4"><Empty title={t('insights.not_yet_title')} body={t('insights.need_days', { have: d.days_logged ?? 0, need: d.days_needed ?? 21 })} /></div>}
       {d?.state === 'never_run' && <div className="mt-4"><Empty title={t('insights.never_run_title')} body={t('insights.never_run_body')}><Button className="mt-4" onClick={() => void run()} disabled={running}>{t('insights.run_now')}</Button></Empty></div>}

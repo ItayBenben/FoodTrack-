@@ -1,0 +1,22 @@
+{
+  "$schema": "../tracker.schema.json",
+  "key": "migraine",
+  "version": 1,
+  "category": "wellbeing",
+  "icon": "symptom",
+  "cardinality": "many_per_day",
+  "counts_as_outcome_record": true,
+  "quick_log": { "enabled": true, "primary_field": "severity" },
+  "labels": { "en": { "name": "Headache / migraine", "short": "Headache" }, "he": { "name": "כאב ראש / מיגרנה", "short": "כאב ראש" } },
+  "fields": [
+    { "key": "severity", "type": "scale", "min": 0, "max": 10, "required": true, "labels": { "en": "How bad?", "he": "כמה חזק?" }, "analysis": { "role": "outcome", "direction": "higher_is_worse" } },
+    { "key": "aura", "type": "boolean", "labels": { "en": "Aura", "he": "הילה" }, "advanced": true, "analysis": { "role": "context" } },
+    { "key": "duration", "type": "duration", "min": 0, "max": 259200, "labels": { "en": "How long?", "he": "כמה זמן?" }, "advanced": true, "analysis": { "role": "context" } },
+    { "key": "note", "type": "text", "max_length": 500, "sensitive": true, "labels": { "en": "Note", "he": "הערה" }, "advanced": true, "analysis": { "role": "meta" } }
+  ],
+  "aggregation": { "daily": [
+    { "key": "count", "op": "count" },
+    { "key": "severity_max", "op": "max", "field": "severity", "analysis": { "role": "outcome", "type": "continuous", "notable_threshold": 5, "labels": { "en": "Headache", "he": "כאב ראש" } } }
+  ] },
+  "charts": [{ "type": "line", "aggregation": "severity_max" }]
+}

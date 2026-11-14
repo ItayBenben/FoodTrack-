@@ -268,7 +268,10 @@
    "tag_alcohol": "Alcohol"
   },
   "same_days_as": "Same days as: {names}",
-  "also_seen": "Also seen in: {names}"
+  "also_seen": "Also seen in: {names}",
+  "seg_findings": "Findings",
+  "seg_trends": "Trends",
+  "seg_trials": "Trials"
  },
  "more": {
   "trackers": "Trackers",
@@ -674,5 +677,109 @@
    "trial_confirmed": "trial confirmed",
    "user_choice": "my choice"
   }
+ },
+ "export": {
+  "range": "Range",
+  "last_30": "30 days",
+  "last_90": "90 days",
+  "last_365": "A year",
+  "last_3650": "Everything",
+  "for_clinician": "For your doctor or dietitian",
+  "clinical_body": "Two pages of numbers — stool types, symptoms over time, a standard-style symptom score, weight, medication — plus a food diary. No AI text.",
+  "clinical_open": "Open the report",
+  "your_data": "Your data",
+  "unencrypted": "The file is not encrypted. The link works once, for an hour — delete the file when you’re done with it.",
+  "state": {
+   "working": "Preparing…",
+   "failed": "That didn’t finish. Nothing was changed — try again.",
+   "offline": "Exports need a connection."
+  },
+  "download": "Download (works once)",
+  "import": "Import an export",
+  "check": "Check what would change",
+  "import_result": "{n} new entries, {k} already here, {e} problems.",
+  "import_now": "Import {n} entries",
+  "print": "Print / save as PDF"
+ },
+ "report": {
+  "title": "FoodTrack summary",
+  "days": "{n} days",
+  "bristol": "Stool type (Bristol scale)",
+  "type": "Type {n}",
+  "per_week": "{n} bowel movements per week on average",
+  "sss": "Symptom severity score (published five-item structure, derived)",
+  "sss_item": {
+   "pain_severity": "Pain severity",
+   "pain_frequency": "Pain frequency (last 10 days)",
+   "distension": "Distension severity",
+   "bowel_dissatisfaction": "Bowel-habit dissatisfaction",
+   "life_interference": "Interference with life"
+  },
+  "total": "Total",
+  "band": {
+   "mild": "mild range",
+   "moderate": "moderate range",
+   "severe": "severe range"
+  },
+  "sss_note": "Derived from logged entries using the published five-item structure; not the validated questionnaire itself.",
+  "weekly": "Week by week",
+  "week": "Week of",
+  "symptom_load": "Symptom load",
+  "score": "Gut-day score",
+  "weight": "Weight",
+  "meds": "Medication",
+  "flags": "Warning signs recorded",
+  "diary": "Food diary (recent)",
+  "footer": "Self-recorded data from a personal tracking app. Not a diagnosis."
+ },
+ "trends": {
+  "title": "Trends",
+  "days": "{n} days",
+  "none": "Turn on trackers to see trends.",
+  "not_enough": "Not enough points yet.",
+  "range_note": "The time axis follows your reading direction."
+ },
+ "reminders": {
+  "enable_push": "Turn on notifications on this device",
+  "push": {
+   "on": "Notifications are on.",
+   "denied": "Notifications are blocked in the browser settings.",
+   "not_configured": "This server isn’t set up to send notifications. In-app reminders still work.",
+   "failed": "That didn’t work. Nothing changed — try again."
+  },
+  "privacy": "Notifications never mention a symptom, a food or a finding. Warning signs are never sent as notifications — they wait in the app.",
+  "kind": {
+   "checkin": "Evening check-in",
+   "meal_nudge": "Meal nudges",
+   "trial_daily": "Trial step of the day",
+   "weekly_insight": "Weekly look"
+  },
+  "time": "Time",
+  "quiet": "Quiet hours",
+  "quiet_from": "From",
+  "quiet_to": "To",
+  "pause_week": "Pause all for a week",
+  "unpause": "Resume reminders"
+ },
+ "security": {
+  "on": "Encryption is on",
+  "since": "Keys created {date}",
+  "what": "What this protects",
+  "protects": "Your meal text, notes, photos and food names are encrypted on the server. A stolen database copy doesn’t reveal “went to my brother’s, ate too much at the barbecue”, or a photo of your kitchen.",
+  "leaks": "It still shows the shape of things: that you logged a type-7 stool on the 14th, a bloating score that evening, your weight trend. The numbers stay readable because the analysis needs them.",
+  "card": "Recovery card",
+  "card_explain": "Keep a printed copy off the server and away from your backups. Showing it needs your passphrase and is logged.",
+  "show_card": "Show the card",
+  "hide_card": "Hide",
+  "rate_limited": "Too many requests — try again in an hour.",
+  "verify": "Check a printed card",
+  "check_card": "Check it",
+  "card_valid": "This card unlocks your data.",
+  "card_invalid": "This card doesn’t match. Print a fresh one.",
+  "rotation_cli": "Rotating keys is done on the server only (pnpm keys:rotate-kek), never from the app."
+ },
+ "error": {
+  "title": "Something on this screen broke",
+  "body": "Everything you logged is still saved on this device and will sync. Try again, or go back to Today."
  }
 }

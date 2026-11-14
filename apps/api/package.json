@@ -16,7 +16,7 @@
     "db:seed": "tsx src/cli/seed.ts",
     "keys": "tsx src/cli/keys.ts",
     "reset-passphrase": "tsx src/cli/reset-passphrase.ts",
-    "create-user": "tsx src/cli/create-user.ts"
+    "vapid": "tsx src/cli/vapid.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.3.0",
@@ -32,11 +32,13 @@
     "jose": "^6.0.11",
     "pg": "^8.16.0",
     "pino": "^9.7.0",
+    "web-push": "3.6.7",
     "zod": "^3.25.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
     "@types/pg": "^8.15.4",
+    "@types/web-push": "3.6.4",
     "tsup": "^8.5.0",
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",

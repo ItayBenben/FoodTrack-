@@ -59,18 +59,18 @@ If a spec is wrong, change the spec in the same commit as the code. Never let th
 
 ## Already written — load, don't re-author
 
-`config/trackers/*.json` (13) · `config/packs/*.json` (3) · `config/food-tags/fodmap.json` + `citations.json` · `config/analysis.json` · `config/llm.json` · `packages/tokens/tokens.json` · `apps/web/locales/{en,he}.json` (386 keys each).
+`config/trackers/*.json` (14, incl. `migraine` — the M7 genericity proof) · `config/packs/*.json` (4) · `config/foods/seed.json` · `config/food-tags/fodmap.json` + `citations.json` + `tag-labels.json` · `config/analysis.json` · `config/llm.json` · `packages/tokens/tokens.json` · `apps/web/locales/{en,he}.json` (635 keys each).
 
 Two standing rules about them: **`tokens.json` is the single source of truth for the design system** — Tailwind config and CSS variables are generated from it, never hand-edited. And **no user-facing string is written in a component** — it goes in the locale files, both of them, or it doesn't ship.
 
 ## Stack
 
-Next.js 15 + React 19 + TypeScript strict · Tailwind v4 · Dexie (IndexedDB) · TanStack Query · Fastify API · PostgreSQL 18 with RLS · Drizzle · pg-boss · Python 3.12 + FastAPI + scipy/statsmodels/PyMC for analysis · MinIO · Docker Compose.
+Next.js 15 + React 19 + TypeScript strict · Tailwind v4 · Dexie (IndexedDB) · TanStack Query · Fastify API · PostgreSQL 18 with RLS · hand-written SQL migrations + `pg` (impl-notes I-01) · the `job` table as queue (I-11) · Python 3.12 + FastAPI + numpy/scipy/statsmodels for analysis · encrypted volume for media (I-12) · Docker Compose.
 
 ## Commands
 
 ```bash
-pnpm dev                 # web + api + worker
+pnpm dev                 # web + api (the api runs the job worker in-process)
 docker compose up -d     # full stack including postgres, minio, analysis
 pnpm db:migrate          # apply migrations
 pnpm db:seed             # 90 days of synthetic data with a known injected effect
