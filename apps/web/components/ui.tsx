@@ -33,8 +33,8 @@ export function SegmentedScale({ min, max, value, onChange, label, lowHint, high
   );
 }
 
-export function Chip({ on, children, onClick, className = '' }: { on?: boolean; children: ReactNode; onClick?: () => void; className?: string }) {
-  return <button aria-pressed={on} onClick={onClick} className={`min-h-12 px-3 rounded-pill border text-body ${on ? 'bg-accent-soft border-accent text-text' : 'bg-surface border-border text-text'} ${className}`}>{children}</button>;
+export function Chip({ on, children, onClick, className = '', 'data-testid': testid }: { on?: boolean; children: ReactNode; onClick?: () => void; className?: string; 'data-testid'?: string }) {
+  return <button aria-pressed={on} onClick={onClick} data-testid={testid} className={`min-h-12 px-3 rounded-pill border text-body ${on ? 'bg-accent-soft border-accent text-text' : 'bg-surface border-border text-text'} ${className}`}>{children}</button>;
 }
 
 /** Bottom sheet: ✕, veil tap, or Escape dismiss (08 §1.1). */

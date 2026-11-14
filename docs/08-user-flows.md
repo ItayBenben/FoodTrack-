@@ -388,7 +388,9 @@ An `unspecified` meal is roughly a wasted day for the association engine, and §
 ### 4.4 Meal — photo path
 
 ```
-[ 📷 Photo ] → source sheet: [ Camera ] [ Choose from library ]
+[ 📷 Photo ] → source sheet: [ Take a photo ] [ Choose from gallery ]
+  ├─ gallery → pick one or several (up to the remaining slots); no preview — the
+  │  user already chose them; each is shrunk on-device (≤1600 px JPEG) and joins the strip
   ↓ capture
 PREVIEW screen — the photo, full-bleed
   [ Retake ]   [ Use photo ]   [ Cancel ]
@@ -403,7 +405,7 @@ composer behaves exactly as the text path from here. Text and photo compose:
 typing a note re-parses text and photo together.
 ```
 
-- **Up to 4 photos per meal.** The composer shows a horizontal thumbnail strip; each has a long-press → `Retake · Remove · View full`.
+- **Up to 4 photos per meal** (the field's `max_items`). Picking more from the gallery adds what fits and says so in a toast; the Photo chip at the limit explains instead of opening the sheet. The composer shows a horizontal thumbnail strip; each has a long-press → `Retake · Remove · View full`.
 - **Permanent upload failure** (retries exhausted, 24 h): the thumbnail turns to a `⚠` state and a Today row appears — *"A photo from Tuesday couldn't upload. [ Retry ] [ Remove it ]"*. It is never silently dropped.
 - **Data-model consequence:** meal photos are a `multi_photo` field storing an array of `media_id`, not the single `value_media_id` originally specified. See `02` §2.1 addendum.
 
