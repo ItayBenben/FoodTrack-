@@ -23,6 +23,8 @@ if [[ $MEM_MB -lt 3500 && ! -f /swapfile ]]; then
 fi
 
 log "2/7 docker + git"
+# a fresh VM is often still running unattended-upgrades: wait for the apt lock instead of failing
+[[ -d /etc/apt/apt.conf.d ]] && echo 'DPkg::Lock::Timeout "600";' > /etc/apt/apt.conf.d/99foodtrack-lock-timeout
 if ! command -v docker >/dev/null; then
   if command -v dnf >/dev/null || command -v yum >/dev/null; then
     (dnf install -y docker git || yum install -y docker git) >/dev/null
