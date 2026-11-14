@@ -22,6 +22,7 @@ Under the hood it is a **configurable tracker engine**. Gut health is the first 
 | `docs/07-build-plan.md` | To know what milestone you're on. |
 | `docs/08-user-flows.md` | **Any flow, branch, error, or back button.** Resolves D15–D31. |
 | `docs/09-screen-inventory.md` | Every screen and control. The completeness checklist. |
+| `docs/deployment.md` | Production: where it runs, how to deploy/verify, known risks. |
 | `docs/10-competitive-gaps.md` | Before adding any "new" feature. Resolves D32–D46; lists what we deliberately rejected. |
 
 If a spec is wrong, change the spec in the same commit as the code. Never let them drift.
@@ -82,7 +83,7 @@ pnpm lint                # eslint + logical-property rule + copy lint
 
 ## Shipping
 
-Standing instruction from the owner: when a change is ready and CI is green, **merge the PR and deploy to production without asking**. Production is a single VM (`scripts/deploy-vm.sh`, see `docs/runbook.md` §0) that tracks `main`; redeploy by re-running the script on the box. Secrets live only in the box's `/opt/foodtrack/.env` — never in git.
+Standing instruction from the owner: when a change is ready and CI is green, **merge the PR and deploy to production without asking**. Production is a single VM (`scripts/deploy-vm.sh`, see `docs/deployment.md` for where it runs, how to reach it and its history) that tracks `main`; redeploy by re-running the script on the box. Secrets live only in the box's `/opt/foodtrack/.env` — never in git.
 
 ## Conventions
 
