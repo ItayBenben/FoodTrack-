@@ -133,4 +133,3 @@ Created at first install in `/root/foodtrack-recovery-card.txt`. It must be copi
 - [ ] Attach an Elastic IP (or a real domain).
 - [ ] Copy backups off-box on a schedule.
 - [ ] Photo parsing is near its timeout (15.1 s of 16 s on a busy photo). A busy meal photo may silently come back `vision: unavailable`. Options: a faster model in `ANTHROPIC_MODEL_VISION`, downscaling images before the call, or a separate `vision.timeout_ms` — decide before raising any timeout (see "Anthropic key and model").
-- [ ] `aws-actions/configure-aws-credentials@v4` runs on deprecated Node 20; bump when a Node 24 release is out.

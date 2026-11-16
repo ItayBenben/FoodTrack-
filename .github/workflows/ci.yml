@@ -20,11 +20,11 @@ jobs:
       DATABASE_URL: postgres://foodtrack_app:foodtrack_app@localhost:5432/foodtrack_test
       DATABASE_OWNER_URL: postgres://foodtrack:foodtrack@localhost:5432/foodtrack_test
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22, cache: pnpm }
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: { python-version: "3.12", cache: pip, cache-dependency-path: apps/analysis/requirements.txt }
       - run: pnpm install --frozen-lockfile
       - name: create database roles
@@ -75,9 +75,9 @@ jobs:
       DATABASE_URL: postgres://foodtrack_app:foodtrack_app@localhost:5432/foodtrack_e2e
       DATABASE_OWNER_URL: postgres://foodtrack:foodtrack@localhost:5432/foodtrack_e2e
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v5
+      - uses: actions/setup-node@v5
         with: { node-version: 22, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @foodtrack/web exec playwright install --with-deps chromium
@@ -94,6 +94,6 @@ jobs:
   compose:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: node scripts/compose-lint.mjs
       - run: cp .env.example .env && docker compose config -q
