@@ -125,6 +125,7 @@ Created at first install in `/root/foodtrack-recovery-card.txt`. It must be copi
 10. First deploy failed with *Not authorized to perform sts:AssumeRoleWithWebIdentity*: this repo issues OIDC tokens with GitHub's **immutable subject** (`repo:ItayBenben@58786757/FoodTrack-@1362440115:environment:production`, see `gh api repos/ItayBenben/FoodTrack-/actions/oidc/customization/sub`), so the trust policy matching only `repo:ItayBenben/FoodTrack-:…` never matched. The template now accepts both forms; stack updated.
 11. Deploy run 43822121710 green: `main` @ `184b559` live, smoke test passed. Gallery photos and photo reading are now in production.
 12. Verified photo reading in the api container on a public-domain food photo (960×640, 23 foods): `vision: true`, provider anthropic, `degraded false`, sensible items — but it took **15.1 s against the 16 s photo timeout** (2 × `text.timeout_ms`). See §5.
+13. **Reboot verified** (2026-11-16): `RebootInstances` → site back in ~90 s (web first, api 200 ~10 s later), all six containers came back by themselves with 0 crash-restarts, row counts and volumes unchanged, swap re-mounted, travian-partner active, pending kernel update applied (7.0.0-1017-aws). A *stop/start* (not a reboot) would still change the public IP — see §3.
 
 ## 5. Open follow-ups
 
