@@ -130,7 +130,7 @@ Created at first install in `/root/foodtrack-recovery-card.txt`. It must be copi
 ## 5. Open follow-ups
 
 - [ ] Rotate the Anthropic key (it passed through chat and SSM command history).
-- [ ] Copy the recovery card off the box and delete it there.
+- [x] Copy the recovery card off the box and delete it there — done 2026-11-16 (owner holds it; shredded on the box).
 - [ ] Attach an Elastic IP (or a real domain).
 - [ ] Copy backups off-box on a schedule.
 - [ ] Photo parsing is near its timeout (15.1 s of 16 s on a busy photo). A busy meal photo may silently come back `vision: unavailable`. Options: a faster model in `ANTHROPIC_MODEL_VISION`, downscaling images before the call, or a separate `vision.timeout_ms` — decide before raising any timeout (see "Anthropic key and model").
