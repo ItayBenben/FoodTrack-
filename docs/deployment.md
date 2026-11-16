@@ -119,9 +119,18 @@ Created at first install in `/root/foodtrack-recovery-card.txt`. It must be copi
 7. Merged PR #2, redeployed from `main`, re-verified.
 8. Gallery photos (PR #4); photo reading turned on and continuous deployment added (I-29, I-30).
 
+### 2026-11-16 — continuous deployment live
+
+9. Created the CloudFormation stack `foodtrack-github-deploy` (eu-central-1) with `CreateOidcProvider=true` — the account had no GitHub OIDC provider.
+10. First deploy failed with *Not authorized to perform sts:AssumeRoleWithWebIdentity*: this repo issues OIDC tokens with GitHub's **immutable subject** (`repo:ItayBenben@58786757/FoodTrack-@1362440115:environment:production`, see `gh api repos/ItayBenben/FoodTrack-/actions/oidc/customization/sub`), so the trust policy matching only `repo:ItayBenben/FoodTrack-:…` never matched. The template now accepts both forms; stack updated.
+11. Deploy run 43822121710 green: `main` @ `184b559` live, smoke test passed. Gallery photos and photo reading are now in production.
+12. Verified photo reading in the api container on a public-domain food photo (960×640, 23 foods): `vision: true`, provider anthropic, `degraded false`, sensible items — but it took **15.1 s against the 16 s photo timeout** (2 × `text.timeout_ms`). See §5.
+
 ## 5. Open follow-ups
 
 - [ ] Rotate the Anthropic key (it passed through chat and SSM command history).
 - [ ] Copy the recovery card off the box and delete it there.
 - [ ] Attach an Elastic IP (or a real domain).
 - [ ] Copy backups off-box on a schedule.
+- [ ] Photo parsing is near its timeout (15.1 s of 16 s on a busy photo). A busy meal photo may silently come back `vision: unavailable`. Options: a faster model in `ANTHROPIC_MODEL_VISION`, downscaling images before the call, or a separate `vision.timeout_ms` — decide before raising any timeout (see "Anthropic key and model").
+- [ ] `aws-actions/configure-aws-credentials@v4` runs on deprecated Node 20; bump when a Node 24 release is out.

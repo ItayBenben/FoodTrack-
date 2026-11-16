@@ -2,10 +2,6 @@
 
 Read this before writing any code in this repo. Then read the spec doc for whatever you're building.
 
-## Pending work — read first
-
-**There is unfinished work in `docs/HANDOFF.md`.** If the owner says "continue" (or anything similar), read that file and carry out its steps without asking. Remove this section when the handoff is done.
-
 ## What this is
 
 A self-hosted PWA for tracking food, stool, symptoms and wellbeing, which finds statistical associations between what you eat and how your gut behaves, and then helps you test those associations with structured N-of-1 trials.
