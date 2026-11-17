@@ -44,7 +44,7 @@ export default function Timeline() {
             <h2 className="font-semibold">{fmtDay(d, { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })}</h2>
             <div className="flex items-center gap-3">
               {scoreBy.get(d) != null && <span className="text-label text-text-muted tabular-nums">{t('timeline.score', { n: scoreBy.get(d)! })}</span>}
-              <button className="min-h-12 min-w-12 text-accent" aria-label={t('timeline.add_to_day')} onClick={() => open([...defs.values()].find((x) => x.has_meal_items)?.key ?? 'note', { at: `${d}T12:00:00` })}><Icon name="plus" size={18} /></button>
+              <button className="min-h-12 min-w-12 text-accent" aria-label={t('timeline.add_to_day')} onClick={() => open([...defs.values()].find((x) => x.has_meal_items)?.key ?? 'note', { at: new Date(`${d}T12:00:00`).toISOString() })}><Icon name="plus" size={18} /></button>
             </div>
           </div>
           <ul className="divide-y divide-border">{shown.filter((o) => o.local_day === d).map((o) => <ObsRow key={o.id} o={o} def={defs.get(o.tracker_key)} onOpen={() => open(o.tracker_key, { editId: o.id })} />)}</ul>

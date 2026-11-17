@@ -232,7 +232,8 @@ Lockout: 5 failed attempts → exponential backoff starting at 30 s, capped at 1
 → `{ "changes": [ { "seq":…, "entity":…, "op":…, "payload":… } ], "next_seq": …, "has_more": false }`
 
 **Rules**
-- Push is transactional per mutation, not per batch — one bad row never blocks the rest.
+- Push is transactional per mutation, not per batch — one bad row never blocks the rest. This includes schema validation: the envelope is checked as a whole, each mutation on its own, and a malformed one comes back in `rejected` (`reason: "validation"`, the failing path in `detail`) instead of a `422` for the batch.
+- `occurred_at` must carry a zone (`Z` or an offset). Clients send a full ISO instant; a time picked without a zone is device-local.
 - Conflict resolution is per field, last-write-wins by `recorded_at`, with `device_id` as a deterministic tiebreak. The losing value is preserved in `observation_revision`.
 - A client that has been offline longer than the `change_log` retention (90 days) receives `410 Gone` and performs a full resync.
 - Media upload is separate: `POST /media` returns a presigned PUT URL; the observation references `media_id` and tolerates the blob arriving later.

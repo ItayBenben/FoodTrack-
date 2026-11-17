@@ -29,11 +29,15 @@ async function refreshCounts() {
   useSync.setState({ pending, failed });
 }
 
+/** Every stored time is a full ISO instant. A string without a zone (e.g. a picker's `2026-11-16T12:00:00`)
+ *  is read as device-local — what the person meant. Unparseable input is left as-is for the server to reject. */
+export function isoTime(s: string): string { const d = new Date(s); return Number.isNaN(d.getTime()) ? s : d.toISOString(); }
+
 /** Save: one IndexedDB transaction, then return. Measured < 100 ms in e2e. */
 export async function saveObservation(input: SaveInput): Promise<LocalObservation> {
   const u = await userMeta();
   const now = new Date().toISOString();
-  const occurred = input.occurred_at ?? now;
+  const occurred = input.occurred_at ? isoTime(input.occurred_at) : now;
   const row: LocalObservation = {
     id: input.id ?? uuidv7(), client_id: `c_${uuidv7()}`, tracker_key: input.tracker_key, occurred_at: occurred, local_day: dayOf(occurred, u),
     time_source: input.time_source ?? (input.occurred_at ? 'user_set' : 'now'), values: input.values, note: input.note ?? null,
@@ -56,7 +60,7 @@ export async function editObservation(id: string, patch: Partial<Pick<LocalObser
   await db().transaction('rw', db().observations, db().outbox, async () => {
     const cur = await db().observations.get(id); if (!cur) return;
     const next = { ...cur, ...patch, values: patch.values ? { ...cur.values, ...patch.values } : cur.values, sync: 'pending' as const };
-    if (patch.occurred_at) next.local_day = dayOf(patch.occurred_at, u);
+    if (patch.occurred_at) { next.occurred_at = isoTime(patch.occurred_at); next.local_day = dayOf(next.occurred_at, u); }
     await db().observations.put(next);
     const queued = await db().outbox.where('entity_id').equals(id).filter((r) => r.op === 'upsert' && r.status === 'pending').first();
     if (!queued) await db().outbox.add({ mutation_id: `m_${uuidv7()}`, op: 'upsert', entity: 'observation', entity_id: id, base_revision: cur.revision, recorded_at: now, attempts: 0, next_attempt_at: 0, status: 'pending' });
@@ -114,7 +118,7 @@ export function serverValues(values: Record<string, unknown>): Record<string, un
 }
 
 function toPayload(o: LocalObservation) {
-  return { id: o.id, client_id: o.client_id, tracker_key: o.tracker_key, occurred_at: o.occurred_at, time_source: o.time_source, source: 'manual',
+  return { id: o.id, client_id: o.client_id, tracker_key: o.tracker_key, occurred_at: isoTime(o.occurred_at), time_source: o.time_source, source: 'manual',
     note: o.note, values: serverValues(o.values), group_id: o.group_id ?? null, batch_id: o.batch_id ?? null, ...(o.specificity === 'unspecified' ? { specificity: 'unspecified' } : {}),
     ...(o.meal_items ? { meal_items: o.meal_items.map(({ canonical_name: _c, ...i }) => i) } : {}) };
 }
@@ -143,6 +147,12 @@ export async function drain(): Promise<void> {
         res = await api('/sync/push', { method: 'POST', body: { device_id: await deviceId(), mutations } });
       } catch (e) {
         if (e instanceof ApiError && e.status === 401) { useSync.setState({ needsUnlock: true }); break; }
+        if (e instanceof ApiError && e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429) {
+          // The server refused the request itself; retrying the same bytes can never succeed. Keep the entries
+          // on the device, mark them failed with the reason, and let "Retry failed" try again after a fix.
+          for (const r of rows) await db().outbox.update(r.seq!, { status: 'failed', attempts: r.attempts + 1, last_error: e.message });
+          break;
+        }
         for (const r of rows) await db().outbox.update(r.seq!, { attempts: r.attempts + 1, next_attempt_at: Date.now() + Math.min(60_000, 1000 * 2 ** r.attempts), last_error: (e as Error).message });
         const wait = Math.min(60_000, 1000 * 2 ** (rows[0]!.attempts));
         scheduleDrain(wait);
@@ -233,4 +243,8 @@ export async function pull(): Promise<number> {
   return n;
 }
 
-export async function syncNow() { await drain(); await pull().catch(() => 0); }
+/** "Retry all now": skip the backoff wait for everything pending, then drain and pull. */
+export async function syncNow() {
+  await db().outbox.where('status').equals('pending').modify({ next_attempt_at: 0 });
+  await drain(); await pull().catch(() => 0);
+}

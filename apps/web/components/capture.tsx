@@ -44,7 +44,8 @@ export function useDeleteWithUndo() {
 
 function useTimestamp(at: string | null) {
   const [ts, setTs] = useState<string | null>(at);
-  return { ts, setTs, timeSource: ts ? 'user_set' : 'now' };
+  // an untouched placeholder time (e.g. noon from the timeline) is not a time the person set (rule 8)
+  return { ts, setTs, timeSource: (!ts ? 'now' : ts === at ? 'default' : 'user_set') as 'now' | 'default' | 'user_set' };
 }
 
 // ───────── QuickPick ─────────
@@ -138,7 +139,7 @@ export function TrackerForm({ def, editId, at, onClose }: { def: TrackerDefiniti
   const { t, label } = useI18n();
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [note, setNote] = useState<string>('');
-  const { ts, setTs } = useTimestamp(at);
+  const { ts, setTs, timeSource } = useTimestamp(at);
   const [existing, setExisting] = useState<LocalObservation | null>(null);
   const [more, setMore] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -154,7 +155,7 @@ export function TrackerForm({ def, editId, at, onClose }: { def: TrackerDefiniti
     if (existing) {
       const removed = Object.fromEntries(Object.keys(existing.values).filter((k) => !(k in clean)).map((k) => [k, null]));
       await editObservation(existing.id, { values: { ...removed, ...clean }, note: note || null, ...(ts && ts !== existing.occurred_at ? { occurred_at: ts, time_source: 'user_set' } : {}) });
-    } else await saveObservation({ tracker_key: def.key, values: clean, note: note || null, occurred_at: ts ?? undefined, time_source: ts ? 'user_set' : 'now' });
+    } else await saveObservation({ tracker_key: def.key, values: clean, note: note || null, occurred_at: ts ?? undefined, time_source: timeSource });
     onClose();
   };
   const nothing = async () => { await saveObservation({ tracker_key: def.key, values: { ...values, [def.all_clear!.field]: def.all_clear!.value }, occurred_at: ts ?? undefined }); onClose(); };
