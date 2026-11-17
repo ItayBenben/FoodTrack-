@@ -4,6 +4,7 @@ import { localDay } from '@foodtrack/shared';
 import { withUser } from '../db/pool.js';
 import { HttpProblem, notFound } from '../lib/problem.js';
 import { getUser } from '../services/users.js';
+import { trialReport } from '../services/trial-report.js';
 import { createTrial, evaluateTrial, finish, getTrialRow, propose, startTrial, trialView, washoutStatus, type Phase } from '../services/trials.js';
 
 const Target = z.object({ kind: z.enum(['food', 'tag', 'nutrient', 'medication']), ref: z.string().min(1).max(100), label: z.object({ en: z.string(), he: z.string() }) });
@@ -145,6 +146,8 @@ export async function trialRoutes(app: FastifyInstance) {
       ON CONFLICT (trial_id, period_index) DO UPDATE SET guess = EXCLUDED.guess, confidence = EXCLUDED.confidence, answered_at = now()`, [P(req), idx, b.guess, b.confidence ?? null]);
     return { ok: true };
   }));
+  // D44 / S137: the CENT/SCRIBE-style report of a finished trial; the browser prints it to PDF (I-31)
+  app.get('/trials/:id/report', async (req) => withUser(deps.db, req.userId, (tx) => trialReport(tx, deps, P(req))));
   app.get('/trials/:id/blinding-report', async (req) => withUser(deps.db, req.userId, async (tx) => {
     const t = await getTrialRow(tx, P(req));
     if (t.design === 'D' && !t.revealed_at) throw new HttpProblem(409, 'not_revealed', 'Reveal first');

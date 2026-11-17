@@ -3,8 +3,9 @@
 // locale key parity, and the mandatory open-label string. Never disable this.
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url)); // .pathname breaks on Windows (/C:/…)
 const LOCALES = join(ROOT, 'apps/web/locales');
 // Patterns mirror packages/shared/src/copy-rules.ts (kept in sync by test).
 const src = readFileSync(join(ROOT, 'packages/shared/src/copy-rules.ts'), 'utf8');

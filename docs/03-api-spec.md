@@ -542,7 +542,10 @@ Insight and verdict payloads gain `overlapping_events: [{id, kind, days_overlapp
 
 | Method | Path | Notes |
 |---|---|---|
-| POST | `/trials/{id}/report` | Queues a CENT/SCRIBE-conformant PDF. Returns `{job_id}`. |
-| GET | `/trials/{id}/report` | `303` to the artefact, or `202` while building. |
+| GET | `/trials/{id}/report` | The report as data: `{trial, preregistration, schedule, sequence, days, washout, deviations, adverse_events, verdict}`. `409 not_complete` while the trial runs; `409 not_revealed` for a blinded trial before the reveal (the report names each period's arm). The web app renders it at `/report/trial?id=` and the browser prints it to PDF (impl-notes I-31). |
+
+- `preregistration` is the frozen `hypothesis` exactly as stored, including `power` (the simulated power from the proposal, `null` for trials created before it was recorded).
+- `sequence` is what was actually completed: consecutive runs of `trial_day` before the day the trial ended, with logged / followed / slipped / excluded counts. `schedule` is the plan as run (after pauses and slip extensions).
+- `adverse_events` are the safety flags raised between start and end. `deviations` are the trial's recorded deviations, plus the abandonment and its reason.
 
 The report is generated from the frozen pre-registration plus the observed data — **never** from current spec defaults, or a trial run under older settings would be reported under newer ones.

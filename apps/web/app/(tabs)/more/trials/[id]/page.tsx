@@ -8,6 +8,7 @@ import { useI18n } from '@/lib/i18n';
 import { currentPhase, dayNumber, phaseLength, type Trial, type Verdict } from '@/lib/trials';
 import { BackHeader } from '@/components/back';
 import { PhaseStrip } from '@/components/trial-card';
+import Link from 'next/link';
 import { Button, Card, Chip, SectionTitle, Sheet, useToasts } from '@/components/ui';
 
 export default function TrialPage() {
@@ -46,6 +47,8 @@ export default function TrialPage() {
       </div>)}
       {tr.design === 'D' && !tr.revealed_at && ['completed', 'stopped_early', 'abandoned'].includes(tr.status) && <Button className="w-full mt-4" onClick={() => void act('reveal')} data-testid="reveal">{t('trial.reveal')}</Button>}
       {tr.verdict && <VerdictCard v={tr.verdict} name={name} trial={tr} />}
+      {['completed', 'stopped_early', 'abandoned'].includes(tr.status) && (tr.design !== 'D' || tr.revealed_at) && (
+        <Link className="mt-3 w-full inline-flex min-h-12 items-center justify-center px-4 rounded-chip border border-border" href={`/report/trial?id=${id}`} data-testid="trial-report-link">{t('trial_report.open')}</Link>)}
       <Sheet open={slip} onClose={() => setSlip(false)} title={t('trial.i_slipped')}>
         <input type="date" dir="ltr" className="min-h-12 rounded-chip border border-border bg-surface px-3" value={slipDay} max={tr.today} onChange={(e) => setSlipDay(e.target.value)} aria-label={t('builder.date')} />
         <Button className="w-full mt-3" onClick={async () => { await act(`days/${slipDay}`, { adherent: false }); setSlip(false); }}>{t('trial.record_slip')}</Button>
