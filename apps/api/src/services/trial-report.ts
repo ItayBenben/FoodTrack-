@@ -26,7 +26,7 @@ export async function trialReport(tx: Tx, deps: Deps, id: string) {
   const user = await getUser(tx);
   const rollover = { timezone: user.timezone, dayRollover: user.day_rollover };
   // the same cut-off the verdict used: days before the day the trial ended
-  const endDay = t.completed_at ? localDay(new Date(String(t.completed_at)), rollover) : localDay(new Date(), rollover);
+  const endDay = localDay(t.completed_at ? new Date(t.completed_at as Date | string) : new Date(), rollover);
   const allocation: string[] | null = t.design === 'D' && t.allocation_key
     ? JSON.parse(deps.keys.crypto.open('trial', 'allocation', id, t.allocation_key as Buffer)!) as string[] : null;
   const armOf = (phase: string, idx: number | null | undefined) => (allocation && phase === 'challenge' && idx !== null && idx !== undefined ? allocation[idx] ?? null : null);
@@ -45,12 +45,11 @@ export async function trialReport(tx: Tx, deps: Deps, id: string) {
     tally(run, d); sequence.push(run);
   }
 
-  const startedAt = t.started_at ? new Date(String(t.started_at)) : null;
-  const endedAt = t.completed_at ? new Date(String(t.completed_at)) : new Date();
-  const adverse = startedAt
-    ? (await tx.query<{ rule_key: string; raised_at: Date; acknowledged_at: Date | null }>(
-      'SELECT rule_key, raised_at, acknowledged_at FROM safety_flag WHERE raised_at >= $1 AND raised_at <= $2 ORDER BY raised_at', [startedAt, endedAt])).rows
-    : [];
+  // compare in SQL against the stored timestamps: a JS round trip would drop precision at the window's edges
+  const adverse = (await tx.query<{ rule_key: string; raised_at: Date; acknowledged_at: Date | null }>(
+    `SELECT f.rule_key, f.raised_at, f.acknowledged_at FROM safety_flag f, trial t
+      WHERE t.id = $1 AND t.started_at IS NOT NULL AND f.raised_at >= t.started_at AND f.raised_at <= coalesce(t.completed_at, now())
+      ORDER BY f.raised_at`, [id])).rows;
 
   const hyp = t.hypothesis as Record<string, unknown>;
   const abandonReason = t.abandon_reason ? safeJson(deps.keys.crypto.open('trial', 'abandon_reason', id, t.abandon_reason as Buffer)) : null;
