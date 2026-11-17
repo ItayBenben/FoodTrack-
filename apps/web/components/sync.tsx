@@ -32,7 +32,7 @@ function SyncSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
     <Sheet open={open} onClose={onClose} title={t('sync.title')}>
       <p className="text-text-muted">{rows.length ? t('sync.pending_count', { n: rows.length }) : t('sync.all_saved')}</p>
       {s.lastSyncAt && <p className="text-label text-text-muted mt-1">{t('sync.last', { time: fmtTime(s.lastSyncAt) })}</p>}
-      <ul className="mt-3">{rows.map((r) => <li key={r.seq} className="py-2 border-b border-border text-label"><span className="font-medium">{t(`sync.op.${r.op}`)}</span> · {r.status === 'failed' ? <span className="text-danger">{r.last_error}</span> : r.attempts ? t('sync.retrying', { n: r.attempts }) : t('sync.queued')}</li>)}</ul>
+      <ul className="mt-3">{rows.map((r) => <li key={r.seq} className="py-2 border-b border-border text-label"><span className="font-medium">{t(`sync.op.${r.op}`)}</span> · {r.status === 'failed' ? <span className="text-danger">{r.last_error}</span> : r.attempts ? <>{t('sync.retrying', { n: r.attempts })}{r.last_error && <span className="block text-text-muted">{r.last_error}</span>}</> : t('sync.queued')}</li>)}</ul>
       <div className="grid grid-cols-2 gap-2 mt-4">
         <Button variant="secondary" onClick={() => void retryFailed()} disabled={!rows.some((r) => r.status === 'failed')}>{t('sync.retry_failed')}</Button>
         <Button onClick={() => void syncNow()} disabled={!s.online}>{t('sync.retry_all')}</Button>

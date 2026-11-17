@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db, setMeta } from './db/local';
-import { deleteLocal, editObservation, saveObservation, serverValues } from './store';
+import { deleteLocal, editObservation, isoTime, saveObservation, serverValues } from './store';
 
 beforeEach(async () => { await db().delete(); await db().open(); await setMeta('user', { id: 'u', timezone: 'Asia/Jerusalem', day_rollover: '04:00', locale: 'he-IL', idle_lock_minutes: 15, display_name: null }); });
 
@@ -32,6 +32,13 @@ describe('the client write path (06 §4)', () => {
     await deleteLocal(o.id);
     const rows = await db().outbox.toArray();
     expect(rows.map((r) => r.op)).toEqual(['delete']);
+  });
+  it('a time without a zone is read as device-local and stored as a full ISO instant', async () => {
+    expect(isoTime('2026-11-16T12:00:00')).toBe(new Date('2026-11-16T12:00:00').toISOString());
+    expect(isoTime('2026-08-21T01:00:00+03:00')).toBe('2026-08-20T22:00:00.000Z');
+    expect(isoTime('not a time')).toBe('not a time'); // left for the server to reject with a reason
+    const o = await saveObservation({ tracker_key: 'stool', values: { bristol: 4 }, occurred_at: '2026-11-16T12:00:00' });
+    expect(o.occurred_at).toMatch(/Z$/);
   });
   it('placeholder photo ids never leave the device', () => {
     expect(serverValues({ description: 'toast', photos: ['local_1', '0190-real', 'local_2'], tags: ['a'] }))

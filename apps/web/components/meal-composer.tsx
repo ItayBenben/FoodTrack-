@@ -70,7 +70,7 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
     const meal_items: MealItemInput[] | undefined = all.length ? all.map((i, n) => ({ raw_text: i.raw_text, food_id: i.food_id, quantity: i.quantity, unit: i.unit, grams_est: i.grams_est, confidence: i.confidence, resolved_by: (i.resolved_by ?? undefined) as MealItemInput['resolved_by'], portion_precision: (i.portion_precision ?? 'unspecified') as MealItemInput['portion_precision'], position: n, ...(i.canonical_name ? { canonical_name: i.canonical_name } : {}) })) : undefined;
     let id = existing?.id;
     if (existing) await editObservation(existing.id, { values, meal_items, ...(ts && ts !== existing.occurred_at ? { occurred_at: ts, time_source: 'user_set' } : {}) });
-    else id = (await saveObservation({ tracker_key: def.key, values, meal_items, occurred_at: ts ?? undefined, time_source: ts ? 'user_set' : 'now', ...(opts.unspecified ? { specificity: 'unspecified' as const } : {}) })).id;
+    else id = (await saveObservation({ tracker_key: def.key, values, meal_items, occurred_at: ts ?? undefined, time_source: !ts ? 'now' : ts === at ? 'default' : 'user_set', ...(opts.unspecified ? { specificity: 'unspecified' as const } : {}) })).id;
     for (const p of photos.filter((x) => x.blob)) await db().media_queue.put({ id: p.id, observation_id: id!, blob: p.blob!, created_at: new Date().toISOString() });
     if (opts.unspecified) push({ text: t('meal.unspecified_saved') });
     void close(true);

@@ -10,6 +10,7 @@ from engine.config import analysis_config
 from engine.load import load_user
 from engine import stats as S
 from engine.trials import design_power, verdict
+from engine.plain import plain_route
 
 app = FastAPI(title="FoodTrack analysis", docs_url=None, redoc_url=None, openapi_url=None)
 DSN = os.environ.get("DATABASE_URL", "postgresql://foodtrack_app:foodtrack_app@localhost:5432/foodtrack")
@@ -36,6 +37,7 @@ def health() -> dict:
 
 
 @app.post("/analyze/associations")
+@plain_route
 def associations(req: AssocReq) -> dict:
     cfg = {**analysis_config(), **(req.params or {})}
     try:
@@ -51,6 +53,7 @@ def associations(req: AssocReq) -> dict:
 
 
 @app.post("/analyze/power")
+@plain_route
 def power(req: PowerReq) -> dict:
     cfg = analysis_config()
     d = req.delta or cfg["min_interesting_rd"]
@@ -74,6 +77,7 @@ class TrialReq(BaseModel):
 
 
 @app.post("/analyze/trial")
+@plain_route
 def trial(req: TrialReq) -> dict:
     return verdict(req.days, req.hypothesis, req.outcome_type, req.guesses, req.allocation, req.partial, analysis_config())
 
@@ -87,6 +91,7 @@ class TrialPowerReq(BaseModel):
 
 
 @app.post("/analyze/trial-power")
+@plain_route
 def trial_power(req: TrialPowerReq) -> dict:
     cfg = analysis_config()
     p = design_power({"on_days": req.on_days, "off_days": req.off_days}, req.p_base, req.log_rate, req.mie, sims=cfg["trial_power_simulations"], bar=cfg["trial_decision_bar"])

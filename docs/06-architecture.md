@@ -126,7 +126,10 @@ user taps Save
   → POST /sync/push
   → on success: mark outbox row done, update local revision
   → on 409 conflict: apply server field values, keep local in revision history, toast if user-visible
-  → on network error: leave in outbox, exponential backoff (1s → 60s cap), survives restart
+  → on network error / 5xx / 408 / 429: leave in outbox, exponential backoff (1s → 60s cap), survives restart;
+    the sync sheet shows the last error under "retrying"; "Retry all now" skips the backoff wait
+  → on any other 4xx for the request, or a mutation in `rejected`: mark it failed with the reason — never
+    retry the same bytes forever. It stays on the device; "Retry failed" re-queues it
 ```
 
 **Read path**

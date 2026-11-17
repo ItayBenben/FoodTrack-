@@ -117,6 +117,21 @@ describe('sync (03 §8)', () => {
     const n = (await app.inject({ url: '/api/v1/observations?tracker_key=stool&limit=500', headers: auth(t) })).json().data.filter((o: { client_id: string }) => o.client_id.startsWith('push-')).length;
     expect(n).toBe(2);
   });
+  it('a mutation that fails validation is rejected alone, with a reason — it never blocks the batch', async () => {
+    const good = stool(4, 'push-v-000001');
+    const badTime = { ...stool(4, 'push-v-000002'), occurred_at: '2026-11-16T12:00:00' }; // no offset
+    const body = { device_id: 'dev-A', mutations: [
+      { client_id: good.client_id, entity: 'observation', op: 'upsert', payload: good },
+      { client_id: badTime.client_id, entity: 'observation', op: 'upsert', payload: badTime },
+      { entity: 'observation', op: 'upsert', payload: {} }] };
+    const res = await app.inject({ method: 'POST', url: '/api/v1/sync/push', headers: auth(t), payload: body });
+    expect(res.statusCode).toBe(200);
+    const r = res.json();
+    expect(r.applied.map((x: { client_id: string }) => x.client_id)).toEqual(['push-v-000001']);
+    expect(r.rejected).toHaveLength(2);
+    expect(r.rejected[0]).toMatchObject({ client_id: 'push-v-000002', reason: 'validation' });
+    expect(r.rejected[0].detail).toContain('payload.occurred_at');
+  });
   it('per-field conflict: the later edit wins, the loser is kept in revisions', async () => {
     const created = (await app.inject({ method: 'POST', url: '/api/v1/observations', headers: auth(t), payload: { ...stool(4, 'conf-000001'), note: 'orig' } })).json();
     // device B edits the note now (server-side, revision 2)

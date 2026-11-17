@@ -13,6 +13,11 @@ import { issueAccess } from '../src/services/auth';
 import { withUser } from '../src/db/pool';
 
 const PORT = 8765;
+/** Pin the calendar, not only the seed: with a sliding end day the same draws land on different weekdays
+ *  every day, the weekday adjustment moves, and the test passed or failed by date (green on 2026-11-16,
+ *  red on 2026-11-17 with identical code). This checks the pipeline on one known dataset; the statistical
+ *  release gate is test:stats, which this does not touch. */
+const FIXTURE_END_DAY = '2026-11-15';
 let py: ChildProcess; let deps: Awaited<ReturnType<typeof freshDeps>>; let app: FastifyInstance; let A: string; let tA = ''; let tB = '';
 
 async function tokenFor(uid: string) {
@@ -29,7 +34,7 @@ beforeAll(async () => {
   app = await testApp(deps);
   A = await createUser(deps); const B = await createUser(deps, 'second user passphrase');
   const foods = await loadFoodRefs(deps.db, A);
-  await insertFixture(deps, A, generateFixture(foods, { days: 90, seed: 42 }).observations);
+  await insertFixture(deps, A, generateFixture(foods, { days: 90, seed: 42, endDay: FIXTURE_END_DAY }).observations);
   tA = await tokenFor(A); tB = await tokenFor(B);
   for (let i = 0; i < 60; i++) { try { if ((await fetch(`http://127.0.0.1:${PORT}/health`)).ok) break; } catch { /* starting */ } await new Promise((r) => setTimeout(r, 250)); }
 }, 120_000);
