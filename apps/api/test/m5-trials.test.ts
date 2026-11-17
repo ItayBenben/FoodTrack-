@@ -90,7 +90,9 @@ describe('trials (07 M5 done-when)', () => {
     expect(v.limitations).toContain('open_label');
   });
   it('D44: the trial report is built from the frozen pre-registration, with every day, deviation and adverse event', async () => {
-    await owner(`INSERT INTO safety_flag (user_id, rule_key, raised_at) VALUES ($1, 'red_flag_blood', now())`, [A]);
+    // one warning sign during the trial, one after it ended: only the first is an adverse event of this trial
+    await owner(`INSERT INTO safety_flag (user_id, rule_key, raised_at) SELECT $1, 'red_flag_blood', started_at + (completed_at - started_at) / 2 FROM trial WHERE id = $2`, [A, trialId]);
+    await owner(`INSERT INTO safety_flag (user_id, rule_key, raised_at) VALUES ($1, 'red_flag_fever_gi', now() + interval '1 minute')`, [A]);
     const r = await app.inject({ url: `/api/v1/trials/${trialId}/report`, headers: H() });
     expect(r.statusCode, r.body).toBe(200);
     const rep = r.json();
@@ -104,8 +106,8 @@ describe('trials (07 M5 done-when)', () => {
     expect(rep.days.length).toBe(rep.sequence.reduce((s: number, x: { n_days: number }) => s + x.n_days, 0));
     expect(rep.days[0]).toEqual(expect.objectContaining({ day: expect.any(String), phase: expect.any(String), logged: expect.any(Boolean) }));
     expect(Array.isArray(rep.deviations)).toBe(true);
-    expect(rep.adverse_events.map((e: { rule_key: string }) => e.rule_key)).toContain('red_flag_blood');
-    await owner(`DELETE FROM safety_flag WHERE user_id = $1 AND rule_key = 'red_flag_blood'`, [A]);
+    expect(rep.adverse_events.map((e: { rule_key: string }) => e.rule_key)).toEqual(['red_flag_blood']);
+    await owner(`DELETE FROM safety_flag WHERE user_id = $1 AND rule_key IN ('red_flag_blood', 'red_flag_fever_gi')`, [A]);
   });
   it('the trial report is per-user: another account gets a 404', async () => {
     const B = await createUser(deps, 'another user passphrase here');
