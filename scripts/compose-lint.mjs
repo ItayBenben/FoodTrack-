@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // 06 §5.5: only Caddy publishes ports; everything else stays on the internal network.
 import { readFileSync } from 'node:fs';
-const ROOT = new URL('..', import.meta.url).pathname;
+import { fileURLToPath } from 'node:url';
+const ROOT = fileURLToPath(new URL('..', import.meta.url)); // .pathname breaks on Windows (/C:/…)
 let bad = 0;
 for (const file of ['docker-compose.yml']) {
   const text = readFileSync(ROOT + file, 'utf8');
