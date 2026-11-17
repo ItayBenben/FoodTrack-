@@ -361,7 +361,7 @@ The completeness checklist. Every screen, every control on it, what the control 
 | S135 | Null verdict | headline · evidence counts · `What this rules out ▾` · `What it doesn't ▾` (mandatory) · `Take it off the suspect list` · `Test something else` · `Retest in 6 months` |
 | S135b | Insights-wide null | combinations tested count · `Widen what you log` · `Test a suspect properly` · `Check your transit time` |
 | S136 | Component editor | component rows with `fraction` · `+ Add ingredient` · `Not in mine` (forks a personal copy) · cycle/depth error inline · `Save` · `Cancel` (confirm-discard) |
-| S137 | Trial report | preview · `Download PDF` · `Share with a clinician` · deviations section · `202` building state with progress |
+| S137 | Trial report (`/report/trial?id=`) | preview · `Download PDF` (browser print; share the saved PDF from the OS) · `Back` · sections: pre-registration, schedule, sequence completed, deviations, adverse events, result + blinding + limitations, day-by-day data · `409` → explains it opens once the trial is finished (and revealed, if blinded). Entry: `Trial report (PDF)` on a finished trial. |
 
 Three control-level notes specific to this set, because each is a way the feature could be built wrong:
 
@@ -458,4 +458,4 @@ Where each screen lives in `apps/web`. Controls are as listed above unless noted
 | Export & import, Clinician report | `app/(tabs)/more/export`, `app/report` | |
 | Reminders, Security & encryption | `app/(tabs)/more/{reminders,security}` | |
 | How this works | `app/(tabs)/more/how` | |
-| Not yet built | custom tracker builder UI (API exists: `/me/trackers/custom`), TOTP enrolment UI (API exists), trial report PDF (D44) | |
+| Not yet built | custom tracker builder UI (API exists: `/me/trackers/custom`), TOTP enrolment UI (API exists) | |

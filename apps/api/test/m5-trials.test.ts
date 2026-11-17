@@ -78,6 +78,8 @@ describe('trials (07 M5 done-when)', () => {
   });
   it('no verdict and no live estimate while running (D21)', async () => {
     expect((await app.inject({ url: `/api/v1/trials/${trialId}/verdict`, headers: H() })).statusCode).toBe(409);
+    const rep = await app.inject({ url: `/api/v1/trials/${trialId}/report`, headers: H() });
+    expect(rep.statusCode).toBe(409); expect(rep.json().type).toContain('not_complete');
   });
   it('US-06 AC5: a trial stopped with poor adherence is inconclusive, never negative', async () => {
     await owner(`UPDATE trial_day SET adherent = false, logged = true WHERE trial_id = $1 AND phase = 'elimination'`, [trialId]);
@@ -86,6 +88,29 @@ describe('trials (07 M5 done-when)', () => {
     const v = (await app.inject({ url: `/api/v1/trials/${trialId}/verdict`, headers: H() })).json();
     expect(v.verdict).toBe('inconclusive'); expect(v.partial).toBe(true); expect(v.open_label).toBe(true);
     expect(v.limitations).toContain('open_label');
+  });
+  it('D44: the trial report is built from the frozen pre-registration, with every day, deviation and adverse event', async () => {
+    await owner(`INSERT INTO safety_flag (user_id, rule_key, raised_at) VALUES ($1, 'red_flag_blood', now())`, [A]);
+    const r = await app.inject({ url: `/api/v1/trials/${trialId}/report`, headers: H() });
+    expect(r.statusCode, r.body).toBe(200);
+    const rep = r.json();
+    expect(rep.preregistration.minimum_interesting_effect).toBe(0.2);
+    expect(rep.preregistration.prespecified_at).toBeTruthy();
+    expect(rep.preregistration).toHaveProperty('power'); // recorded at creation, or explicitly null
+    expect(rep.trial).toMatchObject({ design: 'A', open_label: true, status: 'stopped_early' });
+    expect(rep.verdict.verdict).toBe('inconclusive');
+    expect(rep.sequence.length).toBeGreaterThan(0);
+    expect(rep.sequence[0]).toEqual(expect.objectContaining({ phase: expect.any(String), start: expect.any(String), n_days: expect.any(Number), n_logged: expect.any(Number) }));
+    expect(rep.days.length).toBe(rep.sequence.reduce((s: number, x: { n_days: number }) => s + x.n_days, 0));
+    expect(rep.days[0]).toEqual(expect.objectContaining({ day: expect.any(String), phase: expect.any(String), logged: expect.any(Boolean) }));
+    expect(Array.isArray(rep.deviations)).toBe(true);
+    expect(rep.adverse_events.map((e: { rule_key: string }) => e.rule_key)).toContain('red_flag_blood');
+    await owner(`DELETE FROM safety_flag WHERE user_id = $1 AND rule_key = 'red_flag_blood'`, [A]);
+  });
+  it('the trial report is per-user: another account gets a 404', async () => {
+    const B = await createUser(deps, 'another user passphrase here');
+    const tB = await tokenFor(B);
+    expect((await app.inject({ url: `/api/v1/trials/${trialId}/report`, headers: { authorization: `Bearer ${tB}` } })).statusCode).toBe(404);
   });
   it('the elimination-load cap refuses a fourth', async () => {
     for (const ref of ['wheat', 'legume', 'spicy']) await app.inject({ method: 'POST', url: '/api/v1/avoid', headers: H(), payload: { kind: 'tag', ref, label: { en: ref, he: ref } } });
@@ -114,6 +139,9 @@ describe('Design D: the allocation never leaks (the blinding gate)', () => {
       expect(b).not.toMatch(/\["(active|control)"|"phase":"(active|control)"|"arm"/);
     }
     expect((await app.inject({ method: 'POST', url: `/api/v1/trials/${id}/reveal`, headers: H() })).statusCode).toBe(409);
+    const rep = await app.inject({ url: `/api/v1/trials/${id}/report`, headers: H() });
+    expect(rep.statusCode).toBe(409);
+    expect(rep.body).not.toMatch(/"(active|control)"/);
   });
   it('reveal is allowed only after the trial ends, is idempotent, and audit-logged', async () => {
     await app.inject({ method: 'POST', url: `/api/v1/trials/${id}/abandon`, headers: H(), payload: { reason: 'other' } });
@@ -123,5 +151,13 @@ describe('Design D: the allocation never leaks (the blinding gate)', () => {
     expect(r2.already).toBe(true); expect(r2.allocation).toEqual(r1.allocation);
     const { rows } = await owner(`SELECT count(*)::int AS n FROM security_audit WHERE action = 'trial_revealed'`);
     expect(rows[0].n).toBe(1);
+  });
+  it("a blinded trial's report waits for the reveal, then names each period's arm", async () => {
+    const rep = (await app.inject({ url: `/api/v1/trials/${id}/report`, headers: H() })).json();
+    expect(rep.trial.design).toBe('D'); expect(rep.trial.open_label).toBe(false);
+    expect(rep.sequence).toEqual([]); // abandoned on day one: nothing was completed
+    const arms = rep.schedule.filter((x: { period_index: number | null }) => x.period_index !== null && x.period_index !== undefined).map((x: { arm: string | null }) => x.arm);
+    expect(arms.length).toBeGreaterThan(0);
+    for (const a of arms) expect(['active', 'control']).toContain(a);
   });
 });

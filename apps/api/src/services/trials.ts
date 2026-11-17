@@ -154,7 +154,8 @@ export async function createTrial(tx: Tx, deps: Deps, body: { insight_id?: strin
   const doses = cfg.challenge_doses[p.target.ref] ?? cfg.challenge_doses.default!;
   const T = cfg.trial_default;
   const phases = buildPhases(p.design, start, { baselineDays: reuse && p.baseline_reused ? 0 : T.baseline_days, eliminationDays: elim, washoutDays: T.washout_days, challengeDays: T.challenge_days, followupDays: T.followup_days, doses });
-  const hypothesis = { ...p.hypothesis, baseline_reused: reuse && p.baseline_reused, elimination_days: elim, prespecified_at: new Date().toISOString() };
+  // the power calculation is part of the pre-registration (CENT; D44) — frozen with it, so the report can state it
+  const hypothesis = { ...p.hypothesis, baseline_reused: reuse && p.baseline_reused, elimination_days: elim, power: p.power ?? null, prespecified_at: new Date().toISOString() };
   const { rows } = await tx.query<{ id: string }>(
     `INSERT INTO trial (user_id, origin_association_id, target_kind, target_ref, target_label, design, primary_outcome, hypothesis, baseline_start, baseline_end, phases, status, analytic_washout_k)
      VALUES (app_current_user(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'proposed', $11) RETURNING id`,
