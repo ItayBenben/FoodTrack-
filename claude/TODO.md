@@ -120,6 +120,12 @@ The prototype has **34 screens**. The spec now has **S127–S137** with no proto
 
 ---
 
+## 5b. Engine finding — weekday alignment flips the M4 result
+
+Found 2026-11-17. The M4 integration test (seed 42, 90 days, injected dairy → loose stool, true effect 0.38) found the effect when the fixture ended on 2026-11-15 and **missed it** when the same draws ended on 2026-11-16 — only the weekdays the days fall on changed. Same code, same numpy/scipy/statsmodels. The test is now pinned to 2026-11-15 so CI is deterministic, but the sensitivity is real: a planted 0.38 effect at 90 days should not depend on the calendar.
+
+To do: sweep the end day across 7 consecutive days (and a few seeds) through `analyze()`; see whether the weekday confounder adjustment or the FDR cut is what flips it; decide with the null gate (`test:stats`) in the loop — **never** by loosening the gate (rule 4).
+
 ## 6. Known thin data
 
 **Open Food Facts Israel carries 8,089 products** and the largest single category has 292 items. That is not enough for barcode logging to feel useful on Israeli shelves. The Price Transparency feeds (255k+ products, 49 chains, ~4-hourly) fix *identity* but are **unconfirmed for nutrition or ingredient fields** — treat as a name↔barcode layer until proven otherwise.
