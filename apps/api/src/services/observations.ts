@@ -39,6 +39,13 @@ export function deriveTimePrecision(timeSource: string, occurredAt: Date, record
   return Math.abs(occurredAt.getTime() - recordedAt.getTime()) <= exactDelayH * 3600_000 ? 'exact' : 'day_only';
 }
 
+/** The values a meal is parsed from: its text, then its photos. */
+function parseSource(def: TrackerDefinition, values: Record<string, unknown>): string {
+  const photos = def.fields.filter((f) => f.type === 'photo' || f.type === 'multi_photo').map((f) => values[f.key]).filter((v) => (Array.isArray(v) ? v.length : v));
+  return JSON.stringify([String(values.description ?? '').trim(), photos]);
+}
+const hasParseSource = (def: TrackerDefinition, values: Record<string, unknown>) => parseSource(def, values) !== JSON.stringify(['', []]);
+
 export function deriveSpecificity(items: { food_id?: string | null; confidence?: number | null }[], hasContent: boolean): 'resolved' | 'partial' | 'unspecified' {
   if (items.length === 0) return hasContent ? 'partial' : 'unspecified';
   const resolved = items.filter((i) => i.food_id && (i.confidence ?? 1) >= 0.6).length;
@@ -222,7 +229,7 @@ export async function createObservation(tx: Tx, ctx: WriteCtx, input: Observatio
   // on a meal with nothing resolved (08 §4.3b) — a client can never upgrade an empty meal to resolved.
   const declined = input.specificity === 'unspecified' && !items.some((i) => i.food_id);
   const specificity = def.has_meal_items ? (declined ? 'unspecified' : deriveSpecificity(items, hasContent)) : 'resolved';
-  const parseStatus = def.has_meal_items && !declined && items.length === 0 && input.values.description ? 'pending' : 'none';
+  const parseStatus = def.has_meal_items && !declined && items.length === 0 && hasParseSource(def, input.values) ? 'pending' : 'none';
 
   await tx.query(
     `INSERT INTO observation (id, user_id, tracker_key, def_version, def_hash, occurred_at, local_day, recorded_at, source, confidence, note,
@@ -323,6 +330,15 @@ export async function updateObservation(tx: Tx, ctx: WriteCtx, id: string, patch
      WHERE id = $1`,
     [id, occurred, day, deps.keys.crypto.sealOpt('observation', 'note', id, next.note), precision, specificity, Boolean(patch.meal_items)]);
   await writeValues(tx, deps, def, id, next.values as ObservationValues);
+  // A meal still without foods whose text or photos changed (typed later, or a photo that finished
+  // uploading after the meal synced) is parsed again in the background — never left "no details".
+  const reparse = def.has_meal_items && !patch.meal_items && !cur.meal_items?.length && specificity !== 'unspecified'
+    && hasParseSource(def, next.values) && parseSource(def, next.values) !== parseSource(def, cur.values);
+  if (reparse) {
+    await tx.query(`UPDATE observation SET parse_status = 'pending' WHERE id = $1`, [id]);
+    await tx.query(`INSERT INTO job (kind, user_id, payload, dedupe_key) VALUES ('parse_meal', app_current_user(), $1, $2) ON CONFLICT DO NOTHING`,
+      [{ observation_id: id }, `parse_meal:${id}:r${cur.revision + 1}`]);
+  }
   const obs = (await loadObservation(tx, deps, id))!;
   const { rows: prof } = await tx.query<{ birth_year: number | null }>('SELECT birth_year FROM user_profile');
   const flags = await evaluateSafety(tx, def, { id, local_day: day, values: obs.values }, { birth_year: prof[0]?.birth_year ?? null });

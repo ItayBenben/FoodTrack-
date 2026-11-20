@@ -6,7 +6,10 @@ import { DeterministicProvider } from '../src/llm/deterministic';
 import type { LLMProvider, MealParseResult, PhotoParseInput } from '../src/llm/types';
 import { withUser } from '../src/db/pool';
 import { issueAccess } from '../src/services/auth';
-import { createUser, freshDeps, testApp } from './helpers';
+import pg from 'pg';
+import { OWNER_URL, createUser, freshDeps, testApp } from './helpers';
+import { runOnce } from '../src/workers/jobs';
+import { uuidv7 } from '@foodtrack/shared';
 
 let deps: Deps; let app: FastifyInstance; let tokenA = ''; let tokenB = '';
 let mode: 'ok' | 'down' = 'ok';
@@ -93,5 +96,58 @@ describe('meal photo → foods (08 §4.4)', () => {
     const body = (await parsePhoto(tokenA)).json();
     const other = await app.inject({ url: `/api/v1/media/${body.media_id}`, headers: { authorization: `Bearer ${tokenB}` } });
     expect(other.statusCode).toBe(404);
+  });
+
+  describe('a meal saved with only a photo still gets its foods (08 §4.4)', () => {
+    const H = () => ({ authorization: `Bearer ${tokenA}`, 'x-device-id': 'dev-photo' });
+    const save = async (values: Record<string, unknown>) => (await app.inject({ method: 'POST', url: '/api/v1/observations', headers: H(),
+      payload: { client_id: `c-${uuidv7()}`, tracker_key: 'meal', occurred_at: new Date().toISOString(), values } })).json();
+    const upload = async () => {
+      const m = multipart(PNG, 'image/png');
+      return (await app.inject({ method: 'POST', url: '/api/v1/media', payload: m.payload, headers: { ...m.headers, ...H() } })).json().media_id as string;
+    };
+    const get = async (id: string) => (await app.inject({ url: `/api/v1/observations/${id}`, headers: H() })).json();
+
+    it('saved before the composer finished reading it: the server reads the photo in the background', async () => {
+      mode = 'ok';
+      const o = await save({ photos: [await upload()] });
+      expect(o.parse_status).toBe('pending');
+      await runOnce(deps);
+      const now = await get(o.id);
+      expect(now.meal_items.map((i: { raw_text: string }) => i.raw_text)).toContain('חומוס');
+      expect(now.meal_items.every((i: { resolved_by: string }) => i.resolved_by === 'vision')).toBe(true);
+      expect(now.parse_status).toBe('done');
+    });
+
+    it('the model is down: the meal is marked degraded and retried, then filled in when it comes back', async () => {
+      mode = 'down';
+      const o = await save({ photos: [await upload()] });
+      await runOnce(deps);
+      expect((await get(o.id)).parse_status).toBe('degraded');
+      mode = 'ok';
+      const c = new pg.Client({ connectionString: OWNER_URL }); await c.connect(); await c.query(`UPDATE job SET run_after = now() WHERE status = 'queued'`); await c.end();
+      await runOnce(deps);
+      expect((await get(o.id)).meal_items.length).toBeGreaterThan(0);
+    });
+
+    it('a meal that synced before its photo uploaded is read once the real photo id arrives', async () => {
+      mode = 'ok';
+      const o = await save({ photos: ['local-not-uploaded-yet'] });
+      await runOnce(deps);
+      expect((await get(o.id)).meal_items ?? []).toHaveLength(0);
+      const media = await upload();
+      const u = await app.inject({ method: 'PATCH', url: `/api/v1/observations/${o.id}`, headers: H(), payload: { values: { photos: [media] } } });
+      expect(u.statusCode).toBe(200);
+      await runOnce(deps);
+      expect((await get(o.id)).meal_items.length).toBeGreaterThan(0);
+    });
+
+    it('words typed later into a meal with no foods are parsed too', async () => {
+      const o = await save({ photos: ['local-never-uploaded'] });
+      await runOnce(deps);
+      await app.inject({ method: 'PATCH', url: `/api/v1/observations/${o.id}`, headers: H(), payload: { values: { description: 'חומוס' } } });
+      await runOnce(deps);
+      expect((await get(o.id)).meal_items.length).toBeGreaterThan(0);
+    });
   });
 });
