@@ -36,7 +36,7 @@ test('08 §4.4: meal photos can be picked from the gallery, several at once, up 
   await expect(sheet.getByTestId('meal-photos').locator('img')).toHaveCount(4); // the field's max_items
   await expect(page.getByText(/Up to 4 photos|עד 4 תמונות/)).toBeVisible(); // the 5th is reported, not silently lost
   // e2e runs the offline deterministic provider: photo reading is off, and the composer says so instead of going quiet
-  await expect(sheet.getByTestId('photo-status')).toHaveText(/Photo reading is off|זיהוי מתמונות כבוי/, { timeout: 15_000 });
+  await expect(sheet.getByTestId('photo-stage').first()).toHaveText(/Photo reading is off|זיהוי מתמונות כבוי/, { timeout: 15_000 });
 
   await sheet.getByTestId('save').click();
   await waitSynced(page);

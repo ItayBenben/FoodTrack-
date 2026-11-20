@@ -127,10 +127,11 @@ The completeness checklist. Every screen, every control on it, what the control 
 | parsed row — `✕` | ⟳ remove + undo toast |
 | `+ add item` | ⟳ appends a row focused on search |
 | photo thumbnails | `✕` removes with an undo toast · long-press → `Retake · Remove · View full` |
+| photo progress | one row per photo: thumbnail + its stage (`Preparing…` → `Uploading… N%` → `Reading the foods in this photo…`, or `Uploading and reading…` when the browser reports no upload progress) → the foods seen **in that photo** as chips, `No foods recognised` or why it couldn't be read. Above the rows: a progress bar over the photos still in flight and `Photo i of n: step`, then `Done: n photos read, k foods found`. While any photo is still being read, a line above `Save` says saving now is fine and the foods are added in the background. Save stays enabled. |
 | tag chips · `+` | ⟳ chip picker + free text |
 | `Save` | ⟳ writes locally, closes ≤100 ms |
 
-*States: parsing (spinner + "reading what you wrote") · degraded ("still tidying this up") · offline ("saved as you wrote it") · zero items (row shows `Needs a moment` + `Parse now`).*
+*States: parsing (spinner + "reading what you wrote") · degraded ("still tidying this up") · offline ("saved as you wrote it") · zero items (row shows `Needs a moment` + `Parse now`) · photos only, still being read (row reads `Meal (reading the photos…)`, never `Meal (no details)`, until the server fills in the foods).*
 
 | ID | Screen | Controls |
 |---|---|---|

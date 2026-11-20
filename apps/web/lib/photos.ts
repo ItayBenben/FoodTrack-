@@ -65,3 +65,51 @@ export function mergeItems<T extends { food_id: string | null; canonical_name: s
   }
   return out;
 }
+
+/** 'working': uploading and reading, when the browser reports no upload progress to tell the two apart. */
+export type PhotoStage = 'preparing' | 'uploading' | 'working' | 'reading' | 'done' | 'kept' | 'saved';
+/** How far along one photo is, 0..1, for the composer's progress bar. Reading has no measurable progress: it sits at the midpoint. */
+export function stageProgress(stage: PhotoStage, uploaded = 0): number {
+  switch (stage) {
+    case 'preparing': return 0.05;
+    case 'uploading': return 0.05 + 0.45 * Math.min(1, Math.max(0, uploaded));
+    case 'working': return 0.5;
+    case 'reading': return 0.75;
+    default: return 1;
+  }
+}
+/** Overall progress of the photos still in flight; photos already on the meal ('saved') don't count. */
+export function overallProgress(photos: { stage: PhotoStage; uploaded?: number }[]): number | null {
+  const live = photos.filter((p) => p.stage !== 'saved');
+  if (!live.length || live.every((p) => p.stage === 'done' || p.stage === 'kept')) return null;
+  return live.reduce((s, p) => s + stageProgress(p.stage, p.uploaded), 0) / live.length;
+}
+
+/**
+ * Like parseMealPhoto, but over XMLHttpRequest so the upload reports progress: `onUpload(fraction)` while
+ * the bytes go up, then `onReading()` once they are all sent and the server is reading the photo. If the
+ * browser reports no upload progress at all within 3 s, `onUnknown()` says so rather than sit at 0%.
+ */
+export function uploadAndReadPhoto(blob: Blob, headers: Record<string, string>, onUpload: (fraction: number) => void, onReading: () => void, onUnknown: () => void = () => undefined): Promise<PhotoParseResult | null> {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return Promise.resolve(null);
+  if (typeof XMLHttpRequest === 'undefined') return parseMealPhoto(blob, headers);
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/v1/meals/parse-photo');
+    for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
+    let heard = false;
+    const silent = setTimeout(() => { if (!heard) onUnknown(); }, 3_000);
+    xhr.upload.onprogress = (e) => { if (e.lengthComputable && e.total > 0) { heard = true; onUpload(e.loaded / e.total); } };
+    xhr.upload.onload = () => { heard = true; onUpload(1); onReading(); };
+    xhr.onloadend = () => clearTimeout(silent);
+    xhr.onload = () => {
+      if (xhr.status < 200 || xhr.status >= 300) { resolve(null); return; }
+      try { resolve(JSON.parse(xhr.responseText) as PhotoParseResult); } catch { resolve(null); }
+    };
+    xhr.onerror = () => resolve(null);
+    xhr.ontimeout = () => resolve(null);
+    xhr.timeout = 90_000;
+    const fd = new FormData(); fd.append('file', blob, 'meal');
+    xhr.send(fd);
+  });
+}

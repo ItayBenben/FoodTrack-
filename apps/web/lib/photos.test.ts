@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { admit, fitWithin, mergeItems } from './photos';
+import { admit, fitWithin, mergeItems, overallProgress, stageProgress } from './photos';
 
 describe('fitWithin', () => {
   it('shrinks the long edge to the limit and keeps the ratio', () => {
@@ -23,5 +23,20 @@ describe('mergeItems', () => {
   });
   it('treats the same name as the same food even without ids', () => {
     expect(mergeItems([it_(null, 'Green salad', 'סלט')], [it_(null, 'green salad', 'salad')])).toHaveLength(1);
+  });
+});
+
+describe('photo progress (08 §4.4)', () => {
+  it('each stage moves the bar forward, and reading never claims to be finished', () => {
+    const order = [stageProgress('preparing'), stageProgress('uploading', 0), stageProgress('uploading', 0.5), stageProgress('uploading', 1), stageProgress('reading'), stageProgress('done')];
+    for (let i = 1; i < order.length; i++) expect(order[i]!).toBeGreaterThanOrEqual(order[i - 1]!);
+    expect(stageProgress('reading')).toBeLessThan(1);
+    expect(stageProgress('uploading', 7)).toBe(stageProgress('uploading', 1)); // clamped
+  });
+  it('the bar shows only while a photo is in flight, and ignores photos already on the meal', () => {
+    expect(overallProgress([])).toBeNull();
+    expect(overallProgress([{ stage: 'saved' }])).toBeNull();
+    expect(overallProgress([{ stage: 'done' }, { stage: 'kept' }])).toBeNull();
+    expect(overallProgress([{ stage: 'saved' }, { stage: 'done' }, { stage: 'reading' }])).toBeCloseTo((1 + 0.75) / 2);
   });
 });
