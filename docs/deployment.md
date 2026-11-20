@@ -133,6 +133,8 @@ Created at first install in `/root/foodtrack-recovery-card.txt`. It must be copi
 15. Fixed on the box: `chown 100:101` + `chmod 700` on the volume's `_data`, and write checked from the api and worker containers. Verified end to end inside the api container: media store round trip OK, and a real 960×640 food photo read by Claude in 15.5 s (`degraded=false`, 23 foods named in Hebrew).
 16. Made permanent: the api image creates `/data/media` owned by `app`, so a new volume inherits it. `deploy-vm.sh` re-applies the ownership on every deploy and **fails the deploy** if the api cannot write a file there. `/health/ready` now writes a probe file instead of only checking that the directory exists.
 
+17. After the fix the owner's photos uploaded (3 × `POST /media` 201, 3 × `parse-photo` 200 in 8–9 s), but the meal saved at 08:19 stayed empty: it was stored `specificity = unspecified`, and the re-parse on update skipped unspecified meals. One `parse_meal` job was queued by hand for it (dedupe key `…:manual-20261120`), and the worker filled in 26 items. Code fix: the update path no longer skips unspecified meals, and the create path judges content by the tracker's photo fields instead of a hard-coded `photos` key.
+
 ## 5. Open follow-ups
 
 - [ ] Rotate the Anthropic key (it passed through chat and SSM command history).

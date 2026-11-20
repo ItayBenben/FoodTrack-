@@ -10,7 +10,7 @@ export function summarize(o: LocalObservation, def: TrackerDefinition | undefine
   if (def.all_clear && o.values[def.all_clear.field] === def.all_clear.value && Object.keys(o.values).length === 1) return t('rows.all_clear');
   if (def.has_meal_items) {
     const names = (o.meal_items ?? []).map((i) => i.raw_text).join(', ');
-    return names || String(o.values.description ?? '') || t('rows.meal_unspecified');
+    return names || String(o.values.description ?? '') || (o.parse_status === 'pending' ? t('rows.meal_reading') : t('rows.meal_unspecified'));
   }
   const parts: string[] = [];
   for (const f of def.fields) {

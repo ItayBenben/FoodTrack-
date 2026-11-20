@@ -13,13 +13,15 @@ import { api, getAccessToken } from '@/lib/api';
 import { db, deviceId, type LocalObservation } from '@/lib/db/local';
 import { editObservation, saveObservation } from '@/lib/store';
 import { useParse, type ParsedItem } from '@/lib/meals';
-import { admit, mergeItems, parseMealPhoto, prepareMealPhoto } from '@/lib/photos';
+import { admit, mergeItems, overallProgress, prepareMealPhoto, uploadAndReadPhoto, type PhotoStage } from '@/lib/photos';
 import { Button, Chip, Sheet, useToasts } from './ui';
 import { TimestampControl } from './fields';
 import { Icon } from './icons';
 
 const DRAFT = 'draft_meal';
 interface Suggestion { id: string; label: string; times_logged: number }
+/** One photo in the composer and how far along it is: what it found is shown under it (08 §4.4). */
+interface ComposerPhoto { id: string; url: string; blob?: Blob; stage: PhotoStage; uploaded?: number; found?: ParsedItem[] }
 
 export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinition; editId: string | null; at: string | null; onClose: () => void }) {
   const { t, label } = useI18n();
@@ -27,7 +29,7 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
   const [slot, setSlot] = useState<string | null>(null);
   const [ts, setTs] = useState<string | null>(at);
   const [items, setItems] = useState<ParsedItem[] | null>(null);
-  const [photos, setPhotos] = useState<{ id: string; url: string; blob?: Blob }[]>([]);
+  const [photos, setPhotos] = useState<ComposerPhoto[]>([]);
   const [existing, setExisting] = useState<LocalObservation | null>(null);
   const [editing, setEditing] = useState<number | null>(null);
   const [clarify, setClarify] = useState<Suggestion[] | null>(null);
@@ -39,7 +41,6 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
   const galleryRef = useRef<HTMLInputElement>(null);
   const [photoSource, setPhotoSource] = useState(false);
   const [photoItems, setPhotoItems] = useState<ParsedItem[]>([]);
-  const [reading, setReading] = useState(0);
   const [vision, setVision] = useState<'on' | 'off' | 'unavailable' | null>(null);
   const parse = useParse(text, ts);
   const slotField = def.fields.find((f) => f.key === 'slot' && f.type === 'enum');
@@ -47,7 +48,7 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
   const SpeechRec = typeof window !== 'undefined' ? ((window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike }).SpeechRecognition ?? (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionLike }).webkitSpeechRecognition) : undefined;
 
   useEffect(() => {
-    if (editId) void db().observations.get(editId).then((o) => { if (!o) return; setExisting(o); setText(String(o.values.description ?? '')); setSlot((o.values.slot as string) ?? null); setTs(o.occurred_at); setItems((o.meal_items ?? []) as ParsedItem[]); setPhotos(((o.values.photos as string[]) ?? []).map((id) => ({ id, url: `/api/v1/media/${id}` }))); });
+    if (editId) void db().observations.get(editId).then((o) => { if (!o) return; setExisting(o); setText(String(o.values.description ?? '')); setSlot((o.values.slot as string) ?? null); setTs(o.occurred_at); setItems((o.meal_items ?? []) as ParsedItem[]); setPhotos(((photoField ? (o.values[photoField.key] as string[] | undefined) : undefined) ?? []).map((id) => ({ id, url: `/api/v1/media/${id}`, stage: 'saved' as const }))); });
     else void db().drafts.get(DRAFT).then((d) => { if (d) { setText(String(d.data.text ?? '')); setSlot((d.data.slot as string) ?? null); } });
     setTimeout(() => ref.current?.focus(), 30);
   }, [editId]);
@@ -69,8 +70,10 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
     if (photoField && photos.length) values[photoField.key] = photos.map((p) => p.id);
     const meal_items: MealItemInput[] | undefined = all.length ? all.map((i, n) => ({ raw_text: i.raw_text, food_id: i.food_id, quantity: i.quantity, unit: i.unit, grams_est: i.grams_est, confidence: i.confidence, resolved_by: (i.resolved_by ?? undefined) as MealItemInput['resolved_by'], portion_precision: (i.portion_precision ?? 'unspecified') as MealItemInput['portion_precision'], position: n, ...(i.canonical_name ? { canonical_name: i.canonical_name } : {}) })) : undefined;
     let id = existing?.id;
-    if (existing) await editObservation(existing.id, { values, meal_items, ...(ts && ts !== existing.occurred_at ? { occurred_at: ts, time_source: 'user_set' } : {}) });
-    else id = (await saveObservation({ tracker_key: def.key, values, meal_items, occurred_at: ts ?? undefined, time_source: !ts ? 'now' : ts === at ? 'default' : 'user_set', ...(opts.unspecified ? { specificity: 'unspecified' as const } : {}) })).id;
+    // photos but no foods yet (still being read, or offline): the server reads them after the save, and the list says so meanwhile
+    const parse_pending = !meal_items?.length && !existing?.meal_items?.length && photos.length > 0 && !opts.unspecified;
+    if (existing) await editObservation(existing.id, { values, meal_items, ...(parse_pending ? { parse_status: 'pending' } : {}), ...(ts && ts !== existing.occurred_at ? { occurred_at: ts, time_source: 'user_set' } : {}) });
+    else id = (await saveObservation({ tracker_key: def.key, values, meal_items, occurred_at: ts ?? undefined, time_source: !ts ? 'now' : ts === at ? 'default' : 'user_set', parse_pending, ...(opts.unspecified ? { specificity: 'unspecified' as const } : {}) })).id;
     for (const p of photos.filter((x) => x.blob)) await db().media_queue.put({ id: p.id, observation_id: id!, blob: p.blob!, created_at: new Date().toISOString() });
     if (opts.unspecified) push({ text: t('meal.unspecified_saved') });
     void close(true);
@@ -93,28 +96,33 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
   const addPhotos = async (files: File[]) => {
     const { take, dropped } = admit(photos.length, maxPhotos, files.filter((f) => f.type.startsWith('image/') || f.type === ''));
     if (dropped > 0) push({ text: t('meal.photo_limit', { n: maxPhotos }) });
-    for (const f of take) {
+    // every picked photo shows at once with its own progress; each is then shrunk, uploaded and read in turn
+    const placed = take.map((f) => ({ f, local: `local_${uuidv7()}` }));
+    // the original file is held until the shrunk copy is ready, so a save made meanwhile still has something to upload
+    setPhotos((prev) => [...prev, ...placed.map(({ f, local }) => ({ id: local, url: URL.createObjectURL(f), blob: f as Blob, stage: 'preparing' as const }))].slice(0, maxPhotos));
+    for (const { f, local } of placed) {
       const blob = await prepareMealPhoto(f);
-      const local = `local_${uuidv7()}`;
-      setPhotos((prev) => (prev.length >= maxPhotos ? prev : [...prev, { id: local, url: URL.createObjectURL(blob), blob }]));
+      update(local, { blob, stage: 'uploading', uploaded: 0 });
       void readPhoto(local, blob);
     }
   };
+  const update = (id: string, patch: Partial<ComposerPhoto>) => setPhotos((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   /** Online: upload now and let the vision model name the foods. Offline or failed: the photo stays queued and uploads with the meal. */
   const readPhoto = async (local: string, blob: Blob) => {
-    const token = getAccessToken(); if (!token) return;
-    setReading((n) => n + 1);
-    try {
-      const r = await parseMealPhoto(blob, { authorization: `Bearer ${token}`, 'x-device-id': await deviceId() });
-      if (!r) return;
-      setPhotos((prev) => prev.map((p) => (p.id === local ? { id: r.media_id, url: p.url } : p)));
-      setVision(r.vision);
-      if (r.items.length) {
-        const found = r.items as ParsedItem[];
-        setPhotoItems((prev) => mergeItems(prev, found));
-        setItems((prev) => mergeItems(prev ?? [], found));
-      }
-    } finally { setReading((n) => n - 1); }
+    const token = getAccessToken();
+    const r = token ? await uploadAndReadPhoto(blob, { authorization: `Bearer ${token}`, 'x-device-id': await deviceId() },
+      (fraction) => update(local, { uploaded: fraction }), () => update(local, { stage: 'reading', uploaded: 1 }),
+      () => setPhotos((prev) => prev.map((p) => (p.id === local && p.stage === 'uploading' ? { ...p, stage: 'working' } : p)))) : null;
+    // offline or failed: the photo is kept on the device and uploads with the meal; the server reads it then
+    if (!r) { update(local, { stage: 'kept' }); setVision((v) => v ?? 'unavailable'); return; }
+    const found = r.items as ParsedItem[];
+    // uploaded: the meal points at the server's copy, so the blob is not sent a second time
+    update(local, { id: r.media_id, blob: undefined, stage: r.vision === 'on' ? 'done' : 'kept', found });
+    setVision(r.vision);
+    if (found.length) {
+      setPhotoItems((prev) => mergeItems(prev, found));
+      setItems((prev) => mergeItems(prev ?? [], found));
+    }
   };
   const removePhoto = (id: string) => {
     const prev = photos;
@@ -135,6 +143,33 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
     if (!last) { push({ text: t('meal.no_last') }); return; }
     setText(String(last.values.description ?? '')); setItems((last.meal_items ?? []) as ParsedItem[]);
   };
+
+  const progress = overallProgress(photos);
+  const live = photos.filter((p) => p.stage !== 'saved');
+  const stillReading = live.filter((p) => p.stage === 'preparing' || p.stage === 'uploading' || p.stage === 'working' || p.stage === 'reading').length;
+  const stageText = (p: ComposerPhoto): string => {
+    switch (p.stage) {
+      case 'preparing': return t('meal.photo_stage_preparing');
+      case 'uploading': return t('meal.photo_stage_uploading', { pct: Math.round((p.uploaded ?? 0) * 100) });
+      case 'working': return t('meal.photo_stage_working');
+      case 'reading': return t('meal.photo_stage_reading');
+      case 'done': return p.found?.length ? t('meal.photo_stage_found', { n: p.found.length }) : t('meal.photo_stage_none');
+      case 'kept': return vision === 'off' ? t('meal.photo_vision_off') : t('meal.photo_vision_unavailable');
+      default: return t('meal.photo_stage_saved');
+    }
+  };
+  const photoStatus = (() => {
+    if (!live.length) return null;
+    const idx = live.findIndex((p) => p.stage === 'preparing' || p.stage === 'uploading' || p.stage === 'working' || p.stage === 'reading');
+    if (idx >= 0) {
+      const p = live[idx]!;
+      const step = p.stage === 'uploading' ? t('meal.photo_step_uploading', { pct: Math.round((p.uploaded ?? 0) * 100) }) : p.stage === 'reading' ? t('meal.photo_step_reading') : p.stage === 'working' ? t('meal.photo_step_working') : t('meal.photo_step_preparing');
+      return t('meal.photo_progress', { i: idx + 1, n: live.length, step });
+    }
+    const foods = live.reduce((s2, p) => s2 + (p.found?.length ?? 0), 0);
+    if (live.some((p) => p.stage === 'kept')) return null; // each kept photo already says why, under it
+    return t('meal.photo_all_done', { n: live.length, foods });
+  })();
 
   if (clarify !== null) return (
     <Sheet open onClose={() => void close(false)} title={t('meal.clarify_title')} testid="clarify">
@@ -162,10 +197,24 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" data-testid="photo-camera-input" onChange={(e) => { const f = Array.from(e.target.files ?? []); e.target.value = ''; void addPhotos(f); }} />
         <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" data-testid="photo-gallery-input" onChange={(e) => { const f = Array.from(e.target.files ?? []); e.target.value = ''; void addPhotos(f); }} />
       </div>
-      {photos.length > 0 && (reading > 0 || (vision && vision !== 'on')) && <p className="text-label text-text-muted mt-2" data-testid="photo-status">{reading > 0 ? t('meal.photo_reading') : vision === 'off' ? t('meal.photo_vision_off') : t('meal.photo_vision_unavailable')}</p>}
-      {photos.length > 0 && <div className="flex gap-2 mt-2 overflow-x-auto" data-testid="meal-photos">{photos.map((p) => (
-        <div key={p.id} className="relative shrink-0"><img src={p.url} alt={t('meal.photo')} className="h-20 w-20 object-cover rounded-chip" />
-          <button aria-label={t('meal.remove_photo')} className="absolute top-0 end-0 bg-text text-bg rounded-pill h-7 w-7 flex items-center justify-center" onClick={() => removePhoto(p.id)}><Icon name="close" size={14} /></button></div>))}</div>}
+      {progress !== null && (
+        <div className="mt-2" data-testid="photo-progress">
+          <div className="h-2 rounded-pill bg-border overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label={t('meal.photo_progress_label')}>
+            <div className="h-full bg-accent transition-[width] duration-300" style={{ width: `${Math.round(progress * 100)}%` }} />
+          </div>
+        </div>
+      )}
+      {photoStatus && <p className="text-label text-text-muted mt-1" data-testid="photo-status" aria-live="polite">{photoStatus}</p>}
+      {photos.length > 0 && <ul className="flex flex-col gap-2 mt-2" data-testid="meal-photos">{photos.map((p, n) => (
+        <li key={p.id} className="flex gap-3 items-start" data-testid="meal-photo-row" data-stage={p.stage}>
+          <div className="relative shrink-0"><img src={p.url} alt={t('meal.photo_n', { n: n + 1 })} className="h-20 w-20 object-cover rounded-chip" />
+            <button aria-label={t('meal.remove_photo')} className="absolute top-0 end-0 bg-text text-bg rounded-pill h-7 w-7 flex items-center justify-center" onClick={() => removePhoto(p.id)}><Icon name="close" size={14} /></button></div>
+          <div className="flex-1 min-w-0">
+            <p className="text-label text-text-muted" data-testid="photo-stage">{stageText(p)}</p>
+            {p.found && p.found.length > 0 && <ul className="flex flex-wrap gap-1 mt-1" data-testid="photo-foods">{p.found.map((i, k) => (
+              <li key={`${i.raw_text}-${k}`} dir="auto" className="text-label rounded-pill border border-border px-2 py-0.5">{i.raw_text}</li>))}</ul>}
+          </div>
+        </li>))}</ul>}
       {slotField && (
         <div className="flex flex-wrap gap-2 mt-2">
           {slotField.options!.map((o) => <Chip key={String(o.value)} on={slot === o.value} onClick={() => setSlot(slot === o.value ? null : String(o.value))}>{label(o.labels)}</Chip>)}
@@ -195,6 +244,7 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
           </div>
         )}
       </div>
+      {stillReading > 0 && <p className="text-label text-text-muted mt-3" data-testid="save-while-reading">{t('meal.save_while_reading')}</p>}
       <Button className="w-full mt-4" onClick={() => void save()} data-testid="save">{existing ? t('common.save_changes') : t('common.save')}</Button>
       {editing !== null && items?.[editing] && (
         <ItemEditor item={items[editing]} onClose={() => setEditing(null)} onChange={async (next) => {

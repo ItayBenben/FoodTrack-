@@ -109,7 +109,23 @@
   "photo_limit": "Up to {n} photos per meal. The extra ones weren’t added — remove one to make room.",
   "photo_reading": "Looking at the photo…",
   "photo_vision_off": "Photo reading is off — the photo is kept. Add a few words so the meal counts.",
-  "photo_vision_unavailable": "Couldn’t read this photo yet — it’s kept with the meal, and the foods will be filled in once it can be read. You can also add a few words."
+  "photo_vision_unavailable": "Couldn’t read this photo yet — it’s kept with the meal, and the foods will be filled in once it can be read. You can also add a few words.",
+  "photo_progress_label": "Photo progress",
+  "photo_n": "Photo {n}",
+  "photo_stage_preparing": "Preparing…",
+  "photo_stage_uploading": "Uploading… {pct}%",
+  "photo_stage_reading": "Reading the foods in this photo… (usually 10–20 s)",
+  "photo_stage_found": "Foods seen in this photo: {n}",
+  "photo_stage_none": "No foods recognised in this photo. Add them in words below.",
+  "photo_stage_saved": "Saved with the meal",
+  "photo_step_preparing": "preparing",
+  "photo_step_uploading": "uploading {pct}%",
+  "photo_step_reading": "reading the foods",
+  "photo_progress": "Photo {i} of {n}: {step}",
+  "photo_all_done": "Done: {n} photos read, {foods} foods found. Check them below, then save.",
+  "save_while_reading": "You can save now. Foods from photos still being read are added to the meal automatically in a minute or two.",
+  "photo_stage_working": "Uploading and reading the foods in this photo… (usually 10–20 s)",
+  "photo_step_working": "uploading and reading"
  },
  "units": {
   "g": "g",
@@ -131,7 +147,8 @@
  "rows": {
   "all_clear": "All clear",
   "meal_unspecified": "Meal (no details)",
-  "needs_a_moment": "needs a moment"
+  "needs_a_moment": "needs a moment",
+  "meal_reading": "Meal (reading the photos…)"
  },
  "toast": {
   "deleted": "Deleted.",

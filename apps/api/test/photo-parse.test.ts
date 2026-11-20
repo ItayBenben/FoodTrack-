@@ -142,6 +142,17 @@ describe('meal photo → foods (08 §4.4)', () => {
       expect((await get(o.id)).meal_items.length).toBeGreaterThan(0);
     });
 
+    it('a meal saved as unspecified is still read once its photo arrives', async () => {
+      mode = 'ok';
+      const o = (await app.inject({ method: 'POST', url: '/api/v1/observations', headers: H(),
+        payload: { client_id: `c-${uuidv7()}`, tracker_key: 'meal', occurred_at: new Date().toISOString(), values: {}, specificity: 'unspecified' } })).json();
+      expect(o.specificity).toBe('unspecified');
+      const u = await app.inject({ method: 'PATCH', url: `/api/v1/observations/${o.id}`, headers: H(), payload: { values: { photos: [await upload()] } } });
+      expect(u.statusCode).toBe(200);
+      await runOnce(deps);
+      expect((await get(o.id)).meal_items.length).toBeGreaterThan(0);
+    });
+
     it('words typed later into a meal with no foods are parsed too', async () => {
       const o = await save({ photos: ['local-never-uploaded'] });
       await runOnce(deps);

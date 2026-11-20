@@ -22,6 +22,8 @@ export function dayOf(iso: string, u: UserMeta | null): string {
 export interface SaveInput {
   tracker_key: string; values: Record<string, unknown>; occurred_at?: string; time_source?: string; note?: string | null;
   meal_items?: MealItemInput[]; group_id?: string | null; batch_id?: string | null; id?: string; specificity?: 'unspecified';
+  /** The caller knows the server will read this entry in the background (e.g. a meal with photos but no foods yet). Local display only. */
+  parse_pending?: boolean;
 }
 
 async function refreshCounts() {
@@ -42,7 +44,7 @@ export async function saveObservation(input: SaveInput): Promise<LocalObservatio
     id: input.id ?? uuidv7(), client_id: `c_${uuidv7()}`, tracker_key: input.tracker_key, occurred_at: occurred, local_day: dayOf(occurred, u),
     time_source: input.time_source ?? (input.occurred_at ? 'user_set' : 'now'), values: input.values, note: input.note ?? null,
     meal_items: input.meal_items, revision: 0, deleted_at: null, group_id: input.group_id ?? null, batch_id: input.batch_id ?? null,
-    specificity: input.specificity, parse_status: !input.specificity && !input.meal_items?.length && typeof input.values.description === 'string' ? 'pending' : 'none',
+    specificity: input.specificity, parse_status: input.parse_pending || (!input.specificity && !input.meal_items?.length && typeof input.values.description === 'string') ? 'pending' : 'none',
     recorded_at: now, sync: 'pending',
   };
   await db().transaction('rw', db().observations, db().outbox, async () => {
@@ -54,7 +56,7 @@ export async function saveObservation(input: SaveInput): Promise<LocalObservatio
   return row;
 }
 
-export async function editObservation(id: string, patch: Partial<Pick<LocalObservation, 'values' | 'note' | 'occurred_at' | 'meal_items' | 'time_source'>>) {
+export async function editObservation(id: string, patch: Partial<Pick<LocalObservation, 'values' | 'note' | 'occurred_at' | 'meal_items' | 'time_source' | 'parse_status'>>) {
   const u = await userMeta();
   const now = new Date().toISOString();
   await db().transaction('rw', db().observations, db().outbox, async () => {
