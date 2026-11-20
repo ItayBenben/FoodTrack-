@@ -224,7 +224,7 @@ export async function createObservation(tx: Tx, ctx: WriteCtx, input: Observatio
   const precision = deriveTimePrecision(input.time_source, occurred, recorded, deps.analysis.exact_recording_delay_hours);
   const id = input.id ?? uuidv7();
   const items = input.meal_items ?? [];
-  const hasContent = Boolean(input.values.description) || (Array.isArray(input.values.photos) && input.values.photos.length > 0);
+  const hasContent = hasParseSource(def, input.values);
   // The server recomputes specificity; the only client value it honours is an explicit "I don't remember"
   // on a meal with nothing resolved (08 §4.3b) — a client can never upgrade an empty meal to resolved.
   const declined = input.specificity === 'unspecified' && !items.some((i) => i.food_id);
@@ -332,7 +332,9 @@ export async function updateObservation(tx: Tx, ctx: WriteCtx, id: string, patch
   await writeValues(tx, deps, def, id, next.values as ObservationValues);
   // A meal still without foods whose text or photos changed (typed later, or a photo that finished
   // uploading after the meal synced) is parsed again in the background — never left "no details".
-  const reparse = def.has_meal_items && !patch.meal_items && !cur.meal_items?.length && specificity !== 'unspecified'
+  // No specificity check: a meal saved as 'unspecified' and given photos or words later must still be read
+  // (2026-11-20: a photo-only meal stayed empty because its photos uploaded after it was saved unspecified).
+  const reparse = def.has_meal_items && !patch.meal_items && !cur.meal_items?.length
     && hasParseSource(def, next.values) && parseSource(def, next.values) !== parseSource(def, cur.values);
   if (reparse) {
     await tx.query(`UPDATE observation SET parse_status = 'pending' WHERE id = $1`, [id]);
