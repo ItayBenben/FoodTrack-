@@ -127,6 +127,12 @@ Created at first install in `/root/foodtrack-recovery-card.txt`. It must be copi
 12. Verified photo reading in the api container on a public-domain food photo (960×640, 23 foods): `vision: true`, provider anthropic, `degraded false`, sensible items — but it took **15.1 s against the 16 s photo timeout** (2 × `text.timeout_ms`). See §5.
 13. **Reboot verified** (2026-11-16): `RebootInstances` → site back in ~90 s (web first, api 200 ~10 s later), all six containers came back by themselves with 0 crash-restarts, row counts and volumes unchanged, swap re-mounted, travian-partner active, pending kernel update applied (7.0.0-1017-aws). A *stop/start* (not a reboot) would still change the public IP — see §3.
 
+### 2026-11-20 — photos had never been stored
+
+14. The owner reported that meals logged from a photo showed no foods. The api log showed every `POST /media` and `/meals/parse-photo` failing with `EACCES: permission denied, mkdir '/data/media/…'`. The `foodtrack_media` volume had been created root-owned (2026-11-14) and the api runs as `app` (uid 100), so **no photo had ever been saved in production**. The client keeps an unsent photo in IndexedDB and retries it, so photos still on the phone upload on the next sync.
+15. Fixed on the box: `chown 100:101` + `chmod 700` on the volume's `_data`, and write checked from the api and worker containers. Verified end to end inside the api container: media store round trip OK, and a real 960×640 food photo read by Claude in 15.5 s (`degraded=false`, 23 foods named in Hebrew).
+16. Made permanent: the api image creates `/data/media` owned by `app`, so a new volume inherits it. `deploy-vm.sh` re-applies the ownership on every deploy and **fails the deploy** if the api cannot write a file there. `/health/ready` now writes a probe file instead of only checking that the directory exists.
+
 ## 5. Open follow-ups
 
 - [ ] Rotate the Anthropic key (it passed through chat and SSM command history).

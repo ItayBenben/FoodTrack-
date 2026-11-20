@@ -24,5 +24,12 @@ export class VolumeMediaStore implements MediaStore {
   async put(key: string, bytes: Buffer) { const p = this.path(key); await mkdir(dirname(p), { recursive: true }); await writeFile(p, bytes, { mode: 0o600 }); }
   async get(key: string) { return readFile(this.path(key)); }
   async delete(key: string) { await unlink(this.path(key)).catch(() => undefined); }
-  async ready() { try { await mkdir(this.root, { recursive: true }); await access(this.root, constants.W_OK); return true; } catch { return false; } }
+  /** Writes and removes a probe file: a directory that merely exists (e.g. root-owned) is not ready. */
+  async ready() {
+    try {
+      await mkdir(this.root, { recursive: true }); await access(this.root, constants.W_OK);
+      const probe = join(this.root, `.ready-${process.pid}`); await writeFile(probe, ''); await unlink(probe);
+      return true;
+    } catch { return false; }
+  }
 }

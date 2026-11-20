@@ -77,7 +77,13 @@ fi
 docker compose run --rm api node dist/cli/seed.js --foods-only
 
 log "7/7 start"
+# A media volume created before the image set its ownership is root-owned, and every photo upload
+# then fails with EACCES (2026-11-20). Fix it idempotently, then prove the app user can write there.
+docker compose run --rm --no-deps --user root api sh -c 'chown app:app /data/media && chmod 700 /data/media'
 docker compose up -d
+for i in $(seq 1 30); do docker compose exec -T api true </dev/null 2>/dev/null && break; sleep 2; done
+docker compose exec -T api sh -c 'p=/data/media/.write-check && touch "$p" && rm "$p"' </dev/null \
+  || { echo "ERROR: the api cannot write to /data/media — photo uploads would fail"; exit 1; }
 docker compose ps
 echo -e "\nFoodTrack: https://$(grep '^FOODTRACK_DOMAIN=' .env | cut -d= -f2)  (first visit runs setup)"
 echo "Backups: add to root's crontab:  0 3 * * * cd $DIR && COMPOSE=1 BACKUP_DIR=/var/backups/foodtrack scripts/backup.sh"
