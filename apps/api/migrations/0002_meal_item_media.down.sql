@@ -1,0 +1,1 @@
+ALTER TABLE meal_item DROP COLUMN IF EXISTS media_id;

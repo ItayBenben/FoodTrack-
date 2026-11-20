@@ -6,6 +6,8 @@ import { api, ApiError } from './api';
 export interface ParsedItem {
   raw_text: string; food_id: string | null; canonical_name: string | null; quantity: number | null; unit: string | null;
   grams_est: number | null; confidence: number | null; resolved_by: string | null; portion_precision?: string;
+  /** The photo this item was seen in (08 §4.4); absent for typed items. */
+  media_id?: string | null;
 }
 export interface AddOn { food_id: string; label: string; canonical_name: string; quantity: number; unit: string; grams_est: number; confidence: number; resolved_by: string; portion_precision: string }
 

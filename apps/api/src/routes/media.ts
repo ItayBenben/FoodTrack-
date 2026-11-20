@@ -51,7 +51,7 @@ export async function mediaRoutes(app: FastifyInstance) {
     const locale = await withUser(deps.db, req.userId, async (tx) => (await getUser(tx)).locale);
     const r = await deps.llm.parsePhoto({ image: buf, mime: file.mimetype, locale });
     if (r.degraded) return { media_id, items: [], vision: 'unavailable' };
-    const items = await withUser(deps.db, req.userId, (tx) => new MealParser(tx, deps, locale).resolveVision(r.items));
+    const items = await withUser(deps.db, req.userId, (tx) => new MealParser(tx, deps, locale).resolveVision(r.items, media_id));
     return { media_id, items, vision: 'on' };
   });
 }

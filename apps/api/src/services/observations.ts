@@ -24,7 +24,7 @@ export interface ObservationPayload {
 export interface MealItemPayload {
   id: string; observation_id: string; food_id: string | null; canonical_name: string | null; raw_text: string;
   quantity: number | null; unit: string | null; grams_est: number | null; confidence: number | null;
-  resolved_by: string | null; portion_precision: string; position: number;
+  resolved_by: string | null; portion_precision: string; position: number; media_id: string | null;
 }
 
 /** Hooks run inside the write transaction after an observation is stored (trial exposure detection, M5). */
@@ -82,7 +82,7 @@ export async function readMealItems(tx: Tx, deps: Deps, ids: string[]): Promise<
   if (!ids.length) return out;
   const { rows } = await tx.query<Omit<MealItemPayload, 'raw_text'> & { raw_text: Buffer }>(
     `SELECT mi.id, mi.observation_id, mi.food_id, f.canonical_name, mi.raw_text, mi.quantity, mi.unit, mi.grams_est, mi.confidence,
-            mi.resolved_by, mi.portion_precision, mi.position
+            mi.resolved_by, mi.portion_precision, mi.position, mi.media_id
      FROM meal_item mi LEFT JOIN food f ON f.id = mi.food_id WHERE mi.observation_id = ANY($1::uuid[]) ORDER BY mi.position`, [ids]);
   for (const r of rows) out.get(r.observation_id)!.push({ ...r, raw_text: deps.keys.crypto.open('meal_item', 'raw_text', r.id, r.raw_text) ?? '' });
   return out;
@@ -169,11 +169,11 @@ export async function writeMealItems(tx: Tx, deps: Deps, observationId: string, 
     const id = it.id ?? uuidv7();
     const grams = it.grams_est ?? null;
     await tx.query(
-      `INSERT INTO meal_item (id, observation_id, user_id, food_id, raw_text, quantity, unit, grams_est, estimated, confidence, resolved_by, portion_precision, position)
-       VALUES ($1,$2,app_current_user(),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+      `INSERT INTO meal_item (id, observation_id, user_id, food_id, raw_text, quantity, unit, grams_est, estimated, confidence, resolved_by, portion_precision, position, media_id)
+       VALUES ($1,$2,app_current_user(),$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,
       [id, observationId, it.food_id ?? null, deps.keys.crypto.seal('meal_item', 'raw_text', id, it.raw_text), it.quantity ?? null, it.unit ?? null,
         grams, grams === null, it.confidence ?? null, it.resolved_by ?? null,
-        it.portion_precision ?? (it.quantity ? 'estimated' : 'unspecified'), it.position ?? pos++]);
+        it.portion_precision ?? (it.quantity ? 'estimated' : 'unspecified'), it.position ?? pos++, it.media_id ?? null]);
     if (it.food_id) await learnFood(tx, deps, it.food_id, it.raw_text, it.quantity ?? null, it.unit ?? null, grams, occurredAt);
   }
 }

@@ -295,7 +295,8 @@ CREATE TABLE meal_item (
   grams_est      numeric,                              -- normalised for nutrient maths
   confidence     numeric(3,2),
   resolved_by    text,                                 -- llm|user|library|vision
-  position       int NOT NULL DEFAULT 0
+  position       int NOT NULL DEFAULT 0,
+  media_id       uuid                                  -- the photo it was seen in (08 §4.4); null when typed. No FK: removing a photo keeps its foods
 );
 CREATE INDEX ON meal_item (food_id);
 

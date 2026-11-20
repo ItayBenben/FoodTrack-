@@ -20,6 +20,8 @@ export const MealItemInputSchema = z.object({
   resolved_by: z.enum(['llm', 'user', 'library', 'canonical', 'vision', 'deterministic']).nullable().optional(),
   portion_precision: PortionPrecisionSchema.optional(),
   position: z.number().int().nonnegative().optional(),
+  /** The photo this item was seen in (08 §4.4); null for typed items. */
+  media_id: z.string().uuid().nullable().optional(),
 });
 export type MealItemInput = z.infer<typeof MealItemInputSchema>;
 

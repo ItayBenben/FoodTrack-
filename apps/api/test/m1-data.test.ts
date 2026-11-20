@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import pg from 'pg';
 import { writeFileSync, mkdtempSync, cpSync } from 'node:fs';
@@ -160,8 +161,10 @@ describe('the synthetic fixture carries the injected effect', () => {
 describe('migrations', () => {
   it('roll back and re-apply cleanly', async () => {
     await deps.db.end();
-    expect(await migrate(OWNER_URL, 'down', () => undefined)).toEqual(['0001_init']);
-    expect(await migrate(OWNER_URL, 'up', () => undefined)).toEqual(['0001_init']);
+    // the newest migration rolls back, and comes back up again
+    const latest = readdirSync(new URL('../migrations', import.meta.url)).filter((f) => f.endsWith('.up.sql')).map((f) => f.replace('.up.sql', '')).sort().at(-1)!;
+    expect(await migrate(OWNER_URL, 'down', () => undefined)).toEqual([latest]);
+    expect(await migrate(OWNER_URL, 'up', () => undefined)).toEqual([latest]);
     deps = await freshDeps();
   });
 });

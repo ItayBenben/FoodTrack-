@@ -16,21 +16,26 @@ async function png(page: Page, colour: string): Promise<Buffer> {
   return Buffer.from(b64, 'base64');
 }
 const item = (raw: string, canonical: string) => ({ raw_text: raw, food_id: null, canonical_name: canonical, quantity: null, unit: null, grams_est: null, confidence: 0.8, resolved_by: 'vision', portion_precision: 'unspecified' });
-const SEEN = [[item('hummus', 'hummus'), item('pita', 'pita bread')], [item('green salad', 'green salad')]];
+/** What the stand-in model "sees" in each test colour. Keyed by the photo itself, never by request order:
+ *  the uploads run side by side and can reach the server in either order. */
+const SEEN: Record<string, ReturnType<typeof item>[]> = { '#c33': [item('hummus', 'hummus'), item('pita', 'pita bread')], '#3c3': [item('green salad', 'green salad')] };
+const sent = new Map<string, Buffer>(); // colour → the exact bytes picked (small test PNGs are uploaded unchanged)
 
-/** Real upload to the API; the reply is swapped for what a vision model would say about photo n, after `delayMs`. */
+/** Real upload to the API; the reply is swapped for what a vision model would say about that photo, after `delayMs`. */
 async function fakeVision(page: Page, delayMs: number) {
-  let n = 0;
   await page.route('**/api/v1/meals/parse-photo', async (route: Route) => {
-    const which = n++;
+    const upload = route.request().postDataBuffer() ?? Buffer.alloc(0);
+    const colour = [...sent.entries()].find(([, bytes]) => upload.includes(bytes))?.[0];
     const res = await route.fetch();
     const body = await res.json() as { media_id: string };
     await new Promise((r) => setTimeout(r, delayMs));
-    await route.fulfill({ response: res, json: { media_id: body.media_id, vision: 'on', items: SEEN[which % SEEN.length] } });
+    const seen = (colour && SEEN[colour]) || [item('soup', 'soup')];
+    await route.fulfill({ response: res, json: { media_id: body.media_id, vision: 'on', items: seen.map((i) => ({ ...i, media_id: body.media_id })) } });
   });
 }
 async function pickPhotos(page: Page, colours: string[]) {
   const files = await Promise.all(colours.map(async (c, i) => ({ name: `meal-${i}.png`, mimeType: 'image/png', buffer: await png(page, c) })));
+  files.forEach((f, i) => sent.set(colours[i]!, f.buffer));
   await page.getByTestId('sheet-meal').getByTestId('meal-photo').click();
   const chooser = page.waitForEvent('filechooser');
   await page.getByTestId('photo-gallery').click();
@@ -82,4 +87,51 @@ test('saving while photos are still being read says so in the list, never "no de
   const row = page.getByTestId('obs-row').filter({ hasText: /reading the photos|קורא את התמונות/ });
   await expect(row.first()).toBeVisible();
   await expect(page.getByTestId('obs-row').filter({ hasText: /no details|ללא פרטים/ })).toHaveCount(0);
+});
+
+test('edit mode: each saved photo shows its own foods, and a photo added while editing gets the same progress', async ({ page }, info) => {
+  await enter(page);
+  await fakeVision(page, 1_500);
+  await page.getByTestId('fab').click();
+  let sheet = page.getByTestId('sheet-meal');
+  await pickPhotos(page, ['#c33']);
+  await expect(sheet.getByTestId('photo-status')).toHaveText(/1 photos read, 2 foods|נקראו 1 תמונות, זוהו 2 מאכלים/, { timeout: 20_000 });
+  await sheet.getByTestId('save').click();
+  await waitSynced(page);
+
+  // reopen: the saved photo still says which foods came from it
+  await page.getByTestId('obs-row').filter({ hasText: 'hummus' }).filter({ hasNotText: 'green salad' }).first().click(); // this test's meal; earlier tests' meals also have a salad
+  sheet = page.getByTestId('sheet-meal');
+  const rows = sheet.getByTestId('meal-photo-row');
+  await expect(rows).toHaveCount(1);
+  // the saved photo really shows (it is fetched with the login token, not a bare <img src>)
+  await expect.poll(() => rows.nth(0).getByTestId('photo-img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0), { timeout: 10_000 }).toBe(true);
+  await expect(rows.nth(0).getByTestId('photo-foods')).toHaveText(/hummus.*pita/);
+  await expect(rows.nth(0).getByTestId('photo-stage')).toHaveText(/2/);
+
+  // add a second photo while editing: it shows its progress, then its own foods
+  await pickPhotos(page, ['#3c3']);
+  await expect(rows).toHaveCount(2);
+  await expect(sheet.getByTestId('photo-progress')).toBeVisible();
+  await expect(rows.nth(1).getByTestId('photo-foods')).toHaveText(/green salad/, { timeout: 20_000 });
+  await expect(rows.nth(0).getByTestId('photo-foods')).toHaveText(/hummus.*pita/);
+  await page.screenshot({ path: `test-results/photo-progress-edit-${info.project.name}.png` });
+  await sheet.getByTestId('save').click();
+  await waitSynced(page);
+  await expect(page.getByTestId('obs-row').filter({ hasText: 'hummus' }).filter({ hasNotText: 'green salad' })).toHaveCount(0); // the edit added the salad
+});
+
+test('edit mode while the server is still reading the photos: a status and bar say so', async ({ page }) => {
+  await enter(page);
+  await fakeVision(page, 20_000);
+  await page.getByTestId('fab').click();
+  await pickPhotos(page, ['#3cc']);
+  await expect(page.getByTestId('sheet-meal').locator('[data-stage=working], [data-stage=reading], [data-stage=uploading]').first()).toBeVisible({ timeout: 10_000 });
+  await page.getByTestId('sheet-meal').getByTestId('save').click();
+  await expect(page.getByTestId('sheet-meal')).toHaveCount(0);
+  await page.getByTestId('obs-row').filter({ hasText: /reading the photos|קורא את התמונות/ }).first().click();
+  const sheet = page.getByTestId('sheet-meal');
+  await expect(sheet.getByTestId('photo-status')).toHaveText(/on the server|בשרת/);
+  await expect(sheet.getByTestId('photo-progress')).toBeVisible();
+  await expect(sheet.getByTestId('photo-stage').first()).toHaveText(/server|בשרת/);
 });

@@ -72,6 +72,8 @@ describe('meal photo → foods (08 §4.4)', () => {
     expect(vague!.food_id).toBeNull();
     expect(Math.max(...body.items.map((i) => i.confidence))).toBeLessThanOrEqual(0.9);
     expect(seen.at(-1)?.locale).toBe('he-IL');
+    // every item remembers the photo it was seen in, so the meal can show each photo with its own foods
+    expect(body.items.every((i) => (i as { media_id?: string }).media_id === body.media_id)).toBe(true);
   });
 
   it('the model being down never loses the photo', async () => {
@@ -110,10 +112,17 @@ describe('meal photo → foods (08 §4.4)', () => {
 
     it('saved before the composer finished reading it: the server reads the photo in the background', async () => {
       mode = 'ok';
-      const o = await save({ photos: [await upload()] });
+      const photo = await upload();
+      const o = await save({ photos: [photo] });
       expect(o.parse_status).toBe('pending');
       await runOnce(deps);
       const now = await get(o.id);
+      expect(now.meal_items.every((i: { media_id: string | null }) => i.media_id === photo)).toBe(true);
+      // the attribution survives an edit that sends the items back (as the composer does)
+      const back = await app.inject({ method: 'PATCH', url: `/api/v1/observations/${o.id}`, headers: H(),
+        payload: { meal_items: now.meal_items.map((i: Record<string, unknown>) => ({ raw_text: i.raw_text, food_id: i.food_id, confidence: i.confidence, resolved_by: i.resolved_by, media_id: i.media_id })) } });
+      expect(back.statusCode).toBe(200);
+      expect((await get(o.id)).meal_items.every((i: { media_id: string | null }) => i.media_id === photo)).toBe(true);
       expect(now.meal_items.map((i: { raw_text: string }) => i.raw_text)).toContain('חומוס');
       expect(now.meal_items.every((i: { resolved_by: string }) => i.resolved_by === 'vision')).toBe(true);
       expect(now.parse_status).toBe('done');

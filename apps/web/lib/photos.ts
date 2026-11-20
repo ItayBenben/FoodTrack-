@@ -39,7 +39,7 @@ export async function prepareMealPhoto(file: File): Promise<Blob> {
   } finally { bitmap.close(); }
 }
 
-export interface PhotoParseItem { raw_text: string; food_id: string | null; canonical_name: string | null; quantity: number | null; unit: string | null; grams_est: number | null; confidence: number | null; resolved_by: string | null; portion_precision?: string }
+export interface PhotoParseItem { raw_text: string; food_id: string | null; canonical_name: string | null; quantity: number | null; unit: string | null; grams_est: number | null; confidence: number | null; resolved_by: string | null; portion_precision?: string; media_id?: string | null }
 export interface PhotoParseResult { media_id: string; items: PhotoParseItem[]; vision: 'on' | 'off' | 'unavailable' }
 
 /**
@@ -112,4 +112,19 @@ export function uploadAndReadPhoto(blob: Blob, headers: Record<string, string>, 
     const fd = new FormData(); fd.append('file', blob, 'meal');
     xhr.send(fd);
   });
+}
+
+/**
+ * A saved photo as something an <img> can show. The media route needs the bearer token, which a plain
+ * <img src> never sends, so the bytes are fetched with it. A photo still waiting to upload is shown from
+ * the device's queue. null when neither is possible (the row then shows the photo's label).
+ */
+export async function savedPhotoUrl(id: string, token: string | null, queued: (id: string) => Promise<Blob | undefined>): Promise<string | null> {
+  const local = await queued(id).catch(() => undefined);
+  if (local) return URL.createObjectURL(local);
+  if (!token || id.startsWith('local_')) return null;
+  try {
+    const r = await fetch(`/api/v1/media/${id}`, { headers: { authorization: `Bearer ${token}` }, credentials: 'same-origin' });
+    return r.ok ? URL.createObjectURL(await r.blob()) : null;
+  } catch { return null; }
 }
