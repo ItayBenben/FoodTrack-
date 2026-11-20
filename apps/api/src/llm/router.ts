@@ -11,7 +11,7 @@ import { DeterministicProvider, templateNarrative } from './deterministic.js';
 import { OpenAICompatProvider } from './openai-compat.js';
 import { MealParseResultSchema, type LLMProvider, LocalizedText, MealParseInput, MealParseResult, NarrateInput, PhotoParseInput } from './types.js';
 
-interface LlmConfig { text: { timeout_ms: number }; narrative: { timeout_ms: number }; vision: { enabled: boolean }; fallback_order: string[]; prompt_versions: { meal_parse: string; narrative: string } }
+interface LlmConfig { text: { timeout_ms: number }; narrative: { timeout_ms: number }; vision: { enabled: boolean; timeout_ms?: number }; fallback_order: string[]; prompt_versions: { meal_parse: string; narrative: string } }
 
 export interface LLMRouter {
   describe(): { active: string; dataEgress: 'remote' | 'local'; chain: string[]; vision: boolean; model: string };
@@ -61,7 +61,7 @@ export function createLLMRouter(env?: Env, providers?: LLMProvider[]): LLMRouter
     },
     async parsePhoto(input) {
       for (const p of chain.filter((x) => x.capabilities.vision)) {
-        try { return { ...(await withTimeout(cfg.text.timeout_ms * 2, (s) => p.parsePhoto(input, s))), degraded: false }; } catch { /* next */ }
+        try { return { ...(await withTimeout(cfg.vision.timeout_ms ?? cfg.text.timeout_ms * 2, (s) => p.parsePhoto(input, s))), degraded: false }; } catch { /* next */ }
       }
       return { items: [], model: 'none', prompt_version: cfg.prompt_versions.meal_parse, degraded: true };
     },

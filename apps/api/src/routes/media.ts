@@ -9,10 +9,9 @@ import { withUser } from '../db/pool.js';
 import { HttpProblem, notFound } from '../lib/problem.js';
 import { getUser } from '../services/users.js';
 import { MealParser } from '../services/meal-parse.js';
+import { VISION_MIMES } from '../services/media-types.js';
 
 const MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']);
-/** What the vision model can read. HEIC is stored but not analysed (the client converts to JPEG first). */
-const VISION_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 export async function mediaRoutes(app: FastifyInstance) {
   const { deps } = app;

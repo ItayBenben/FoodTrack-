@@ -282,7 +282,7 @@ export interface LLMProvider {
 ```jsonc
 {
   "text":   { "provider": "anthropic", "model": "<model-id>", "timeout_ms": 8000 },
-  "vision": { "provider": "anthropic", "model": "<model-id>", "enabled": false },
+  "vision": { "provider": "anthropic", "model": "<model-id>", "enabled": false, "timeout_ms": 30000 },
   "narrative": { "provider": "ollama", "endpoint": "http://ollama:11434", "model": "<local-model>" },
   "fallback_order": ["anthropic", "ollama", "deterministic"]
 }
