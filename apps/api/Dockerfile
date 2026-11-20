@@ -13,6 +13,8 @@ RUN corepack enable && addgroup -S app && adduser -S app -G app
 COPY --from=build /repo /repo
 COPY config /repo/config
 COPY apps/api/migrations /repo/apps/api/migrations
+# the photo volume mounts here; a new named volume takes this ownership, so the app user can write photos
+RUN mkdir -p /data/media && chown app:app /data/media && chmod 700 /data/media
 USER app
 EXPOSE 4000
 CMD ["node", "dist/server.js"]
