@@ -125,7 +125,9 @@
   "photo_all_done": "Done: {n} photos read, {foods} foods found. Check them below, then save.",
   "save_while_reading": "You can save now. Foods from photos still being read are added to the meal automatically in a minute or two.",
   "photo_stage_working": "Uploading and reading the foods in this photo… (usually 10–20 s)",
-  "photo_step_working": "uploading and reading"
+  "photo_step_working": "uploading and reading",
+  "photo_stage_server": "Being read on the server — its foods appear here in a minute or two.",
+  "photo_server_reading": "Reading the photos on the server… You can keep editing; the foods appear here when they're ready."
  },
  "units": {
   "g": "g",

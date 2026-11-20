@@ -11,7 +11,7 @@ import type { Candidate } from '../llm/types.js';
 export interface ResolvedItem {
   raw_text: string; food_id: string | null; canonical_name: string | null; quantity: number | null; unit: string | null;
   grams_est: number | null; confidence: number | null; resolved_by: 'library' | 'canonical' | 'llm' | 'vision' | 'deterministic' | null;
-  portion_precision: 'estimated' | 'unspecified'; position: number;
+  portion_precision: 'estimated' | 'unspecified'; position: number; media_id?: string | null;
 }
 export interface ParseResult { items: ResolvedItem[]; unresolved: string[]; degraded: boolean; tier: 1 | 2 | 3; model: string; prompt_version: string; add_ons: AddOn[] }
 export interface AddOn { food_id: string; label: string; canonical_name: string; quantity: number; unit: string; grams_est: number; confidence: number; resolved_by: 'library'; portion_precision: 'estimated' }
@@ -191,7 +191,7 @@ export class MealParser {
    * library or the canonical table exactly as typed text would be, so a photographed "hummus" is the
    * same food as a typed "חומוס". An unknown but confident name becomes a private llm food (stage 6).
    */
-  async resolveVision(items: { raw_text: string; canonical_name: string; quantity: number | null; unit: string | null; grams_est: number | null; confidence: number; category: string | null }[]): Promise<ResolvedItem[]> {
+  async resolveVision(items: { raw_text: string; canonical_name: string; quantity: number | null; unit: string | null; grams_est: number | null; confidence: number; category: string | null }[], mediaId: string | null = null): Promise<ResolvedItem[]> {
     const out: ResolvedItem[] = [];
     for (const [i, it] of items.entries()) {
       const hit = (await this.resolveExact(it.canonical_name)) ?? (await this.resolveExact(it.raw_text));
@@ -201,7 +201,7 @@ export class MealParser {
       const grams = it.grams_est ?? (it.quantity && gpu ? Math.round(it.quantity * gpu) : null);
       // a picture tells us what, far better than how much: confidence is the model's, capped below a typed match
       out.push({ raw_text: it.raw_text, food_id: foodId, canonical_name: f?.canonical_name ?? it.canonical_name, quantity: it.quantity, unit: it.unit, grams_est: grams,
-        confidence: Math.round(Math.min(it.confidence, 0.9) * 100) / 100, resolved_by: 'vision', portion_precision: it.quantity || grams ? 'estimated' : 'unspecified', position: i });
+        confidence: Math.round(Math.min(it.confidence, 0.9) * 100) / 100, resolved_by: 'vision', portion_precision: it.quantity || grams ? 'estimated' : 'unspecified', position: i, media_id: mediaId });
     }
     return out;
   }

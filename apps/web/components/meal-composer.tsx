@@ -13,7 +13,7 @@ import { api, getAccessToken } from '@/lib/api';
 import { db, deviceId, type LocalObservation } from '@/lib/db/local';
 import { editObservation, saveObservation } from '@/lib/store';
 import { useParse, type ParsedItem } from '@/lib/meals';
-import { admit, mergeItems, overallProgress, prepareMealPhoto, uploadAndReadPhoto, type PhotoStage } from '@/lib/photos';
+import { admit, mergeItems, overallProgress, prepareMealPhoto, savedPhotoUrl, uploadAndReadPhoto, type PhotoStage } from '@/lib/photos';
 import { Button, Chip, Sheet, useToasts } from './ui';
 import { TimestampControl } from './fields';
 import { Icon } from './icons';
@@ -48,11 +48,25 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
   const SpeechRec = typeof window !== 'undefined' ? ((window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike }).SpeechRecognition ?? (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionLike }).webkitSpeechRecognition) : undefined;
 
   useEffect(() => {
-    if (editId) void db().observations.get(editId).then((o) => { if (!o) return; setExisting(o); setText(String(o.values.description ?? '')); setSlot((o.values.slot as string) ?? null); setTs(o.occurred_at); setItems((o.meal_items ?? []) as ParsedItem[]); setPhotos(((photoField ? (o.values[photoField.key] as string[] | undefined) : undefined) ?? []).map((id) => ({ id, url: `/api/v1/media/${id}`, stage: 'saved' as const }))); });
+    if (editId) void db().observations.get(editId).then((o) => { if (!o) return; setExisting(o); setText(String(o.values.description ?? '')); setSlot((o.values.slot as string) ?? null); setTs(o.occurred_at); setItems((o.meal_items ?? []) as ParsedItem[]); const ids = (photoField ? (o.values[photoField.key] as string[] | undefined) : undefined) ?? [];
+      setPhotos(ids.map((id) => ({ id, url: '', stage: 'saved' as const })));
+      // the image route needs the login token, so each saved photo is fetched with it and shown from memory
+      for (const id of ids) void savedPhotoUrl(id, getAccessToken(), async (k) => (await db().media_queue.get(k))?.blob).then((url) => { if (url) update(id, { url }); }); });
     else void db().drafts.get(DRAFT).then((d) => { if (d) { setText(String(d.data.text ?? '')); setSlot((d.data.slot as string) ?? null); } });
     setTimeout(() => ref.current?.focus(), 30);
   }, [editId]);
   useEffect(() => { if (parse.items && !existing) setItems(mergeItems(parse.items, photoItems)); }, [parse.items, existing, photoItems]);
+  // Edit mode on a meal whose photos the server is still reading: its foods appear here as soon as they arrive.
+  const serverReading = Boolean(existing && existing.parse_status === 'pending' && !existing.meal_items?.length);
+  useEffect(() => {
+    if (!serverReading || !existing) return;
+    const timer = setInterval(() => void db().observations.get(existing.id).then((o) => {
+      if (!o || o.parse_status === 'pending' || !o.meal_items?.length) return;
+      setExisting(o);
+      setItems((cur) => (cur && cur.length ? cur : (o.meal_items as ParsedItem[]))); // never over what the person already typed
+    }), 2_000);
+    return () => clearInterval(timer);
+  }, [serverReading, existing]);
 
   const close = async (saved: boolean) => {
     if (!saved && !editId && (text.trim() || photos.length)) {
@@ -68,7 +82,7 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
     if (text.trim()) values.description = text.trim();
     if (slot) values.slot = slot;
     if (photoField && photos.length) values[photoField.key] = photos.map((p) => p.id);
-    const meal_items: MealItemInput[] | undefined = all.length ? all.map((i, n) => ({ raw_text: i.raw_text, food_id: i.food_id, quantity: i.quantity, unit: i.unit, grams_est: i.grams_est, confidence: i.confidence, resolved_by: (i.resolved_by ?? undefined) as MealItemInput['resolved_by'], portion_precision: (i.portion_precision ?? 'unspecified') as MealItemInput['portion_precision'], position: n, ...(i.canonical_name ? { canonical_name: i.canonical_name } : {}) })) : undefined;
+    const meal_items: MealItemInput[] | undefined = all.length ? all.map((i, n) => ({ raw_text: i.raw_text, food_id: i.food_id, quantity: i.quantity, unit: i.unit, grams_est: i.grams_est, confidence: i.confidence, resolved_by: (i.resolved_by ?? undefined) as MealItemInput['resolved_by'], portion_precision: (i.portion_precision ?? 'unspecified') as MealItemInput['portion_precision'], position: n, ...(i.media_id ? { media_id: i.media_id } : {}), ...(i.canonical_name ? { canonical_name: i.canonical_name } : {}) })) : undefined;
     let id = existing?.id;
     // photos but no foods yet (still being read, or offline): the server reads them after the save, and the list says so meanwhile
     const parse_pending = !meal_items?.length && !existing?.meal_items?.length && photos.length > 0 && !opts.unspecified;
@@ -147,6 +161,8 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
   const progress = overallProgress(photos);
   const live = photos.filter((p) => p.stage !== 'saved');
   const stillReading = live.filter((p) => p.stage === 'preparing' || p.stage === 'uploading' || p.stage === 'working' || p.stage === 'reading').length;
+  /** The foods seen in one photo: what the live read found, or, for a saved photo, the meal's items that came from it. */
+  const foodsFor = (p: ComposerPhoto): ParsedItem[] => p.found ?? (items ?? []).filter((i) => i.media_id && i.media_id === p.id);
   const stageText = (p: ComposerPhoto): string => {
     switch (p.stage) {
       case 'preparing': return t('meal.photo_stage_preparing');
@@ -155,11 +171,14 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
       case 'reading': return t('meal.photo_stage_reading');
       case 'done': return p.found?.length ? t('meal.photo_stage_found', { n: p.found.length }) : t('meal.photo_stage_none');
       case 'kept': return vision === 'off' ? t('meal.photo_vision_off') : t('meal.photo_vision_unavailable');
-      default: return t('meal.photo_stage_saved');
+      default: {
+        const n = foodsFor(p).length;
+        return n ? t('meal.photo_stage_found', { n }) : serverReading ? t('meal.photo_stage_server') : t('meal.photo_stage_saved');
+      }
     }
   };
   const photoStatus = (() => {
-    if (!live.length) return null;
+    if (!live.length) return serverReading && photos.length ? t('meal.photo_server_reading') : null;
     const idx = live.findIndex((p) => p.stage === 'preparing' || p.stage === 'uploading' || p.stage === 'working' || p.stage === 'reading');
     if (idx >= 0) {
       const p = live[idx]!;
@@ -197,21 +216,21 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
         <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" data-testid="photo-camera-input" onChange={(e) => { const f = Array.from(e.target.files ?? []); e.target.value = ''; void addPhotos(f); }} />
         <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" data-testid="photo-gallery-input" onChange={(e) => { const f = Array.from(e.target.files ?? []); e.target.value = ''; void addPhotos(f); }} />
       </div>
-      {progress !== null && (
+      {(progress !== null || (serverReading && photos.length > 0)) && (
         <div className="mt-2" data-testid="photo-progress">
-          <div className="h-2 rounded-pill bg-border overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-label={t('meal.photo_progress_label')}>
-            <div className="h-full bg-accent transition-[width] duration-300" style={{ width: `${Math.round(progress * 100)}%` }} />
+          <div className="h-2 rounded-pill bg-border overflow-hidden" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress !== null ? Math.round(progress * 100) : undefined} aria-label={t('meal.photo_progress_label')}>
+            <div className={`h-full bg-accent transition-[width] duration-300 ${progress === null ? 'animate-pulse' : ''}`} style={{ width: `${Math.round((progress ?? 0.5) * 100)}%` }} />
           </div>
         </div>
       )}
       {photoStatus && <p className="text-label text-text-muted mt-1" data-testid="photo-status" aria-live="polite">{photoStatus}</p>}
       {photos.length > 0 && <ul className="flex flex-col gap-2 mt-2" data-testid="meal-photos">{photos.map((p, n) => (
         <li key={p.id} className="flex gap-3 items-start" data-testid="meal-photo-row" data-stage={p.stage}>
-          <div className="relative shrink-0"><img src={p.url} alt={t('meal.photo_n', { n: n + 1 })} className="h-20 w-20 object-cover rounded-chip" />
+          <div className="relative shrink-0">{p.url ? <img src={p.url} alt={t('meal.photo_n', { n: n + 1 })} className="h-20 w-20 object-cover rounded-chip" data-testid="photo-img" /> : <div className="h-20 w-20 rounded-chip bg-border flex items-center justify-center text-text-muted" aria-label={t('meal.photo_n', { n: n + 1 })}><Icon name="photo" size={20} /></div>}
             <button aria-label={t('meal.remove_photo')} className="absolute top-0 end-0 bg-text text-bg rounded-pill h-7 w-7 flex items-center justify-center" onClick={() => removePhoto(p.id)}><Icon name="close" size={14} /></button></div>
           <div className="flex-1 min-w-0">
             <p className="text-label text-text-muted" data-testid="photo-stage">{stageText(p)}</p>
-            {p.found && p.found.length > 0 && <ul className="flex flex-wrap gap-1 mt-1" data-testid="photo-foods">{p.found.map((i, k) => (
+            {foodsFor(p).length > 0 && <ul className="flex flex-wrap gap-1 mt-1" data-testid="photo-foods">{foodsFor(p).map((i, k) => (
               <li key={`${i.raw_text}-${k}`} dir="auto" className="text-label rounded-pill border border-border px-2 py-0.5">{i.raw_text}</li>))}</ul>}
           </div>
         </li>))}</ul>}

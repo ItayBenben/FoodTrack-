@@ -44,7 +44,7 @@ export async function parseStoredMeal(tx: Tx, deps: Deps, observationId: string,
 }
 
 /** Photos the meal's photo fields point at that are on the server and readable by the model. null: the meal has none. */
-async function readStoredPhotos(tx: Tx, deps: Deps, trackerKey: string, values: Record<string, unknown>): Promise<{ image: Buffer; mime: string }[] | null> {
+async function readStoredPhotos(tx: Tx, deps: Deps, trackerKey: string, values: Record<string, unknown>): Promise<{ id: string; image: Buffer; mime: string }[] | null> {
   const def = (await deps.registry.get(tx, trackerKey))?.def;
   const ids = (def?.fields ?? []).filter((f) => f.type === 'photo' || f.type === 'multi_photo')
     .flatMap((f) => { const v = values[f.key]; return Array.isArray(v) ? v : typeof v === 'string' ? [v] : []; })
@@ -52,23 +52,23 @@ async function readStoredPhotos(tx: Tx, deps: Deps, trackerKey: string, values: 
   if (!ids.length) return null;
   const { rows } = await tx.query<{ id: string; storage_key: string; mime: string; object_key_wrapped: Buffer; nonce: Buffer }>(
     `SELECT id, storage_key, mime, object_key_wrapped, nonce FROM media WHERE id::text = ANY($1) AND mime = ANY($2)`, [ids, [...VISION_MIMES]]);
-  const out: { image: Buffer; mime: string }[] = [];
+  const out: { id: string; image: Buffer; mime: string }[] = [];
   for (const row of rows.slice(0, MAX_PHOTOS_READ)) {
-    try { out.push({ image: deps.keys.crypto.openMedia(row.id, await deps.media.get(row.storage_key), row.object_key_wrapped, row.nonce), mime: row.mime }); }
+    try { out.push({ id: row.id, image: deps.keys.crypto.openMedia(row.id, await deps.media.get(row.storage_key), row.object_key_wrapped, row.nonce), mime: row.mime }); }
     catch { /* a missing object is skipped, never fatal */ }
   }
   return out;
 }
 
 /** Every photo is read; foods seen in more than one are kept once. Degraded only if no photo could be read. */
-async function readPhotoItems(deps: Deps, parser: MealParser, photos: { image: Buffer; mime: string }[], locale: string) {
+async function readPhotoItems(deps: Deps, parser: MealParser, photos: { id: string; image: Buffer; mime: string }[], locale: string) {
   if (!deps.llm.describe().vision) return { items: [], degraded: true };
   const items: ResolvedItem[] = []; let read = 0;
   for (const p of photos) {
-    const r = await deps.llm.parsePhoto({ ...p, locale });
+    const r = await deps.llm.parsePhoto({ image: p.image, mime: p.mime, locale });
     if (r.degraded) continue;
     read++;
-    for (const it of await parser.resolveVision(r.items)) {
+    for (const it of await parser.resolveVision(r.items, p.id)) {
       if (it.food_id ? items.some((x) => x.food_id === it.food_id) : items.some((x) => x.raw_text === it.raw_text)) continue;
       items.push({ ...it, position: items.length });
     }
