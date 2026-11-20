@@ -16,21 +16,26 @@ async function png(page: Page, colour: string): Promise<Buffer> {
   return Buffer.from(b64, 'base64');
 }
 const item = (raw: string, canonical: string) => ({ raw_text: raw, food_id: null, canonical_name: canonical, quantity: null, unit: null, grams_est: null, confidence: 0.8, resolved_by: 'vision', portion_precision: 'unspecified' });
-const SEEN = [[item('hummus', 'hummus'), item('pita', 'pita bread')], [item('green salad', 'green salad')]];
+/** What the stand-in model "sees" in each test colour. Keyed by the photo itself, never by request order:
+ *  the uploads run side by side and can reach the server in either order. */
+const SEEN: Record<string, ReturnType<typeof item>[]> = { '#c33': [item('hummus', 'hummus'), item('pita', 'pita bread')], '#3c3': [item('green salad', 'green salad')] };
+const sent = new Map<string, Buffer>(); // colour → the exact bytes picked (small test PNGs are uploaded unchanged)
 
-/** Real upload to the API; the reply is swapped for what a vision model would say about photo n, after `delayMs`. */
+/** Real upload to the API; the reply is swapped for what a vision model would say about that photo, after `delayMs`. */
 async function fakeVision(page: Page, delayMs: number) {
-  let n = 0;
   await page.route('**/api/v1/meals/parse-photo', async (route: Route) => {
-    const which = n++;
+    const upload = route.request().postDataBuffer() ?? Buffer.alloc(0);
+    const colour = [...sent.entries()].find(([, bytes]) => upload.includes(bytes))?.[0];
     const res = await route.fetch();
     const body = await res.json() as { media_id: string };
     await new Promise((r) => setTimeout(r, delayMs));
-    await route.fulfill({ response: res, json: { media_id: body.media_id, vision: 'on', items: SEEN[which % SEEN.length]!.map((i) => ({ ...i, media_id: body.media_id })) } });
+    const seen = (colour && SEEN[colour]) || [item('soup', 'soup')];
+    await route.fulfill({ response: res, json: { media_id: body.media_id, vision: 'on', items: seen.map((i) => ({ ...i, media_id: body.media_id })) } });
   });
 }
 async function pickPhotos(page: Page, colours: string[]) {
   const files = await Promise.all(colours.map(async (c, i) => ({ name: `meal-${i}.png`, mimeType: 'image/png', buffer: await png(page, c) })));
+  files.forEach((f, i) => sent.set(colours[i]!, f.buffer));
   await page.getByTestId('sheet-meal').getByTestId('meal-photo').click();
   const chooser = page.waitForEvent('filechooser');
   await page.getByTestId('photo-gallery').click();
