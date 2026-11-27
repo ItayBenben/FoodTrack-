@@ -115,7 +115,8 @@ The completeness checklist. Every screen, every control on it, what the control 
 | Control | Action |
 |---|---|
 | `✕` | ⟳ keeps draft, toast `Draft kept · Undo` |
-| timestamp `[ Today · 13:05 ▾ ]` | ⟳ expands day strip + time wheel; `Set` collapses |
+| timestamp `[ Today · 13:05 ▾ ]` | ⟳ opens a panel *below* the header (never inline beside the title): day strip scrolled to the chosen day, time, `Now`, `Set`; tapping outside collapses. Shows `~` when the time is a slot estimate |
+| slot chips `Breakfast ~08:10` · `Lunch` · … | ⟳ tags the meal. Quick update: unless the clock time was set by hand, also moves the time to that slot's usual time on the chosen day (the day before if still ahead; kept as now if within 90 min). Saved as `slot_median` → `slot_estimate` (`default` → `day_only` with < 3 meals of history). Tap again to undo. Not in edit mode |
 | textarea | ⟳ debounced parse at 600 ms |
 | 🎤 mic | ⟳ live transcript (hidden if no speech API) |
 | `📷 Photo` | → S25 source sheet |

@@ -43,6 +43,8 @@ export async function saveObservation(input: SaveInput): Promise<LocalObservatio
   const row: LocalObservation = {
     id: input.id ?? uuidv7(), client_id: `c_${uuidv7()}`, tracker_key: input.tracker_key, occurred_at: occurred, local_day: dayOf(occurred, u),
     time_source: input.time_source ?? (input.occurred_at ? 'user_set' : 'now'), values: input.values, note: input.note ?? null,
+    // shown as `~` at once; the server derives the stored value the same way (D31)
+    ...(input.time_source === 'slot_median' ? { time_precision: 'slot_estimate' } : input.time_source === 'default' ? { time_precision: 'day_only' } : {}),
     meal_items: input.meal_items, revision: 0, deleted_at: null, group_id: input.group_id ?? null, batch_id: input.batch_id ?? null,
     specificity: input.specificity, parse_status: input.parse_pending || (!input.specificity && !input.meal_items?.length && typeof input.values.description === 'string') ? 'pending' : 'none',
     recorded_at: now, sync: 'pending',

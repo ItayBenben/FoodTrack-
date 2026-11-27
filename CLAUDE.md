@@ -83,7 +83,7 @@ pnpm lint                # eslint + logical-property rule + copy lint
 
 ## Shipping
 
-Standing instruction from the owner: when a change is ready and CI is green, **merge the PR and deploy to production without asking**. Production is a single VM (`scripts/deploy-vm.sh`, see `docs/deployment.md` for where it runs, how to reach it and its history) that tracks `main`; redeploy by re-running the script on the box. Secrets live only in the box's `/opt/foodtrack/.env` — never in git.
+Standing instruction from the owner: when a change is ready, **open the PR yourself, wait for CI, and once it is green merge it and let it deploy to production — without asking first.** This is explicit, durable authorization for the whole sequence (push → PR → merge → deploy); do not stop to confirm any step of it. Merging to `main` triggers `.github/workflows/deploy.yml`, which deploys and smoke-tests. If CI fails, fix it and push again — never merge red. Report the PR link and deploy result afterwards. Production is a single VM (`scripts/deploy-vm.sh`, see `docs/deployment.md` for where it runs, how to reach it and its history) that tracks `main`; redeploy by re-running the script on the box. Secrets live only in the box's `/opt/foodtrack/.env` — never in git.
 
 ## Conventions
 
