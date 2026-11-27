@@ -1,6 +1,6 @@
 'use client';
 /** Renders any field from its definition (02 §2.1). There is no hard-coded form anywhere. */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FieldDef } from '@foodtrack/tracker-schema';
 import { useI18n } from '@/lib/i18n';
 import { BristolArt } from './icons';
@@ -96,30 +96,42 @@ export function BodyMap({ value, onChange }: { value: string[]; onChange: (v: st
   );
 }
 
-/** One timestamp control on every capture screen (08 §1.4). */
-export function TimestampControl({ value, onChange, rolloverNote }: { value: string | null; onChange: (iso: string | null) => void; rolloverNote?: string | null }) {
+/**
+ * One timestamp control on every capture screen (08 §1.4). The expanded panel drops below the
+ * sheet header as an overlay (its containing block is the sticky header), so it never squeezes
+ * the title. `estimate` marks a time the app inferred with `~` (D31) — never shown as exact.
+ */
+export function TimestampControl({ value, onChange, rolloverNote, estimate }: { value: string | null; onChange: (iso: string | null, part?: 'day' | 'time') => void; rolloverNote?: string | null; estimate?: boolean }) {
   const { t, fmtTime } = useI18n();
   const [open, setOpen] = useState(false);
+  const strip = useRef<HTMLDivElement>(null);
   const shown = value ?? new Date().toISOString();
   const days = Array.from({ length: 8 }, (_, i) => { const d = new Date(); d.setDate(d.getDate() - (7 - i)); return d; });
   const cur = new Date(shown);
-  const setDay = (d: Date) => { const n = new Date(cur); n.setFullYear(d.getFullYear(), d.getMonth(), d.getDate()); onChange(n.toISOString()); };
+  const setDay = (d: Date) => { const n = new Date(cur); n.setFullYear(d.getFullYear(), d.getMonth(), d.getDate()); onChange(n.toISOString(), 'day'); };
+  useEffect(() => { if (open) strip.current?.querySelector<HTMLElement>('[aria-pressed="true"]')?.scrollIntoView({ block: 'nearest', inline: 'center' }); }, [open, value]);
+  const dayText = cur.toDateString() === new Date().toDateString() ? t('time.today') : cur.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
   return (
-    <div>
-      <button className="min-h-12 px-3 rounded-pill bg-surface-sunken text-text tabular-nums" onClick={() => setOpen(!open)} aria-expanded={open} data-testid="timestamp">
-        {value ? `${cur.toDateString() === new Date().toDateString() ? t('time.today') : cur.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} · ${fmtTime(shown)}` : `${t('time.now')} · ${fmtTime(shown)}`} ▾
+    <>
+      <button className={`relative z-10 min-h-12 px-3 rounded-pill tabular-nums whitespace-nowrap shrink-0 ${open ? 'bg-accent-soft text-text' : 'bg-surface-sunken text-text'}`} onClick={() => setOpen(!open)} aria-expanded={open} data-testid="timestamp">
+        {value ? `${dayText} · ${estimate ? '~' : ''}${fmtTime(shown)}` : `${t('time.now')} · ${fmtTime(shown)}`} ▾
       </button>
-      {open && (
-        <div className="mt-2 p-3 rounded-card bg-surface border border-border">
-          <div className="flex gap-1 overflow-x-auto">
-            {days.map((d) => <Chip key={d.toISOString()} on={d.toDateString() === cur.toDateString()} onClick={() => setDay(d)}>{d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' })}</Chip>)}
+      {open && (<>
+        <div className="fixed inset-0 z-0" aria-hidden="true" onClick={() => setOpen(false)} />
+        <div className="absolute inset-x-4 top-full z-10 p-3 rounded-card bg-surface border border-border shadow-soft" data-testid="timestamp-panel">
+          <div ref={strip} className="flex gap-1 overflow-x-auto -mx-1 px-1 pb-1">
+            {days.map((d) => <Chip key={d.toISOString()} className="shrink-0 tabular-nums" on={d.toDateString() === cur.toDateString()} onClick={() => setDay(d)}>{d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' })}</Chip>)}
           </div>
-          <input type="time" dir="ltr" className="mt-2 min-h-12 rounded-chip border border-border bg-surface px-3" value={`${String(cur.getHours()).padStart(2, '0')}:${String(cur.getMinutes()).padStart(2, '0')}`}
-            onChange={(e) => { const [h, m] = e.target.value.split(':').map(Number); const n = new Date(cur); n.setHours(h ?? 0, m ?? 0, 0, 0); if (n.getTime() > Date.now() + 24 * 3600_000) return; onChange(n.toISOString()); }} />
+          <div className="mt-2 flex items-center gap-2">
+            <input type="time" dir="ltr" aria-label={t('meal.time')} className="min-h-12 rounded-chip border border-border bg-surface px-3 tabular-nums" value={`${String(cur.getHours()).padStart(2, '0')}:${String(cur.getMinutes()).padStart(2, '0')}`}
+              onChange={(e) => { const [h, m] = e.target.value.split(':').map(Number); const n = new Date(cur); n.setHours(h ?? 0, m ?? 0, 0, 0); if (n.getTime() > Date.now() + 24 * 3600_000) return; onChange(n.toISOString(), 'time'); }} />
+            <span className="flex-1" />
+            <button className="min-h-12 px-3 text-accent" onClick={() => { onChange(null); setOpen(false); }}>{t('time.now')}</button>
+            <button className="min-h-12 px-4 rounded-pill bg-accent text-on-accent font-semibold" onClick={() => setOpen(false)}>{t('time.set')}</button>
+          </div>
           {rolloverNote && <p className="text-label text-text-muted mt-2">{rolloverNote}</p>}
-          <div className="mt-2 flex gap-2"><button className="min-h-12 px-3 text-accent" onClick={() => { onChange(null); setOpen(false); }}>{t('time.now')}</button><button className="min-h-12 px-3 font-semibold text-accent" onClick={() => setOpen(false)}>{t('time.set')}</button></div>
         </div>
-      )}
-    </div>
+      </>)}
+    </>
   );
 }

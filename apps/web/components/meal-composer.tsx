@@ -17,6 +17,7 @@ import { admit, mergeItems, overallProgress, prepareMealPhoto, savedPhotoUrl, up
 import { Button, Chip, Sheet, useToasts } from './ui';
 import { TimestampControl } from './fields';
 import { Icon } from './icons';
+import { slotClock, slotInstant, useSlotTimes, type SlotTimeSource } from '@/lib/slot-times';
 
 const DRAFT = 'draft_meal';
 interface Suggestion { id: string; label: string; times_logged: number }
@@ -27,7 +28,13 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
   const { t, label } = useI18n();
   const [text, setText] = useState('');
   const [slot, setSlot] = useState<string | null>(null);
-  const [ts, setTs] = useState<string | null>(at);
+  const [ts, setTsRaw] = useState<string | null>(at);
+  /** Set when the time came from a slot tap: saved as an estimate, never as exact (D31). */
+  const [tsSource, setTsSource] = useState<SlotTimeSource | null>(null);
+  const [timeByHand, setTimeByHand] = useState(false);
+  /** A new day keeps a slot estimate (it is still "lunch, roughly"); a hand-set clock time is exact. */
+  const setTs = (v: string | null, part?: 'day' | 'time') => { setTsRaw(v); if (part !== 'day') setTsSource(null); setTimeByHand(part === 'time' || (part === undefined && v !== null)); };
+  const slotTimes = useSlotTimes();
   const [items, setItems] = useState<ParsedItem[] | null>(null);
   const [photos, setPhotos] = useState<ComposerPhoto[]>([]);
   const [existing, setExisting] = useState<LocalObservation | null>(null);
@@ -48,7 +55,7 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
   const SpeechRec = typeof window !== 'undefined' ? ((window as unknown as { SpeechRecognition?: new () => SpeechRecognitionLike; webkitSpeechRecognition?: new () => SpeechRecognitionLike }).SpeechRecognition ?? (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionLike }).webkitSpeechRecognition) : undefined;
 
   useEffect(() => {
-    if (editId) void db().observations.get(editId).then((o) => { if (!o) return; setExisting(o); setText(String(o.values.description ?? '')); setSlot((o.values.slot as string) ?? null); setTs(o.occurred_at); setItems((o.meal_items ?? []) as ParsedItem[]); const ids = (photoField ? (o.values[photoField.key] as string[] | undefined) : undefined) ?? [];
+    if (editId) void db().observations.get(editId).then((o) => { if (!o) return; setExisting(o); setText(String(o.values.description ?? '')); setSlot((o.values.slot as string) ?? null); setTsRaw(o.occurred_at); setItems((o.meal_items ?? []) as ParsedItem[]); const ids = (photoField ? (o.values[photoField.key] as string[] | undefined) : undefined) ?? [];
       setPhotos(ids.map((id) => ({ id, url: '', stage: 'saved' as const })));
       // the image route needs the login token, so each saved photo is fetched with it and shown from memory
       for (const id of ids) void savedPhotoUrl(id, getAccessToken(), async (k) => (await db().media_queue.get(k))?.blob).then((url) => { if (url) update(id, { url }); }); });
@@ -76,6 +83,18 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
     onClose();
   };
 
+  /** Quick update: a slot both tags the meal and, unless the time was set by hand, moves it to
+   *  that slot's usual time on the chosen day — marked `~` and saved as an estimate (08 §4.15). */
+  const pickSlot = (v: string) => {
+    if (slot === v) { setSlot(null); if (tsSource) { setTsRaw(at); setTsSource(null); } return; }
+    setSlot(v);
+    const st = slotTimes.find((x) => x.slot === v);
+    if (existing || timeByHand || !st) return;
+    const r = slotInstant(st, ts ? new Date(ts) : new Date(), new Date(), ts === null);
+    if (!r) { if (tsSource) { setTsRaw(at); setTsSource(null); } return; }
+    setTsRaw(r.iso); setTsSource(r.source);
+  };
+
   const doSave = async (opts: { unspecified?: boolean; extra?: ParsedItem[] } = {}) => {
     const all = [...(items ?? []), ...(opts.extra ?? [])];
     const values: Record<string, unknown> = {};
@@ -87,7 +106,7 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
     // photos but no foods yet (still being read, or offline): the server reads them after the save, and the list says so meanwhile
     const parse_pending = !meal_items?.length && !existing?.meal_items?.length && photos.length > 0 && !opts.unspecified;
     if (existing) await editObservation(existing.id, { values, meal_items, ...(parse_pending ? { parse_status: 'pending' } : {}), ...(ts && ts !== existing.occurred_at ? { occurred_at: ts, time_source: 'user_set' } : {}) });
-    else id = (await saveObservation({ tracker_key: def.key, values, meal_items, occurred_at: ts ?? undefined, time_source: !ts ? 'now' : ts === at ? 'default' : 'user_set', parse_pending, ...(opts.unspecified ? { specificity: 'unspecified' as const } : {}) })).id;
+    else id = (await saveObservation({ tracker_key: def.key, values, meal_items, occurred_at: ts ?? undefined, time_source: !ts ? 'now' : tsSource ?? (ts === at ? 'default' : 'user_set'), parse_pending, ...(opts.unspecified ? { specificity: 'unspecified' as const } : {}) })).id;
     for (const p of photos.filter((x) => x.blob)) await db().media_queue.put({ id: p.id, observation_id: id!, blob: p.blob!, created_at: new Date().toISOString() });
     if (opts.unspecified) push({ text: t('meal.unspecified_saved') });
     void close(true);
@@ -203,7 +222,7 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
   );
 
   return (
-    <Sheet open onClose={() => void close(false)} title={existing ? t('meal.edit_title') : t('meal.title')} testid="sheet-meal" headerExtra={<TimestampControl value={ts} onChange={setTs} />}>
+    <Sheet open onClose={() => void close(false)} title={existing ? t('meal.edit_title') : t('meal.title')} testid="sheet-meal" headerExtra={<TimestampControl value={ts} onChange={setTs} estimate={tsSource !== null} />}>
       <div className="relative">
         <textarea ref={ref} data-autofocus dir="auto" rows={3} className="w-full rounded-card border border-border bg-surface p-3 pe-12 text-body" placeholder={t('meal.placeholder')}
           value={text} onChange={(e) => setText(e.target.value)} data-testid="meal-text" aria-label={t('meal.title')} />
@@ -236,7 +255,8 @@ export function MealComposer({ def, editId, at, onClose }: { def: TrackerDefinit
         </li>))}</ul>}
       {slotField && (
         <div className="flex flex-wrap gap-2 mt-2">
-          {slotField.options!.map((o) => <Chip key={String(o.value)} on={slot === o.value} onClick={() => setSlot(slot === o.value ? null : String(o.value))}>{label(o.labels)}</Chip>)}
+          {slotField.options!.map((o) => { const v = String(o.value); const st = slotTimes.find((x) => x.slot === v); const clock = st ? slotClock(st) : null;
+            return <Chip key={v} on={slot === v} onClick={() => pickSlot(v)} data-testid={`slot-${v}`}>{label(o.labels)}{clock && <span className="ms-1 text-label text-text-muted tabular-nums">~{clock}</span>}</Chip>; })}
         </div>
       )}
       <div className="mt-3">

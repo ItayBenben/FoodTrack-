@@ -81,6 +81,8 @@ Every capture screen has one timestamp control with this behaviour:
 [ Set ]                              commits, collapses
 ```
 
+- The expanded panel overlays the sheet below its header; it never shares a row with the title.
+- **Quick update (meal slots).** In the meal composer, tapping a slot chip (Breakfast, Lunch, …) sets the time to the user's usual time for that slot (`/me/slot-times`, cached for offline) unless the clock time was set by hand. The result is an estimate (D31): `~` in the control, `time_source: slot_median`, excluded from the 0–6 h window.
 - Range: 5 years back, 24 h forward (`02` §7 rule 1). Values outside are rejected inline: *"That date is outside what I can record."*
 - If the chosen time falls before the day rollover, the control shows a note: *"Counts as Wednesday 20 — your day starts at 04:00."* This is the only place the rollover is ever explained, and it appears only when it actually applies.
 
